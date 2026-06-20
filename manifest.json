@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Research Companion",
+  "version": "0.1.0",
+  "description": "Suggests similar webpages, reports, and articles to what you're currently reading.",
+  "permissions": ["sidePanel", "scripting", "storage", "activeTab", "identity"],
+  "host_permissions": [
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://openrouter.ai/*",
+    "https://api.search.brave.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Research Companion"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "options_page": "options/options.html"
+}
