@@ -19,6 +19,7 @@ function launchWebAuthFlow(options) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type !== 'CONNECT_OPENROUTER') return false;
+  if (sender.id !== chrome.runtime.id) return false;
 
   connectOpenRouter(launchWebAuthFlow)
     .then(async (key) => {

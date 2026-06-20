@@ -4,7 +4,11 @@ import { getCompletion } from '../src/lib/llm/index.js';
 import { search as braveSearch } from '../src/lib/search/brave.js';
 
 export function renderLoading(container, statusText) {
-  container.innerHTML = `<p class="status">${statusText}</p>`;
+  container.textContent = '';
+  const p = document.createElement('p');
+  p.className = 'status';
+  p.textContent = statusText;
+  container.appendChild(p);
 }
 
 export function renderSetupPrompt(container) {
@@ -78,8 +82,8 @@ export function renderHistoryList(container, entries, onSelect) {
 
 export function requestExtraction(tabId) {
   return new Promise((resolve, reject) => {
-    const listener = (message) => {
-      if (message.type === 'EXTRACTION_RESULT') {
+    const listener = (message, sender) => {
+      if (message.type === 'EXTRACTION_RESULT' && sender.tab?.id === tabId) {
         chrome.runtime.onMessage.removeListener(listener);
         resolve(message.payload);
       }

@@ -3,6 +3,9 @@
   "name": "Research Companion",
   "version": "0.1.0",
   "description": "Suggests similar webpages, reports, and articles to what you're currently reading.",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "permissions": ["sidePanel", "scripting", "storage", "activeTab", "identity"],
   "host_permissions": [
     "https://api.anthropic.com/*",

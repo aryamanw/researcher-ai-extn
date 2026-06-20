@@ -18,11 +18,12 @@ export async function generateCodeChallenge(verifier) {
   return base64UrlEncode(new Uint8Array(digest));
 }
 
-export function buildAuthUrl({ callbackUrl, codeChallenge }) {
+export function buildAuthUrl({ callbackUrl, codeChallenge, state }) {
   const url = new URL(AUTH_URL);
   url.searchParams.set('callback_url', callbackUrl);
   url.searchParams.set('code_challenge', codeChallenge);
   url.searchParams.set('code_challenge_method', 'S256');
+  if (state) url.searchParams.set('state', state);
   return url.toString();
 }
 
@@ -52,10 +53,15 @@ export async function connectOpenRouter(launchWebAuthFlow) {
   const callbackUrl = chrome.identity.getRedirectURL();
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
-  const authUrl = buildAuthUrl({ callbackUrl, codeChallenge });
+  const state = generateCodeVerifier();
+  const authUrl = buildAuthUrl({ callbackUrl, codeChallenge, state });
 
   const redirectUrl = await launchWebAuthFlow({ url: authUrl, interactive: true });
-  const code = new URL(redirectUrl).searchParams.get('code');
+  const params = new URL(redirectUrl).searchParams;
+  if (params.get('state') !== state) {
+    throw new Error('OpenRouter authorization state mismatch');
+  }
+  const code = params.get('code');
   if (!code) {
     throw new Error('OpenRouter authorization did not return a code');
   }
