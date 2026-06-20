@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Notes on Debugging Distributed Systems</title></head>
+<body>
+  <header><h1>Notes on Debugging Distributed Systems</h1></header>
+  <main>
+    <article>
+      <p>Every distributed systems outage I've debugged eventually comes down to the same root cause: an assumption about ordering that held in testing but broke under real network conditions.</p>
+      <p>The most useful habit I've built is writing down, before looking at any logs, what I expect the system to be doing right now. That forces me to surface the assumption before I go hunting for evidence.</p>
+      <p>Distributed tracing helps, but only if the trace IDs propagate consistently across every hop, including the ones your team doesn't own, like a managed queue or a third-party webhook.</p>
+      <p>When in doubt, reproduce the failure at the smallest possible scale: two nodes, one message, one network partition. Most "it's complicated" bugs turn out to be two-node bugs wearing a disguise.</p>
+    </article>
+  </main>
+  <aside>Related posts...</aside>
+</body>
+</html>
