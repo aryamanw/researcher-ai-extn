@@ -16,7 +16,8 @@ describe('gemini complete', () => {
     expect(result).toBe('hello from gemini');
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toContain('generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent');
-    expect(url).toContain('key=key123');
+    expect(url).not.toContain('key=');
+    expect(options.headers['x-goog-api-key']).toBe('key123');
     expect(JSON.parse(options.body).contents[0].parts[0].text).toBe('hi');
   });
 
