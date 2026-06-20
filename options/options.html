@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Research Companion Settings</title>
+</head>
+<body>
+  <h1>Research Companion Settings</h1>
+
+  <form id="settings-form">
+    <label>
+      LLM provider
+      <select name="provider">
+        <option value="">-- choose --</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="openai">OpenAI</option>
+        <option value="gemini">Gemini</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+    </label>
+
+    <label>
+      Model (optional, uses provider default if blank)
+      <input type="text" name="model" />
+    </label>
+
+    <fieldset>
+      <legend>API keys</legend>
+      <label>Anthropic API key <input type="password" name="anthropicKey" /></label>
+      <label>OpenAI API key <input type="password" name="openaiKey" /></label>
+      <label>Gemini API key <input type="password" name="geminiKey" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>OpenRouter</legend>
+      <button type="button" id="connect-openrouter">Connect to OpenRouter</button>
+      <span id="openrouter-status"></span>
+    </fieldset>
+
+    <label>
+      Brave Search API key
+      <input type="password" name="braveSearchKey" />
+    </label>
+
+    <label>
+      Number of results
+      <input type="number" name="resultsCount" min="1" max="20" />
+    </label>
+  </form>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
