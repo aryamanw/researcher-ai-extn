@@ -21,8 +21,18 @@ export function renderNoResults(container) {
 }
 
 export function renderError(container, message, onRetry) {
-  container.innerHTML = `<p class="error">${message}</p><button id="retry-button">Retry</button>`;
-  container.querySelector('#retry-button').addEventListener('click', onRetry);
+  container.innerHTML = '';
+
+  const p = document.createElement('p');
+  p.className = 'error';
+  p.textContent = message;
+  container.appendChild(p);
+
+  const button = document.createElement('button');
+  button.id = 'retry-button';
+  button.textContent = 'Retry';
+  button.addEventListener('click', onRetry);
+  container.appendChild(button);
 }
 
 export function renderResults(container, results) {

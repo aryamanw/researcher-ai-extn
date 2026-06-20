@@ -56,6 +56,17 @@ describe('render functions', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('renderError does not execute scripts from malicious error messages', () => {
+    delete window.__pwned;
+    const onRetry = vi.fn();
+    renderError(container, '<img src=x onerror="window.__pwned = true">', onRetry);
+    container.querySelector('#retry-button').click();
+    expect(window.__pwned).toBeFalsy();
+    expect(container.textContent).toContain('<img src=x onerror="window.__pwned = true">');
+    expect(container.querySelector('img')).toBeNull();
+    delete window.__pwned;
+  });
+
   it('renderResults renders each result with title, snippet, and relevance', () => {
     renderResults(container, [
       { title: 'A', url: 'https://a.com', snippet: 'snip', relevance: 'because reasons' },
