@@ -26,22 +26,43 @@ export function renderError(container, message, onRetry) {
 }
 
 export function renderResults(container, results) {
-  container.innerHTML = results
-    .map(
-      (r) => `
-      <article class="result">
-        <a href="${r.url}" target="_blank" rel="noopener">${r.title}</a>
-        <p class="snippet">${r.snippet}</p>
-        <p class="relevance">${r.relevance}</p>
-      </article>`
-    )
-    .join('');
+  container.innerHTML = '';
+  results.forEach((r) => {
+    const article = document.createElement('article');
+    article.className = 'result';
+
+    const a = document.createElement('a');
+    a.textContent = r.title;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    try {
+      const u = new URL(r.url);
+      if (/^https?:$/.test(u.protocol)) a.href = r.url;
+    } catch {
+      // leave href unset for invalid URLs
+    }
+
+    const snippet = document.createElement('p');
+    snippet.className = 'snippet';
+    snippet.textContent = r.snippet;
+
+    const relevance = document.createElement('p');
+    relevance.className = 'relevance';
+    relevance.textContent = r.relevance;
+
+    article.append(a, snippet, relevance);
+    container.appendChild(article);
+  });
 }
 
 export function renderHistoryList(container, entries, onSelect) {
-  container.innerHTML = entries.map((entry) => `<li data-id="${entry.id}">${entry.sourcePage.title}</li>`).join('');
-  container.querySelectorAll('li').forEach((li) => {
+  container.innerHTML = '';
+  entries.forEach((entry) => {
+    const li = document.createElement('li');
+    li.textContent = entry.sourcePage.title;
+    li.dataset.id = entry.id;
     li.addEventListener('click', () => onSelect(li.dataset.id));
+    container.appendChild(li);
   });
 }
 
