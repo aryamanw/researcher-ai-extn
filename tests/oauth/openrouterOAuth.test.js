@@ -80,7 +80,8 @@ describe('connectOpenRouter', () => {
     );
     const launchWebAuthFlow = vi.fn(async (options) => {
       expect(options.url).toContain('https://openrouter.ai/auth?');
-      return 'https://abc.chromiumapp.org/?code=auth-code-789';
+      const state = new URL(options.url).searchParams.get('state');
+      return `https://abc.chromiumapp.org/?code=auth-code-789&state=${state}`;
     });
 
     const key = await connectOpenRouter(launchWebAuthFlow);
@@ -90,7 +91,10 @@ describe('connectOpenRouter', () => {
   });
 
   it('throws when the redirect has no code', async () => {
-    const launchWebAuthFlow = vi.fn(async () => 'https://abc.chromiumapp.org/?error=access_denied');
+    const launchWebAuthFlow = vi.fn(async (options) => {
+      const state = new URL(options.url).searchParams.get('state');
+      return `https://abc.chromiumapp.org/?error=access_denied&state=${state}`;
+    });
     await expect(connectOpenRouter(launchWebAuthFlow)).rejects.toThrow(
       'OpenRouter authorization did not return a code'
     );

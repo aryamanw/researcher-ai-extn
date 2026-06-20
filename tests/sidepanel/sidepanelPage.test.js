@@ -120,7 +120,7 @@ describe('requestExtraction', () => {
       },
       scripting: {
         executeScript: vi.fn().mockImplementation(async () => {
-          listeners[0]({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'X', confidence: 'high' } });
+          listeners[0]({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'X', confidence: 'high' } }, { tab: { id: 7 } });
           return [];
         }),
       },
@@ -133,6 +133,32 @@ describe('requestExtraction', () => {
       target: { tabId: 7 },
       files: ['dist/content.bundled.js'],
     });
+  });
+
+  it('rejects spoofed messages from wrong tabId', async () => {
+    const listeners = [];
+    global.chrome = {
+      runtime: {
+        onMessage: {
+          addListener: (fn) => { listeners.push(fn); fn({ type: 'EXTRACTION_RESULT', payload: { text: 'spoofed' } }, { tab: { id: 999 } }); },
+          removeListener: (fn) => {
+            const i = listeners.indexOf(fn);
+            if (i >= 0) listeners.splice(i, 1);
+          },
+        },
+      },
+      scripting: {
+        executeScript: vi.fn().mockImplementation(async () => {
+          return [];
+        }),
+      },
+    };
+
+    const promise = requestExtraction(7);
+    listeners[0]({ type: 'EXTRACTION_RESULT', payload: { text: 'real', title: 'T', url: 'U', confidence: 'high' } }, { tab: { id: 7 } });
+
+    const result = await promise;
+    expect(result).toEqual({ title: 'T', url: 'U', text: 'real', confidence: 'high' });
   });
 });
 
@@ -162,7 +188,7 @@ describe('analyzeActiveTab', () => {
     getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k' });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
-      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: '', confidence: 'low' } });
+      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: '', confidence: 'low' } }, { tab: { id: 1 } });
     });
     const renderNoContentFn = vi.fn();
 
@@ -182,7 +208,7 @@ describe('analyzeActiveTab', () => {
     getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k', resultsCount: 8 });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
-      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } });
+      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
     });
     const results = [{ title: 'R', url: 'https://r.com', snippet: 's', relevance: 'rel' }];
     runPipeline.mockResolvedValue(results);
@@ -206,7 +232,7 @@ describe('analyzeActiveTab', () => {
     getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k', resultsCount: 8 });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
-      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } });
+      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
     });
     runPipeline.mockResolvedValue([]);
     const renderNoResultsFn = vi.fn();
