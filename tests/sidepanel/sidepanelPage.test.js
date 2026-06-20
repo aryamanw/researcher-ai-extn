@@ -66,6 +66,22 @@ describe('render functions', () => {
     expect(container.querySelector('a').href).toBe('https://a.com/');
   });
 
+  it('renderResults does not execute scripts from malicious titles', () => {
+    delete window.__pwned;
+    renderResults(container, [
+      {
+        title: '<img src=x onerror="window.__pwned = true">',
+        url: 'https://a.com',
+        snippet: 'snip',
+        relevance: 'rel',
+      },
+    ]);
+    expect(window.__pwned).toBeFalsy();
+    expect(container.textContent).toContain('<img src=x onerror="window.__pwned = true">');
+    expect(container.querySelector('img')).toBeNull();
+    delete window.__pwned;
+  });
+
   it('renderHistoryList renders entries and wires click selection', () => {
     const onSelect = vi.fn();
     renderHistoryList(
