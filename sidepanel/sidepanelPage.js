@@ -99,7 +99,7 @@ export function renderResults(container, results, { provider, showProvider } = {
 
   if (showProvider && provider) {
     const label = document.createElement('p');
-    label.className = 'active-provider';
+    label.className = 'active-provider status';
     label.textContent = `Using ${PROVIDER_LABELS[provider] || provider}`;
     container.appendChild(label);
   }
@@ -200,7 +200,7 @@ export function requestExtraction(tabId, { timeoutMs = EXTRACTION_TIMEOUT_MS, si
   });
 }
 
-function countConfiguredProviders(settings) {
+export function countConfiguredProviders(settings) {
   let count = 0;
   if (settings.apiKeys?.anthropic) count += 1;
   if (settings.apiKeys?.openai) count += 1;
@@ -261,6 +261,7 @@ export async function analyzeActiveTab({
     timestamp: Date.now(),
     sourcePage: { title: extraction.title, url: extraction.url },
     results,
+    provider: settings.provider,
   });
 
   return { status: 'success', results };

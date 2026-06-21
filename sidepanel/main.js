@@ -9,8 +9,9 @@ import {
   renderError,
   renderHistoryList,
   toFriendlyErrorMessage,
+  countConfiguredProviders,
 } from './sidepanelPage.js';
-import { getHistory } from '../src/lib/storage.js';
+import { getHistory, getSettings } from '../src/lib/storage.js';
 
 const resultsContainer = document.getElementById('results');
 const historyContainer = document.getElementById('history-list');
@@ -46,9 +47,12 @@ async function run() {
     }
 
     const history = await getHistory();
-    renderHistoryList(historyContainer, history, (id) => {
+    renderHistoryList(historyContainer, history, async (id) => {
       const entry = history.find((h) => h.id === id);
-      if (entry) renderResults(resultsContainer, entry.results);
+      if (!entry) return;
+      const settings = await getSettings();
+      const showProvider = countConfiguredProviders(settings) > 1;
+      renderResults(resultsContainer, entry.results, { provider: entry.provider, showProvider });
     });
   } finally {
     isRunning = false;

@@ -109,7 +109,7 @@ legend {
   gap: var(--space-md);
 }
 
-#connect-openrouter {
+.button-primary {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -123,7 +123,7 @@ legend {
   transition: opacity 150ms var(--ease-out-quart);
 }
 
-#connect-openrouter:hover {
+.button-primary:hover {
   opacity: 0.85;
 }
 

@@ -23,6 +23,7 @@ import {
   requestExtraction,
   analyzeActiveTab,
   toFriendlyErrorMessage,
+  countConfiguredProviders,
 } from '../../sidepanel/sidepanelPage.js';
 
 describe('toFriendlyErrorMessage', () => {
@@ -60,6 +61,21 @@ describe('toFriendlyErrorMessage', () => {
       .toBe("Research Companion can't read this page. Browser pages and the Chrome Web Store are off-limits to extensions.");
     expect(toFriendlyErrorMessage(new Error('The extensions gallery cannot be scripted.')))
       .toBe("Research Companion can't read this page. Browser pages and the Chrome Web Store are off-limits to extensions.");
+  });
+});
+
+describe('countConfiguredProviders', () => {
+  it('counts zero when no provider has credentials', () => {
+    expect(countConfiguredProviders({ apiKeys: {}, openrouterToken: '' })).toBe(0);
+  });
+
+  it('counts each provider with a non-empty credential', () => {
+    expect(
+      countConfiguredProviders({
+        apiKeys: { anthropic: 'a-key', openai: '', gemini: 'g-key' },
+        openrouterToken: 'or-token',
+      })
+    ).toBe(3);
   });
 });
 
@@ -387,6 +403,7 @@ describe('analyzeActiveTab', () => {
     expect(renderResultsFn).toHaveBeenCalledWith(results, { provider: 'anthropic', showProvider: false });
     expect(addHistoryEntry).toHaveBeenCalledTimes(1);
     expect(addHistoryEntry.mock.calls[0][0].sourcePage).toEqual({ title: 'T', url: 'U' });
+    expect(addHistoryEntry.mock.calls[0][0].provider).toBe('anthropic');
   });
 
   it('shows the active provider in renderResultsFn only when more than one provider is configured', async () => {
