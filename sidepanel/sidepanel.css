@@ -59,14 +59,14 @@
   font: var(--text-body);
   color: var(--color-text-secondary);
   margin: 0;
-  max-width: 65ch;
+  max-width: 70ch;
 }
 
 .setup-prompt {
   font: var(--text-body);
   color: var(--color-text-secondary);
   margin: 0;
-  max-width: 65ch;
+  max-width: 70ch;
 }
 
 .setup-prompt a {
@@ -84,7 +84,7 @@
   font: var(--text-title);
   color: var(--color-text);
   margin: 0;
-  max-width: 65ch;
+  max-width: 70ch;
 }
 
 #retry-button {
