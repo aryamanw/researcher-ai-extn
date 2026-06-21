@@ -241,7 +241,7 @@ describe('getApiKeyFormatWarning', () => {
   });
 
   it('returns null for a field with no known format', () => {
-    expect(getApiKeyFormatWarning('braveSearchKey', 'anything')).toBeNull();
+    expect(getApiKeyFormatWarning('someOtherField', 'anything')).toBeNull();
   });
 
   it('flags an Anthropic key that does not start with sk-ant-', () => {
@@ -257,6 +257,11 @@ describe('getApiKeyFormatWarning', () => {
   it('flags a Gemini key that does not start with AIza', () => {
     expect(getApiKeyFormatWarning('geminiKey', 'wrong-shape')).toMatch(/AIza/);
     expect(getApiKeyFormatWarning('geminiKey', 'AIzaSyAbc123')).toBeNull();
+  });
+
+  it('flags a Brave Search key containing whitespace, since it has no recognizable prefix to check', () => {
+    expect(getApiKeyFormatWarning('braveSearchKey', 'pasted with spaces')).toMatch(/spaces/);
+    expect(getApiKeyFormatWarning('braveSearchKey', 'a-clean-token')).toBeNull();
   });
 });
 
