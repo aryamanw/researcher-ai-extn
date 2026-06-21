@@ -53,9 +53,9 @@ export function gatherSettingsFromForm(form) {
 export function renderSettingsToForm(form, settings) {
   form.provider.value = settings.provider || '';
   form.model.value = settings.model || '';
-  form.anthropicKey.value = settings.apiKeys?.anthropic || '';
-  form.openaiKey.value = settings.apiKeys?.openai || '';
-  form.geminiKey.value = settings.apiKeys?.gemini || '';
+    form.anthropicKey.value = settings.apiKeys.anthropic;
+    form.openaiKey.value = settings.apiKeys.openai;
+    form.geminiKey.value = settings.apiKeys.gemini;
   form.braveSearchKey.value = settings.braveSearchKey || '';
   form.resultsCount.value = settings.resultsCount ?? 8;
 }
