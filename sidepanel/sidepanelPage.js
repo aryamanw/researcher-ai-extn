@@ -29,8 +29,9 @@ export function renderLoading(container, statusText, onCancel) {
 
 export function renderSetupPrompt(container) {
   container.removeAttribute('aria-busy');
+  const settingsUrl = chrome.runtime.getURL('options/options.html');
   container.innerHTML =
-    '<p class="setup-prompt">Set up a provider and Brave Search key in <a href="/options/options.html" id="open-settings">Settings</a> to get started.</p>';
+    `<p class="setup-prompt">Set up a provider and Brave Search key in <a href="${settingsUrl}" id="open-settings">Settings</a> to get started.</p>`;
 }
 
 export function renderNoContent(container) {
