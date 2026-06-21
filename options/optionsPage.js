@@ -4,6 +4,9 @@ const KEY_FORMAT_HINTS = {
   anthropicKey: { pattern: /^sk-ant-/, message: "Anthropic keys start with \"sk-ant-\" — this doesn't look right." },
   openaiKey: { pattern: /^sk-/, message: "OpenAI keys start with \"sk-\" — this doesn't look right." },
   geminiKey: { pattern: /^AIza/, message: "Gemini keys start with \"AIza\" — this doesn't look right." },
+  // Brave Search tokens have no documented, recognizable prefix, so this only
+  // catches paste mistakes (whitespace, surrounding quotes) rather than shape.
+  braveSearchKey: { pattern: /^\S+$/, message: "API keys shouldn't contain spaces or line breaks — check what you pasted." },
 };
 
 export function getApiKeyFormatWarning(fieldName, value) {

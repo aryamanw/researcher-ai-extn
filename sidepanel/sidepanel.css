@@ -55,14 +55,6 @@
   border-color: var(--color-text-secondary);
 }
 
-.active-provider {
-  font: var(--text-label);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
 .empty-state {
   font: var(--text-body);
   color: var(--color-text-secondary);

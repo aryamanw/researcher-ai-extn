@@ -58,7 +58,7 @@
       <div class="key-field" data-provider="openrouter">
         <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
         <div class="openrouter-row">
-          <button type="button" id="connect-openrouter">Connect to OpenRouter</button>
+          <button type="button" id="connect-openrouter" class="button-primary">Connect to OpenRouter</button>
           <span id="openrouter-status"></span>
         </div>
       </div>
@@ -72,6 +72,7 @@
         <input type="password" name="braveSearchKey" />
         <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
       </div>
+      <p class="key-warning" data-for="braveSearchKey" hidden></p>
     </label>
 
     <label>
