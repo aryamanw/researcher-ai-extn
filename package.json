@@ -7,7 +7,8 @@
     "test": "vitest run",
     "build": "esbuild src/content/contentEntry.js --bundle --outfile=dist/content.bundled.js --format=iife",
     "generate:icons": "node scripts/generate-icons.mjs",
-    "capture:screenshots": "node scripts/capture-screenshots.mjs"
+    "capture:screenshots": "node scripts/capture-screenshots.mjs",
+    "package": "bash scripts/package-extension.sh"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",
