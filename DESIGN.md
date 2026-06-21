@@ -241,6 +241,18 @@ Raw provider/pipeline errors (`Anthropic API error: 401`, `Brave Search API erro
 - **Don't** bundle a web font. The system font stack is the deliberate choice, not a placeholder.
 - **Don't** let a button or row's tap target shrink below 44px just because the content is short — pad or set height explicitly.
 
+## 7. Logo & Icon
+
+**Mark: Linked Nodes.** Two circles joined by a single diagonal line — the smaller, neutral circle (`{colors.ink-on-dark}`) sits lower-left as "the page you're reading," connected by an `{colors.accent-dark}` line to a larger accent-colored circle upper-right, "the related result Research Companion found." The mark is a literal, restrained diagram of the product's one job, not a borrowed search/document/lamp glyph — it earns its abstraction from the product mechanic itself rather than from decoration.
+
+Rendered on a 28px-radius rounded square of `{colors.bg-dark}` (`oklch(20% 0.03 230)`), at all three required extension sizes (16/48/128px), with stroke and node radii scaled up slightly at the smallest size (8px stroke, 16px node radius at the 128 viewBox) so the connection survives toolbar-scale rendering — a thinner line and smaller dots were tested and failed to read at 16px.
+
+Source files: `icons/icon16.png`, `icons/icon48.png`, `icons/icon128.png`. No separate light-mode icon exists — Chrome's toolbar icon is single-state, so the dark-background treatment is canonical regardless of the panel's own light/dark theme.
+
+### Named Rule
+
+**The Two-Node Rule.** The mark always shows exactly two nodes (one origin, one result) and one connecting line. A third node was prototyped and rejected — it survived at 128px but collapsed into visual noise at 16px, and "exactly one match" is a truer reflection of "a result worth clicking" (PRODUCT.md's stated success condition) than "many matches" would be.
+
 ## Known Gaps
 
 - Secret fields show a reveal toggle, a storage/transmission hint, and a format warning on blur, but settings are still re-populated with the literal stored value on every options-page load rather than a masked "saved, ending in ****1234" representation. The current state addresses verifiability (you can always see what you typed) and obvious paste mistakes (wrong-prefix warning); it does not add masked-by-default re-display, and the format check is advisory-only by design — it can't catch every wrong key, only obviously mis-shaped ones.
