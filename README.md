@@ -7,6 +7,8 @@ A Chrome extension that suggests similar webpages, reports, and articles to what
 1. `npm install`
 2. `npm run build` (bundles the content script into `dist/content.bundled.js`)
 3. Open `chrome://extensions`, enable "Developer mode", click "Load unpacked", and select this project's root folder.
+
+Alternatively, download the latest release zip from [Releases](https://github.com/aryamanw/researcher-ai-extn/releases), unzip it, and "Load unpacked" that folder — no build step needed.
 4. Click the extension's "Details" → "Extension options" (or right-click the toolbar icon → Options) to open Settings.
 5. Connect a provider: click "Connect to OpenRouter", or paste an Anthropic/OpenAI/Gemini API key.
 6. Paste a Brave Search API key.
@@ -32,3 +34,10 @@ https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html
 ## Chrome Web Store packaging
 
 To prepare a release for the Chrome Web Store: Run `npm run generate:icons` to regenerate icon assets (icon16.png, icon48.png, icon128.png). Run `npm run capture:screenshots` to regenerate store preview images (screenshot-sidepanel.png and screenshot-options.png). Run `npm run package` to build and zip the extension into `research-companion-v{version}.zip`. For all listing copy, permission justifications, and submission guidelines, see `docs/chrome-web-store-listing.md`.
+
+## Cutting a GitHub release
+
+1. Bump `version` in `package.json`.
+2. Commit and push to `main`.
+3. Tag the commit `vX.Y.Z` (matching `package.json`'s version) and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. The [Release workflow](.github/workflows/release.yml) runs the test suite, verifies the tag matches `package.json`, builds, and attaches `research-companion-vX.Y.Z.zip` to a new [GitHub Release](https://github.com/aryamanw/researcher-ai-extn/releases) automatically.
