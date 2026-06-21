@@ -155,8 +155,7 @@ export function renderHistoryList(container, entries, onSelect) {
     button.dir = 'auto';
     button.textContent = entry.sourcePage.title;
     button.title = entry.sourcePage.title;
-    button.dataset.id = entry.id;
-    button.addEventListener('click', () => onSelect(button.dataset.id));
+    button.addEventListener('click', () => onSelect(entry.id));
     li.appendChild(button);
     container.appendChild(li);
   });

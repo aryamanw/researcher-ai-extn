@@ -16,13 +16,12 @@ function buildQueryPrompt({ title, text }) {
   ].join('\n');
 }
 
-function buildRerankPrompt({ title, pageUrl, candidates, resultsCount }) {
-  const filteredCandidates = candidates.filter((c) => c.url !== pageUrl);
+function buildRerankPrompt({ title, candidates, resultsCount }) {
   return [
     'You are helping a researcher evaluate search results found while reading the page below.',
     `Page title: ${title}`,
     '',
-    `Candidate results (JSON): ${JSON.stringify(filteredCandidates)}`,
+    `Candidate results (JSON): ${JSON.stringify(candidates)}`,
     '',
     `Select the ${resultsCount} most relevant, distinct candidates (drop duplicates and irrelevant ones).`,
     'For each, write a one-sentence explanation of why it is relevant to the page above.',
@@ -66,7 +65,7 @@ export async function runPipeline({ pageTitle, pageUrl, articleText, llmClient, 
     return [];
   }
 
-  const rerankPrompt = buildRerankPrompt({ title: pageTitle, pageUrl, candidates, resultsCount });
+  const rerankPrompt = buildRerankPrompt({ title: pageTitle, candidates, resultsCount });
   const rerankRaw = await llmClient.complete(rerankPrompt);
   const ranked = parseJsonResponse(rerankRaw, 'reranking');
 
