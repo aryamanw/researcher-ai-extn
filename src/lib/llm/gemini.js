@@ -1,5 +1,10 @@
+const MODEL_NAME_PATTERN = /^[\w.-]+$/;
+
 export async function complete({ apiKey, model, prompt }) {
   const modelName = model || 'gemini-1.5-flash';
+  if (!MODEL_NAME_PATTERN.test(modelName)) {
+    throw new Error(`Invalid Gemini model name: ${modelName}`);
+  }
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
     {
