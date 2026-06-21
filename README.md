@@ -24,3 +24,7 @@ Run through this checklist after any change to `sidepanel/`, `background.js`, or
 - [ ] Visit a PDF (e.g. any `.pdf` URL) or a heavily paywalled page. Click the icon. Confirm "Couldn't find readable content on this page" appears instead of an error.
 - [ ] In Settings, clear the Brave Search key, save, reopen the side panel on an article. Confirm the setup prompt appears instead of attempting analysis.
 - [ ] In Settings, click "Connect to OpenRouter". Confirm the OAuth popup opens, approving it returns to the extension, and the status updates to "OpenRouter: connected".
+
+## Privacy policy
+
+https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html
