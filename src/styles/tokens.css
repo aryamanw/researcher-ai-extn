@@ -1,0 +1,105 @@
+/* Shared design tokens for Research Companion. See DESIGN.md for the full system. */
+
+:root {
+  color-scheme: light dark;
+
+  --color-bg: oklch(98% 0.005 250);
+  --color-surface: oklch(94% 0.006 250);
+  --color-text: oklch(25% 0.01 250);
+  --color-text-secondary: oklch(50% 0.01 250);
+  --color-border: oklch(85% 0.006 250);
+  /* For borders that are the *sole* indicator of a UI element's boundary
+     (no fill difference backing them up) — needs 3:1 (WCAG 1.4.11), unlike
+     --color-border's decorative dividers, which don't carry that requirement. */
+  --color-border-strong: oklch(60% 0.006 250);
+  --color-focus-ring: oklch(25% 0.01 250);
+  --shadow-toast: 0 2px 8px oklch(25% 0.01 250 / 0.12);
+
+  --font-sans: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+
+  /* rem, not px: type must scale with the user's browser zoom/font-size setting,
+     the web equivalent of supporting Dynamic Type. */
+  --text-display: 600 1.125rem/1.3 var(--font-sans);
+  --text-headline: 600 0.9375rem/1.4 var(--font-sans);
+  --text-title: 500 0.875rem/1.4 var(--font-sans);
+  --text-body: 400 0.8125rem/1.5 var(--font-sans);
+  --text-label: 500 0.6875rem/1.4 var(--font-sans);
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+
+  /* HIG-aligned minimum touch target (44x44pt) for any clickable row/button,
+     since side panels run on touch-capable Chromebooks too. */
+  --target-min: 44px;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: oklch(18% 0.008 250);
+    --color-surface: oklch(30% 0.008 250);
+    --color-text: oklch(95% 0.006 250);
+    --color-text-secondary: oklch(68% 0.01 250);
+    --color-border: oklch(38% 0.01 250);
+    --color-border-strong: oklch(55% 0.01 250);
+    --color-focus-ring: oklch(95% 0.006 250);
+    --shadow-toast: 0 2px 8px oklch(0% 0 0 / 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease-out-quart: linear;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--text-body);
+}
+
+/* Page titles, URLs, and LLM-generated text are unbounded content from the
+   open web; without this, a long unbroken string overflows the narrow panel
+   instead of wrapping. */
+p, a, h1, h2 {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--color-text);
+}
+
+button {
+  font: var(--text-title);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

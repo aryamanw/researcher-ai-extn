@@ -6,7 +6,13 @@ vi.mock('../../src/lib/storage.js', () => ({
 }));
 
 import { getSettings, saveSettings } from '../../src/lib/storage.js';
-import { gatherSettingsFromForm, renderSettingsToForm, initOptionsPage } from '../../options/optionsPage.js';
+import {
+  gatherSettingsFromForm,
+  renderSettingsToForm,
+  initOptionsPage,
+  syncKeyFieldVisibility,
+  getApiKeyFormatWarning,
+} from '../../options/optionsPage.js';
 
 function buildForm() {
   document.body.innerHTML = `
@@ -14,13 +20,25 @@ function buildForm() {
       <select name="provider">
         <option value="">-- choose --</option>
         <option value="anthropic">Anthropic</option>
+        <option value="openai">OpenAI</option>
+        <option value="gemini">Gemini</option>
+        <option value="openrouter">OpenRouter</option>
       </select>
       <input type="text" name="model" />
-      <input type="password" name="anthropicKey" />
-      <input type="password" name="openaiKey" />
-      <input type="password" name="geminiKey" />
+      <label class="key-field" data-provider="anthropic">
+        <input type="password" name="anthropicKey" />
+        <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
+      </label>
+      <label class="key-field" data-provider="openai">
+        <input type="password" name="openaiKey" />
+        <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key" aria-label="Show OpenAI API key">Show</button>
+      </label>
+      <label class="key-field" data-provider="gemini">
+        <input type="password" name="geminiKey" />
+        <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
+      </label>
       <input type="password" name="braveSearchKey" />
-      <input type="number" name="resultsCount" />
+      <input type="number" name="resultsCount" min="1" max="20" />
     </form>
     <button type="button" id="connect-openrouter">Connect</button>
     <span id="openrouter-status"></span>
@@ -61,6 +79,15 @@ describe('gatherSettingsFromForm', () => {
     const form = buildForm();
     form.resultsCount.value = '';
     expect(gatherSettingsFromForm(form).resultsCount).toBe(8);
+  });
+
+  it('clamps resultsCount to the input\'s declared min/max instead of saving it raw', () => {
+    const form = buildForm();
+    form.resultsCount.value = '999';
+    expect(gatherSettingsFromForm(form).resultsCount).toBe(20);
+
+    form.resultsCount.value = '-5';
+    expect(gatherSettingsFromForm(form).resultsCount).toBe(1);
   });
 });
 
@@ -141,5 +168,150 @@ describe('initOptionsPage', () => {
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
 
     expect(saveSettings.mock.calls.at(-1)[0].braveSearchKey).toBe('new-key');
+  });
+
+  it('shows only the API key field matching the selected provider', async () => {
+    getSettings.mockResolvedValue({
+      provider: 'anthropic',
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+
+    await initOptionsPage(form, connectButton, statusEl);
+
+    expect(form.querySelector('[data-provider="anthropic"]').classList.contains('is-hidden')).toBe(false);
+    expect(form.querySelector('[data-provider="openai"]').classList.contains('is-hidden')).toBe(true);
+    expect(form.querySelector('[data-provider="gemini"]').classList.contains('is-hidden')).toBe(true);
+
+    form.provider.value = 'gemini';
+    form.dispatchEvent(new Event('change'));
+
+    expect(form.querySelector('[data-provider="anthropic"]').classList.contains('is-hidden')).toBe(true);
+    expect(form.querySelector('[data-provider="gemini"]').classList.contains('is-hidden')).toBe(false);
+  });
+
+  it('toggles a key field between password and text when its reveal button is clicked', async () => {
+    getSettings.mockResolvedValue({
+      provider: 'anthropic',
+      apiKeys: { anthropic: 'secret-value', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+
+    await initOptionsPage(form, connectButton, statusEl);
+
+    const toggle = form.querySelector('.key-toggle[data-target="anthropicKey"]');
+    expect(form.anthropicKey.type).toBe('password');
+
+    toggle.click();
+    expect(form.anthropicKey.type).toBe('text');
+    expect(toggle.textContent).toBe('Hide');
+
+    toggle.click();
+    expect(form.anthropicKey.type).toBe('password');
+    expect(toggle.textContent).toBe('Show');
+  });
+});
+
+describe('syncKeyFieldVisibility', () => {
+  it('hides all provider-specific key fields when no provider is selected', () => {
+    const form = buildForm();
+    form.provider.value = '';
+
+    syncKeyFieldVisibility(form);
+
+    form.querySelectorAll('.key-field').forEach((field) => {
+      expect(field.classList.contains('is-hidden')).toBe(true);
+    });
+  });
+});
+
+describe('getApiKeyFormatWarning', () => {
+  it('returns null for an empty value', () => {
+    expect(getApiKeyFormatWarning('anthropicKey', '')).toBeNull();
+  });
+
+  it('returns null for a field with no known format', () => {
+    expect(getApiKeyFormatWarning('braveSearchKey', 'anything')).toBeNull();
+  });
+
+  it('flags an Anthropic key that does not start with sk-ant-', () => {
+    expect(getApiKeyFormatWarning('anthropicKey', 'wrong-shape')).toMatch(/sk-ant-/);
+    expect(getApiKeyFormatWarning('anthropicKey', 'sk-ant-abc123')).toBeNull();
+  });
+
+  it('flags an OpenAI key that does not start with sk-', () => {
+    expect(getApiKeyFormatWarning('openaiKey', 'wrong-shape')).toMatch(/sk-/);
+    expect(getApiKeyFormatWarning('openaiKey', 'sk-abc123')).toBeNull();
+  });
+
+  it('flags a Gemini key that does not start with AIza', () => {
+    expect(getApiKeyFormatWarning('geminiKey', 'wrong-shape')).toMatch(/AIza/);
+    expect(getApiKeyFormatWarning('geminiKey', 'AIzaSyAbc123')).toBeNull();
+  });
+});
+
+describe('initOptionsPage key validation', () => {
+  beforeEach(() => {
+    global.chrome = { runtime: { sendMessage: vi.fn() } };
+  });
+
+  it('shows an inline warning on blur when a key has the wrong shape, and clears it once fixed', async () => {
+    getSettings.mockResolvedValue({
+      provider: 'anthropic',
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+
+    document.body.innerHTML = `
+      <form id="settings-form">
+        <select name="provider"><option value="anthropic" selected>Anthropic</option></select>
+        <input type="text" name="model" />
+        <label class="key-field" data-provider="anthropic">
+          <div class="key-input-row">
+            <input type="password" name="anthropicKey" />
+            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
+          </div>
+          <p class="key-warning" data-for="anthropicKey" hidden></p>
+        </label>
+        <input type="password" name="braveSearchKey" />
+        <input type="number" name="resultsCount" min="1" max="20" />
+      </form>
+      <button type="button" id="connect-openrouter">Connect</button>
+      <span id="openrouter-status"></span>
+    `;
+    const form = document.getElementById('settings-form');
+    form.provider = form.elements.namedItem('provider');
+    form.model = form.elements.namedItem('model');
+    form.anthropicKey = form.elements.namedItem('anthropicKey');
+    form.openaiKey = { value: '' };
+    form.geminiKey = { value: '' };
+    form.braveSearchKey = form.elements.namedItem('braveSearchKey');
+    form.resultsCount = form.elements.namedItem('resultsCount');
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+
+    await initOptionsPage(form, connectButton, statusEl);
+
+    const warningEl = form.querySelector('.key-warning[data-for="anthropicKey"]');
+    form.anthropicKey.value = 'not-a-real-key';
+    form.anthropicKey.dispatchEvent(new Event('blur'));
+    expect(warningEl.hidden).toBe(false);
+    expect(warningEl.textContent).toMatch(/sk-ant-/);
+
+    form.anthropicKey.value = 'sk-ant-abc123';
+    form.anthropicKey.dispatchEvent(new Event('blur'));
+    expect(warningEl.hidden).toBe(true);
   });
 });
