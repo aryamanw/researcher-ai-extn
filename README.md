@@ -28,3 +28,7 @@ Run through this checklist after any change to `sidepanel/`, `background.js`, or
 ## Privacy policy
 
 https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html
+
+## Chrome Web Store packaging
+
+To prepare a release for the Chrome Web Store: Run `npm run generate:icons` to regenerate icon assets (icon16.png, icon48.png, icon128.png). Run `npm run capture:screenshots` to regenerate store preview images (screenshot-sidepanel.png and screenshot-options.png). Run `npm run package` to build and zip the extension into `research-companion-v{version}.zip`. For all listing copy, permission justifications, and submission guidelines, see `docs/chrome-web-store-listing.md`.
