@@ -3,17 +3,24 @@
 :root {
   color-scheme: light dark;
 
-  --color-bg: oklch(98% 0.005 250);
-  --color-surface: oklch(94% 0.006 250);
-  --color-text: oklch(25% 0.01 250);
-  --color-text-secondary: oklch(50% 0.01 250);
-  --color-border: oklch(85% 0.006 250);
+  --color-bg: oklch(97.1% 0.004 134.8);
+  --color-surface: oklch(92% 0.014 230);
+  --color-text: oklch(27.1% 0.036 229.8);
+  --color-text-secondary: oklch(50% 0.02 230);
+  --color-border: oklch(84% 0.018 230);
   /* For borders that are the *sole* indicator of a UI element's boundary
      (no fill difference backing them up) — needs 3:1 (WCAG 1.4.11), unlike
      --color-border's decorative dividers, which don't carry that requirement. */
-  --color-border-strong: oklch(60% 0.006 250);
-  --color-focus-ring: oklch(25% 0.01 250);
-  --shadow-toast: 0 2px 8px oklch(25% 0.01 250 / 0.12);
+  --color-border-strong: oklch(60% 0.025 230);
+  /* Primary actions, focus rings, and the relevance/active-provider labels —
+     the one functional accent. Darkened from the source teal (oklch 58% L)
+     to 50% L so it clears 4.5:1 as both button-fill-with-light-text and
+     plain text-on-bg; the lighter value read as the same hue but failed AA. */
+  --color-accent: oklch(50% 0.09 231);
+  /* Secondary/ghost actions (Cancel, key-reveal toggle) only. */
+  --color-accent-secondary: oklch(30.4% 0.077 148.5);
+  --color-focus-ring: var(--color-accent);
+  --shadow-toast: 0 2px 8px oklch(27.1% 0.036 229.8 / 0.12);
 
   --font-sans: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
 
@@ -43,13 +50,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: oklch(18% 0.008 250);
-    --color-surface: oklch(30% 0.008 250);
-    --color-text: oklch(95% 0.006 250);
-    --color-text-secondary: oklch(68% 0.01 250);
-    --color-border: oklch(38% 0.01 250);
-    --color-border-strong: oklch(55% 0.01 250);
-    --color-focus-ring: oklch(95% 0.006 250);
+    --color-bg: oklch(20% 0.03 230);
+    --color-surface: oklch(30% 0.025 230);
+    --color-text: oklch(95% 0.012 230);
+    --color-text-secondary: oklch(68% 0.022 230);
+    --color-border: oklch(40% 0.025 230);
+    --color-border-strong: oklch(55% 0.025 230);
+    /* Lighter and slightly more saturated than the light-theme accent —
+       dark backgrounds need a brighter accent to read at the same weight. */
+    --color-accent: oklch(70% 0.095 231);
+    --color-accent-secondary: oklch(68% 0.1 148);
+    --color-focus-ring: var(--color-accent);
     --shadow-toast: 0 2px 8px oklch(0% 0 0 / 0.4);
   }
 }
