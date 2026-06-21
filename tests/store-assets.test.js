@@ -12,4 +12,10 @@ describe('chrome web store screenshots', () => {
     expect(width).toBe(1280);
     expect(height).toBe(800);
   });
+
+  it('screenshot-options.png is exactly 1280x800', () => {
+    const { width, height } = pngDimensions('store-assets/screenshot-options.png');
+    expect(width).toBe(1280);
+    expect(height).toBe(800);
+  });
 });

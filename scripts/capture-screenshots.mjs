@@ -39,6 +39,10 @@ async function main() {
   await page.waitForSelector('#results .result');
   await page.screenshot({ path: 'store-assets/screenshot-sidepanel.png' });
 
+  await page.goto(`http://127.0.0.1:${port}/scripts/screenshots/options-harness.html`);
+  await page.waitForSelector('#frame select[name="provider"]');
+  await page.screenshot({ path: 'store-assets/screenshot-options.png' });
+
   await browser.close();
   server.close();
 }
