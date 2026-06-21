@@ -1,43 +1,69 @@
-# Research Companion
+<p align="center">
+  <img src="icons/icon128.png" width="96" height="96" alt="Research Companion icon" />
+</p>
 
-A Chrome extension that suggests similar webpages, reports, and articles to whatever you're currently reading.
+<h1 align="center">Research Companion</h1>
 
-## Setup
+<p align="center">
+  <a href="https://github.com/aryamanw/researcher-ai-extn/releases"><img src="https://img.shields.io/github/v/release/aryamanw/researcher-ai-extn?label=release" alt="Latest release" /></a>
+  <img src="https://img.shields.io/badge/Manifest-V3-blue" alt="Manifest V3" />
+</p>
 
-1. `npm install`
-2. `npm run build` (bundles the content script into `dist/content.bundled.js`)
-3. Open `chrome://extensions`, enable "Developer mode", click "Load unpacked", and select this project's root folder.
+<p align="center">A side-panel research assistant for anyone deep in an article, report, or blog post.</p>
 
-Alternatively, download the latest release zip from [Releases](https://github.com/aryamanw/researcher-ai-extn/releases), unzip it, and "Load unpacked" that folder — no build step needed.
-4. Click the extension's "Details" → "Extension options" (or right-click the toolbar icon → Options) to open Settings.
-5. Connect a provider: click "Connect to OpenRouter", or paste an Anthropic/OpenAI/Gemini API key.
-6. Paste a Brave Search API key.
-7. Select the connected provider from the "LLM provider" dropdown and save.
+## About
 
-## Manual smoke test
+When you're reading something and want to know what else is out there on the same topic, Research Companion reads the page you're on and finds related webpages, reports, and articles — each with a short note on why it's relevant — right in Chrome's side panel, next to what you're reading.
 
-Run through this checklist after any change to `sidepanel/`, `background.js`, or `src/lib/`:
+It only does anything when you click the toolbar icon. No chat window, no notifications, nothing running in the background, nothing competing with the page you're reading for your attention.
 
-- [ ] Visit a real news article or blog post. Click the toolbar icon.
-- [ ] Side panel opens and shows "Reading page...", then "Searching...", then "Ranking results...".
-- [ ] Results appear with title, snippet, and a relevance note; clicking a result opens it in a new tab.
-- [ ] Close and reopen the side panel; the History list shows the page you just analyzed.
-- [ ] Click a history entry; its saved results re-render without a new network call (check the Network tab in DevTools — no new fetches to the LLM/search APIs).
-- [ ] Visit a PDF (e.g. any `.pdf` URL) or a heavily paywalled page. Click the icon. Confirm "Couldn't find readable content on this page" appears instead of an error.
-- [ ] In Settings, clear the Brave Search key, save, reopen the side panel on an article. Confirm the setup prompt appears instead of attempting analysis.
-- [ ] In Settings, click "Connect to OpenRouter". Confirm the OAuth popup opens, approving it returns to the extension, and the status updates to "OpenRouter: connected".
+It connects directly to the AI provider and search service **you** choose, using **your own** API keys. There's no backend server in between — your page content and credentials go straight from your browser to the provider you configured, never through a server the developer runs.
 
-## Privacy policy
+## How to use it
 
-https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html
+### Install
 
-## Chrome Web Store packaging
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-lightgrey?logo=googlechrome&logoColor=white" alt="Chrome Web Store — coming soon" /></a>
+  <a href="https://github.com/aryamanw/researcher-ai-extn/releases"><img src="https://img.shields.io/github/v/release/aryamanw/researcher-ai-extn?label=Download&logo=github" alt="Download latest release" /></a>
+</p>
 
-To prepare a release for the Chrome Web Store: Run `npm run generate:icons` to regenerate icon assets (icon16.png, icon48.png, icon128.png). Run `npm run capture:screenshots` to regenerate store preview images (screenshot-sidepanel.png and screenshot-options.png). Run `npm run package` to build and zip the extension into `research-companion-v{version}.zip`. For all listing copy, permission justifications, and submission guidelines, see `docs/chrome-web-store-listing.md`.
+Research Companion isn't on the Chrome Web Store yet. Until it is, install it from a GitHub release:
 
-## Cutting a GitHub release
+1. Go to [Releases](https://github.com/aryamanw/researcher-ai-extn/releases) and download the latest `research-companion-vX.Y.Z.zip`.
+2. Unzip it.
+3. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked**, and select the unzipped folder.
+4. Pin the extension to your toolbar for one-click access.
 
-1. Bump `version` in `package.json`.
-2. Commit and push to `main`.
-3. Tag the commit `vX.Y.Z` (matching `package.json`'s version) and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. The [Release workflow](.github/workflows/release.yml) runs the test suite, verifies the tag matches `package.json`, builds, and attaches `research-companion-vX.Y.Z.zip` to a new [GitHub Release](https://github.com/aryamanw/researcher-ai-extn/releases) automatically.
+### Connect a provider
+
+1. Right-click the toolbar icon → **Options** (or `chrome://extensions` → Research Companion → **Details** → **Extension options**).
+2. Connect an AI provider: click **Connect to OpenRouter** to sign in without pasting a key, or paste an Anthropic, OpenAI, or Gemini API key directly.
+3. Paste a [Brave Search](https://brave.com/search/api/) API key — this is what actually finds the related pages.
+4. Pick the provider you just connected from the **LLM provider** dropdown.
+
+Settings save automatically as you fill them in.
+
+### Use it
+
+1. Open any article, report, or blog post.
+2. Click the toolbar icon. The side panel walks through reading the page, searching, and ranking results.
+3. Each result shows a title, snippet, and a one-line note on why it's related. Click through to open it in a new tab.
+4. Past sessions show up in **History** at the bottom of the panel — reopening one re-renders instantly, no new searches, no new cost.
+
+If a page has no readable content (a PDF, a paywall stub, an app shell), the panel says so instead of erroring out.
+
+## How it works
+
+Research Companion runs entirely in your browser — there's no backend, no account, and no telemetry.
+
+- **Reading**: when you click the icon, a one-shot script reads the readable text of the active tab only. It never reads tabs you haven't clicked on, and never runs in the background.
+- **Searching**: the page's topic is turned into search queries sent to Brave Search, using your own API key.
+- **Ranking**: your chosen AI provider (Anthropic, OpenAI, Gemini, or OpenRouter) writes a short relevance note for each result, using your own API key or OpenRouter connection.
+- **Storage**: your provider settings, API keys, and the last 50 research sessions are stored only in your browser's local extension storage (`chrome.storage.local`) — never synced, never sent anywhere except the provider you configured.
+
+Full details: [privacy policy](https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html).
+
+---
+
+Want to build or contribute? See [docs/DEVELOPING.md](docs/DEVELOPING.md).
