@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Research Companion Settings</title>
+  <link rel="stylesheet" href="../src/styles/tokens.css" />
+  <link rel="stylesheet" href="./options.css" />
 </head>
 <body>
-  <h1>Research Companion Settings</h1>
+  <header class="page-header">
+    <h1>Research Companion Settings</h1>
+  </header>
 
   <form id="settings-form">
     <label>
@@ -25,27 +29,57 @@
     </label>
 
     <fieldset>
-      <legend>API keys</legend>
-      <label>Anthropic API key <input type="password" name="anthropicKey" /></label>
-      <label>OpenAI API key <input type="password" name="openaiKey" /></label>
-      <label>Gemini API key <input type="password" name="geminiKey" /></label>
+      <legend>Provider credentials</legend>
+      <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+      <label class="key-field" data-provider="anthropic">
+        Anthropic API key
+        <div class="key-input-row">
+          <input type="password" name="anthropicKey" />
+          <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
+        </div>
+        <p class="key-warning" data-for="anthropicKey" hidden></p>
+      </label>
+      <label class="key-field" data-provider="openai">
+        OpenAI API key
+        <div class="key-input-row">
+          <input type="password" name="openaiKey" />
+          <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key" aria-label="Show OpenAI API key">Show</button>
+        </div>
+        <p class="key-warning" data-for="openaiKey" hidden></p>
+      </label>
+      <label class="key-field" data-provider="gemini">
+        Gemini API key
+        <div class="key-input-row">
+          <input type="password" name="geminiKey" />
+          <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
+        </div>
+        <p class="key-warning" data-for="geminiKey" hidden></p>
+      </label>
+      <div class="key-field" data-provider="openrouter">
+        <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
+        <div class="openrouter-row">
+          <button type="button" id="connect-openrouter">Connect to OpenRouter</button>
+          <span id="openrouter-status"></span>
+        </div>
+      </div>
     </fieldset>
 
-    <fieldset>
-      <legend>OpenRouter</legend>
-      <button type="button" id="connect-openrouter">Connect to OpenRouter</button>
-      <span id="openrouter-status"></span>
-    </fieldset>
-
+    <!-- Not wrapped in .key-field: unlike the three LLM keys above, Brave Search is
+         provider-independent infrastructure, not gated by the provider dropdown. -->
     <label>
       Brave Search API key
-      <input type="password" name="braveSearchKey" />
+      <div class="key-input-row">
+        <input type="password" name="braveSearchKey" />
+        <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
+      </div>
     </label>
 
     <label>
       Number of results
       <input type="number" name="resultsCount" min="1" max="20" />
     </label>
+
+    <p class="autosave-status" id="autosave-status"></p>
   </form>
 
   <script type="module" src="./main.js"></script>

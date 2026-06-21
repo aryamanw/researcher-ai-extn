@@ -3,28 +3,72 @@ import { runPipeline } from '../src/lib/pipeline.js';
 import { getCompletion } from '../src/lib/llm/index.js';
 import { search as braveSearch } from '../src/lib/search/brave.js';
 
-export function renderLoading(container, statusText) {
+export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
+  container.setAttribute('aria-busy', 'true');
+
+  const row = document.createElement('div');
+  row.className = 'status-row';
+
   const p = document.createElement('p');
   p.className = 'status';
   p.textContent = statusText;
-  container.appendChild(p);
+  row.appendChild(p);
+
+  if (onCancel) {
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'cancel-button';
+    cancelButton.textContent = 'Cancel';
+    cancelButton.addEventListener('click', onCancel);
+    row.appendChild(cancelButton);
+  }
+
+  container.appendChild(row);
 }
 
 export function renderSetupPrompt(container) {
+  container.removeAttribute('aria-busy');
   container.innerHTML =
     '<p class="setup-prompt">Set up a provider and Brave Search key in <a href="/options/options.html" id="open-settings">Settings</a> to get started.</p>';
 }
 
 export function renderNoContent(container) {
-  container.innerHTML = '<p class="status">Couldn\'t find readable content on this page.</p>';
+  container.removeAttribute('aria-busy');
+  container.innerHTML = '<p class="empty-state">Couldn\'t find readable content on this page.</p>';
 }
 
 export function renderNoResults(container) {
-  container.innerHTML = '<p class="status">No similar results found.</p>';
+  container.removeAttribute('aria-busy');
+  container.innerHTML = '<p class="empty-state">No similar results found.</p>';
+}
+
+export function renderCancelled(container) {
+  container.removeAttribute('aria-busy');
+  container.innerHTML = '<p class="empty-state">Search cancelled.</p>';
+}
+
+export function toFriendlyErrorMessage(error) {
+  const message = error?.message || String(error);
+
+  if (/no (provider|api key\/token) configured/i.test(message)) {
+    return 'Finish setting up your provider and API key in Settings.';
+  }
+  if (/cannot access|cannot be scripted|chrome:\/\/|chrome-extension:\/\/|chromewebstore/i.test(message)) {
+    return "Research Companion can't read this page. Browser pages and the Chrome Web Store are off-limits to extensions.";
+  }
+  const statusMatch = message.match(/api error: (\d{3})/i);
+  if (statusMatch) {
+    const status = Number(statusMatch[1]);
+    if (status === 401 || status === 403) return 'Your API key was rejected. Check it in Settings.';
+    if (status === 429) return 'Rate limited by the provider. Try again in a moment.';
+    if (status >= 500) return 'The provider is having trouble right now. Try again shortly.';
+  }
+  return message;
 }
 
 export function renderError(container, message, onRetry) {
+  container.removeAttribute('aria-busy');
   container.innerHTML = '';
 
   const p = document.createElement('p');
@@ -35,18 +79,38 @@ export function renderError(container, message, onRetry) {
   const button = document.createElement('button');
   button.id = 'retry-button';
   button.textContent = 'Retry';
-  button.addEventListener('click', onRetry);
+  button.addEventListener('click', () => {
+    button.disabled = true;
+    onRetry();
+  });
   container.appendChild(button);
 }
 
-export function renderResults(container, results) {
+const PROVIDER_LABELS = {
+  anthropic: 'Anthropic',
+  openai: 'OpenAI',
+  gemini: 'Gemini',
+  openrouter: 'OpenRouter',
+};
+
+export function renderResults(container, results, { provider, showProvider } = {}) {
+  container.removeAttribute('aria-busy');
   container.innerHTML = '';
+
+  if (showProvider && provider) {
+    const label = document.createElement('p');
+    label.className = 'active-provider';
+    label.textContent = `Using ${PROVIDER_LABELS[provider] || provider}`;
+    container.appendChild(label);
+  }
+
   results.forEach((r) => {
     const article = document.createElement('article');
     article.className = 'result';
 
     const a = document.createElement('a');
     a.textContent = r.title;
+    a.dir = 'auto';
     a.target = '_blank';
     a.rel = 'noopener';
     try {
@@ -58,11 +122,16 @@ export function renderResults(container, results) {
 
     const snippet = document.createElement('p');
     snippet.className = 'snippet';
+    snippet.dir = 'auto';
     snippet.textContent = r.snippet;
 
     const relevance = document.createElement('p');
     relevance.className = 'relevance';
-    relevance.textContent = r.relevance;
+    relevance.dir = 'auto';
+    const relevanceLabel = document.createElement('span');
+    relevanceLabel.className = 'relevance-label';
+    relevanceLabel.textContent = 'Why this: ';
+    relevance.append(relevanceLabel, document.createTextNode(r.relevance));
 
     article.append(a, snippet, relevance);
     container.appendChild(article);
@@ -71,40 +140,94 @@ export function renderResults(container, results) {
 
 export function renderHistoryList(container, entries, onSelect) {
   container.innerHTML = '';
+  if (entries.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'history-empty';
+    li.textContent = 'No history yet';
+    container.appendChild(li);
+    return;
+  }
   entries.forEach((entry) => {
     const li = document.createElement('li');
-    li.textContent = entry.sourcePage.title;
-    li.dataset.id = entry.id;
-    li.addEventListener('click', () => onSelect(li.dataset.id));
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dir = 'auto';
+    button.textContent = entry.sourcePage.title;
+    button.title = entry.sourcePage.title;
+    button.dataset.id = entry.id;
+    button.addEventListener('click', () => onSelect(button.dataset.id));
+    li.appendChild(button);
     container.appendChild(li);
   });
 }
 
-export function requestExtraction(tabId) {
+const EXTRACTION_TIMEOUT_MS = 15000;
+
+export function requestExtraction(tabId, { timeoutMs = EXTRACTION_TIMEOUT_MS, signal } = {}) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Cancelled', 'AbortError'));
+      return;
+    }
+
+    let timer;
+    const cleanup = () => {
+      chrome.runtime.onMessage.removeListener(listener);
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    };
+    const onAbort = () => {
+      cleanup();
+      reject(new DOMException('Cancelled', 'AbortError'));
+    };
     const listener = (message, sender) => {
       if (message.type === 'EXTRACTION_RESULT' && sender.tab?.id === tabId) {
-        chrome.runtime.onMessage.removeListener(listener);
+        cleanup();
         resolve(message.payload);
       }
     };
     chrome.runtime.onMessage.addListener(listener);
+    signal?.addEventListener('abort', onAbort);
+    timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Didn't hear back from the page in time. Try again, or reload the tab if this keeps happening."));
+    }, timeoutMs);
 
     chrome.scripting.executeScript({ target: { tabId }, files: ['dist/content.bundled.js'] }).catch((error) => {
-      chrome.runtime.onMessage.removeListener(listener);
+      cleanup();
       reject(error);
     });
   });
 }
 
-export async function analyzeActiveTab({ tabId, renderStatus, renderResultsFn, renderNoContentFn, renderNoResultsFn }) {
+function countConfiguredProviders(settings) {
+  let count = 0;
+  if (settings.apiKeys?.anthropic) count += 1;
+  if (settings.apiKeys?.openai) count += 1;
+  if (settings.apiKeys?.gemini) count += 1;
+  if (settings.openrouterToken) count += 1;
+  return count;
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+}
+
+export async function analyzeActiveTab({
+  tabId,
+  renderStatus,
+  renderResultsFn,
+  renderNoContentFn,
+  renderNoResultsFn,
+  signal,
+}) {
   const settings = await getSettings();
   if (!settings.provider || !settings.braveSearchKey) {
     return { status: 'not-configured' };
   }
 
   renderStatus('Reading page...');
-  const extraction = await requestExtraction(tabId);
+  const extraction = await requestExtraction(tabId, { signal });
   if (extraction.confidence === 'low') {
     renderNoContentFn();
     return { status: 'no-content' };
@@ -124,12 +247,15 @@ export async function analyzeActiveTab({ tabId, renderStatus, renderResultsFn, r
     resultsCount: settings.resultsCount,
   });
 
+  throwIfAborted(signal);
+
   if (results.length === 0) {
     renderNoResultsFn();
     return { status: 'no-results' };
   }
 
-  renderResultsFn(results);
+  const showProvider = countConfiguredProviders(settings) > 1;
+  renderResultsFn(results, { provider: settings.provider, showProvider });
   await addHistoryEntry({
     id: crypto.randomUUID(),
     timestamp: Date.now(),

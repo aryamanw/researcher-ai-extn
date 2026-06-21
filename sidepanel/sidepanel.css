@@ -1,0 +1,212 @@
+.panel-header {
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-header h1 {
+  font: var(--text-display);
+  margin: 0;
+}
+
+#results {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 64px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  opacity: 0;
+  animation: status-fade-in 200ms var(--ease-out-quart) forwards;
+}
+
+.status {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+@keyframes status-fade-in {
+  to { opacity: 1; }
+}
+
+.cancel-button {
+  flex-shrink: 0;
+  height: var(--target-min);
+  min-width: var(--target-min);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-md);
+  cursor: pointer;
+  transition: color 150ms var(--ease-out-quart), border-color 150ms var(--ease-out-quart);
+}
+
+.cancel-button:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-secondary);
+}
+
+.active-provider {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.empty-state {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 65ch;
+}
+
+.setup-prompt {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 65ch;
+}
+
+.setup-prompt a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+}
+
+.setup-prompt a:hover {
+  text-decoration-color: var(--color-text);
+}
+
+.error {
+  font: var(--text-title);
+  color: var(--color-text);
+  margin: 0;
+  max-width: 65ch;
+}
+
+#retry-button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  background: var(--color-text);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-lg);
+  cursor: pointer;
+  transition: opacity 150ms var(--ease-out-quart);
+}
+
+#retry-button:hover {
+  opacity: 0.85;
+}
+
+.result {
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.result a {
+  font: var(--text-title);
+  text-decoration: none;
+  color: var(--color-text);
+  max-width: 70ch;
+}
+
+.result a:hover {
+  text-decoration: underline;
+}
+
+.result .snippet {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 70ch;
+}
+
+.result .relevance-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.result .relevance {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0 0;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
+}
+
+.history {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.history h2 {
+  font: var(--text-headline);
+  margin: 0 0 var(--space-sm);
+}
+
+#history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#history-list li {
+  display: flex;
+}
+
+#history-list li > button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 0 var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 150ms var(--ease-out-quart), color 150ms var(--ease-out-quart);
+}
+
+#history-list li > button:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+#history-list li.history-empty {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 var(--space-md);
+  color: var(--color-text-secondary);
+  font: var(--text-body);
+}

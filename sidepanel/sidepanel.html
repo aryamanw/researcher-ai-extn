@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Research Companion</title>
+  <link rel="stylesheet" href="../src/styles/tokens.css" />
+  <link rel="stylesheet" href="./sidepanel.css" />
 </head>
 <body>
-  <h1>Research Companion</h1>
-  <div id="results"></div>
+  <header class="panel-header">
+    <h1>Research Companion</h1>
+  </header>
 
-  <h2>History</h2>
-  <ul id="history-list"></ul>
+  <main id="results" aria-live="polite"></main>
+
+  <section class="history">
+    <h2>History</h2>
+    <ul id="history-list"></ul>
+  </section>
 
   <script type="module" src="./main.js"></script>
 </body>
