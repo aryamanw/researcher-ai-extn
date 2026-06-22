@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 vi.mock('../../src/lib/storage.js', () => ({
   getSettings: vi.fn(),
@@ -13,6 +17,36 @@ import {
   syncKeyFieldVisibility,
   getApiKeyFormatWarning,
 } from '../../options/optionsPage.js';
+
+function loadOptionsHtml() {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const htmlPath = resolve(currentDir, '../../options/options.html');
+  const html = readFileSync(htmlPath, 'utf8');
+  return new JSDOM(html).window.document;
+}
+
+describe('options.html structure', () => {
+  it('gives the Model field a secondary (lower-weight) class, distinct from required fields', () => {
+    const doc = loadOptionsHtml();
+    const modelInput = doc.querySelector('input[name="model"]');
+    const modelLabel = modelInput.closest('label');
+    expect(modelLabel.classList.contains('field-secondary')).toBe(true);
+
+    const providerLabel = doc.querySelector('select[name="provider"]').closest('label');
+    expect(providerLabel.classList.contains('field-secondary')).toBe(false);
+  });
+
+  it('groups Search Provider and the Brave Search API key into their own fieldset', () => {
+    const doc = loadOptionsHtml();
+    const searchProviderSelect = doc.querySelector('select[name="searchProvider"]');
+    const braveKeyInput = doc.querySelector('input[name="braveSearchKey"]');
+    const searchFieldset = searchProviderSelect.closest('fieldset');
+
+    expect(searchFieldset).not.toBeNull();
+    expect(searchFieldset.querySelector('legend').textContent).toBe('Search');
+    expect(searchFieldset.contains(braveKeyInput)).toBe(true);
+  });
+});
 
 function buildForm() {
   document.body.innerHTML = `
