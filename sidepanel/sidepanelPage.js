@@ -2,6 +2,7 @@ import { getSettings, addHistoryEntry } from '../src/lib/storage.js';
 import { runPipeline } from '../src/lib/pipeline.js';
 import { getCompletion } from '../src/lib/llm/index.js';
 import { search as braveSearch } from '../src/lib/search/brave.js';
+import { search as duckduckgoSearch } from '../src/lib/search/duckduckgo.js';
 
 export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
@@ -222,7 +223,9 @@ export async function analyzeActiveTab({
   signal,
 }) {
   const settings = await getSettings();
-  if (!settings.provider || !settings.braveSearchKey) {
+  const searchProvider = settings.searchProvider || 'brave';
+  const hasSearchConfig = searchProvider === 'duckduckgo' || !!settings.braveSearchKey;
+  if (!settings.provider || !hasSearchConfig) {
     return { status: 'not-configured' };
   }
 
@@ -235,7 +238,10 @@ export async function analyzeActiveTab({
 
   renderStatus('Searching...');
   const llmClient = { complete: (prompt) => getCompletion(settings, prompt, signal) };
-  const searchClient = { search: (query) => braveSearch({ apiKey: settings.braveSearchKey, query, signal }) };
+  const searchClient =
+    searchProvider === 'duckduckgo'
+      ? { search: (query) => duckduckgoSearch({ query, signal }) }
+      : { search: (query) => braveSearch({ apiKey: settings.braveSearchKey, query, signal }) };
 
   renderStatus('Ranking results...');
   const results = await runPipeline({

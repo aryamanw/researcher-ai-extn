@@ -52,6 +52,7 @@ export function gatherSettingsFromForm(form, storedApiKeys = {}, storedBraveSear
       openai: keyValueOrStored(form.openaiKey, storedApiKeys.openai),
       gemini: keyValueOrStored(form.geminiKey, storedApiKeys.gemini),
     },
+    searchProvider: form.searchProvider?.value || 'brave',
     braveSearchKey: keyValueOrStored(form.braveSearchKey, storedBraveSearchKey),
     resultsCount: clampResultsCount(form.resultsCount.value, form.resultsCount),
   };
@@ -72,6 +73,7 @@ export function renderSettingsToForm(form, settings) {
   form.openaiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.openai);
   form.geminiKey.value = '';
   form.geminiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.gemini);
+  if (form.searchProvider) form.searchProvider.value = settings.searchProvider || 'brave';
   form.braveSearchKey.value = '';
   form.braveSearchKey.placeholder = maskedKeyPlaceholder(settings.braveSearchKey);
   form.resultsCount.value = settings.resultsCount ?? 8;
@@ -79,7 +81,12 @@ export function renderSettingsToForm(form, settings) {
 
 export function syncKeyFieldVisibility(form) {
   const selectedProvider = form.provider?.value;
+  const selectedSearchProvider = form.searchProvider?.value || 'brave';
   form.querySelectorAll('.key-field').forEach((field) => {
+    if (field.dataset.searchProvider) {
+      field.classList.toggle('is-hidden', field.dataset.searchProvider !== selectedSearchProvider);
+      return;
+    }
     field.classList.toggle('is-hidden', field.dataset.provider !== selectedProvider);
   });
 }

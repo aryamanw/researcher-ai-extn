@@ -65,9 +65,15 @@
       </div>
     </fieldset>
 
-    <!-- Not wrapped in .key-field: unlike the three LLM keys above, Brave Search is
-         provider-independent infrastructure, not gated by the provider dropdown. -->
     <label>
+      Search provider
+      <select name="searchProvider">
+        <option value="brave">Brave Search (requires API key)</option>
+        <option value="duckduckgo">DuckDuckGo (no key, completely free)</option>
+      </select>
+    </label>
+
+    <label class="key-field" data-search-provider="brave">
       Brave Search API key
       <div class="key-input-row">
         <input type="password" name="braveSearchKey" />

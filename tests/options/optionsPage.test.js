@@ -37,7 +37,13 @@ function buildForm() {
         <input type="password" name="geminiKey" />
         <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
       </label>
-      <input type="password" name="braveSearchKey" />
+      <select name="searchProvider">
+        <option value="brave">Brave</option>
+        <option value="duckduckgo">DuckDuckGo</option>
+      </select>
+      <label class="key-field" data-search-provider="brave">
+        <input type="password" name="braveSearchKey" />
+      </label>
       <input type="number" name="resultsCount" min="1" max="20" />
     </form>
     <button type="button" id="connect-openrouter">Connect</button>
@@ -50,6 +56,7 @@ function buildForm() {
   form.anthropicKey = form.elements.namedItem('anthropicKey');
   form.openaiKey = form.elements.namedItem('openaiKey');
   form.geminiKey = form.elements.namedItem('geminiKey');
+  form.searchProvider = form.elements.namedItem('searchProvider');
   form.braveSearchKey = form.elements.namedItem('braveSearchKey');
   form.resultsCount = form.elements.namedItem('resultsCount');
   return form;
@@ -70,6 +77,7 @@ describe('gatherSettingsFromForm', () => {
       provider: 'anthropic',
       model: 'claude-3-5-sonnet-20241022',
       apiKeys: { anthropic: 'a-key', openai: '', gemini: '' },
+      searchProvider: 'brave',
       braveSearchKey: 'b-key',
       resultsCount: 10,
     });
@@ -273,15 +281,28 @@ describe('initOptionsPage', () => {
 });
 
 describe('syncKeyFieldVisibility', () => {
-  it('hides all provider-specific key fields when no provider is selected', () => {
+  it('hides all LLM provider-specific key fields when no provider is selected', () => {
     const form = buildForm();
     form.provider.value = '';
 
     syncKeyFieldVisibility(form);
 
-    form.querySelectorAll('.key-field').forEach((field) => {
+    form.querySelectorAll('.key-field[data-provider]').forEach((field) => {
       expect(field.classList.contains('is-hidden')).toBe(true);
     });
+  });
+
+  it('shows the brave key field only when brave is the selected search provider', () => {
+    const form = buildForm();
+    const braveField = form.querySelector('[data-search-provider="brave"]');
+
+    form.searchProvider.value = 'brave';
+    syncKeyFieldVisibility(form);
+    expect(braveField.classList.contains('is-hidden')).toBe(false);
+
+    form.searchProvider.value = 'duckduckgo';
+    syncKeyFieldVisibility(form);
+    expect(braveField.classList.contains('is-hidden')).toBe(true);
   });
 });
 
