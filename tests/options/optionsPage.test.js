@@ -16,6 +16,7 @@ import {
   initOptionsPage,
   syncKeyFieldVisibility,
   getApiKeyFormatWarning,
+  toFriendlyOpenRouterError,
 } from '../../options/optionsPage.js';
 
 function loadOptionsHtml() {
@@ -471,5 +472,45 @@ describe('initOptionsPage key validation', () => {
     form.dispatchEvent(new Event('change'));
     await vi.waitFor(() => expect(warningEl.hidden).toBe(false));
     expect(warningEl.textContent).toMatch(/sk-ant-/);
+  });
+});
+
+describe('toFriendlyOpenRouterError', () => {
+  it('returns a generic connect message when there is no specific error', () => {
+    expect(toFriendlyOpenRouterError(undefined)).toBe("Couldn't connect to OpenRouter. Try again.");
+  });
+
+  it('maps a key-exchange 401/403 to a sign-in-rejected message', () => {
+    expect(toFriendlyOpenRouterError('OpenRouter key exchange failed: 401'))
+      .toBe('OpenRouter rejected the sign-in. Try connecting again.');
+    expect(toFriendlyOpenRouterError('OpenRouter key exchange failed: 403'))
+      .toBe('OpenRouter rejected the sign-in. Try connecting again.');
+  });
+
+  it('maps a key-exchange 429 to a rate-limit message', () => {
+    expect(toFriendlyOpenRouterError('OpenRouter key exchange failed: 429'))
+      .toBe('Rate limited by OpenRouter. Try again in a moment.');
+  });
+
+  it('maps a key-exchange 5xx to a transient-trouble message', () => {
+    expect(toFriendlyOpenRouterError('OpenRouter key exchange failed: 503'))
+      .toBe('OpenRouter is having trouble right now. Try again shortly.');
+  });
+
+  it('maps a cancelled or incomplete sign-in to a plain cancelled message', () => {
+    expect(toFriendlyOpenRouterError('Auth flow cancelled'))
+      .toBe('Sign-in was cancelled.');
+    expect(toFriendlyOpenRouterError('OpenRouter authorization did not return a code'))
+      .toBe('Sign-in was cancelled.');
+  });
+
+  it('maps a state mismatch to a retry message', () => {
+    expect(toFriendlyOpenRouterError('OpenRouter authorization state mismatch'))
+      .toBe("Sign-in didn't complete correctly. Try connecting again.");
+  });
+
+  it('passes through an unrecognized message unchanged', () => {
+    expect(toFriendlyOpenRouterError('something truly unexpected'))
+      .toBe('something truly unexpected');
   });
 });
