@@ -217,6 +217,28 @@ describe('render functions', () => {
     button.click();
     expect(onSelect).toHaveBeenCalledWith('1');
   });
+
+  it('renderHistoryList hides the given section element when there are no entries', () => {
+    const sectionEl = document.createElement('section');
+    renderHistoryList(container, [], vi.fn(), sectionEl);
+    expect(sectionEl.classList.contains('is-hidden')).toBe(true);
+  });
+
+  it('renderHistoryList shows the given section element when there is at least one entry', () => {
+    const sectionEl = document.createElement('section');
+    sectionEl.classList.add('is-hidden');
+    renderHistoryList(
+      container,
+      [{ id: '1', sourcePage: { title: 'Past page', url: 'https://past.com' } }],
+      vi.fn(),
+      sectionEl
+    );
+    expect(sectionEl.classList.contains('is-hidden')).toBe(false);
+  });
+
+  it('renderHistoryList does not throw when no section element is given', () => {
+    expect(() => renderHistoryList(container, [], vi.fn())).not.toThrow();
+  });
 });
 
 describe('requestExtraction', () => {
