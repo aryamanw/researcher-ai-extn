@@ -16,6 +16,25 @@ export function getApiKeyFormatWarning(fieldName, value) {
   return hint.message;
 }
 
+export function toFriendlyOpenRouterError(rawMessage) {
+  if (!rawMessage) return "Couldn't connect to OpenRouter. Try again.";
+
+  if (/cancelled|did not return a code/i.test(rawMessage)) {
+    return 'Sign-in was cancelled.';
+  }
+  if (/state mismatch/i.test(rawMessage)) {
+    return "Sign-in didn't complete correctly. Try connecting again.";
+  }
+  const statusMatch = rawMessage.match(/key exchange failed: (\d{3})/i);
+  if (statusMatch) {
+    const status = Number(statusMatch[1]);
+    if (status === 401 || status === 403) return 'OpenRouter rejected the sign-in. Try connecting again.';
+    if (status === 429) return 'Rate limited by OpenRouter. Try again in a moment.';
+    if (status >= 500) return 'OpenRouter is having trouble right now. Try again shortly.';
+  }
+  return rawMessage;
+}
+
 function refreshKeyWarnings(form) {
   form.querySelectorAll('.key-input-row input').forEach((input) => {
     const warningEl = form.querySelector(`.key-warning[data-for="${input.name}"]`);
@@ -138,7 +157,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     chrome.runtime.sendMessage({ type: 'CONNECT_OPENROUTER' }, (response) => {
       statusEl.textContent = response?.ok
         ? 'OpenRouter: connected'
-        : `OpenRouter: connection failed (${response?.error || 'unknown error'})`;
+        : `OpenRouter: connection failed (${toFriendlyOpenRouterError(response?.error)})`;
       connectButton.disabled = false;
     });
   });
