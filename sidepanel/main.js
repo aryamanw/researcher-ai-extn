@@ -15,6 +15,7 @@ import { getHistory, getSettings } from '../src/lib/storage.js';
 
 const resultsContainer = document.getElementById('results');
 const historyContainer = document.getElementById('history-list');
+const historySection = document.querySelector('.history');
 
 let isRunning = false;
 
@@ -53,7 +54,7 @@ async function run() {
       const settings = await getSettings();
       const showProvider = countConfiguredProviders(settings) > 1;
       renderResults(resultsContainer, entry.results, { provider: entry.provider, showProvider });
-    });
+    }, historySection);
   } finally {
     isRunning = false;
   }

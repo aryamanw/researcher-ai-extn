@@ -140,8 +140,9 @@ export function renderResults(container, results, { provider, showProvider } = {
   });
 }
 
-export function renderHistoryList(container, entries, onSelect) {
+export function renderHistoryList(container, entries, onSelect, sectionEl) {
   container.innerHTML = '';
+  if (sectionEl) sectionEl.classList.toggle('is-hidden', entries.length === 0);
   if (entries.length === 0) {
     const li = document.createElement('li');
     li.className = 'history-empty';
