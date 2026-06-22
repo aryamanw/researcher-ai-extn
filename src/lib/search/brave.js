@@ -1,4 +1,4 @@
-export async function search({ apiKey, query, count = 10 }) {
+export async function search({ apiKey, query, count = 10, signal }) {
   const url = new URL('https://api.search.brave.com/res/v1/web/search');
   url.searchParams.set('q', query);
   url.searchParams.set('count', String(count));
@@ -8,6 +8,7 @@ export async function search({ apiKey, query, count = 10 }) {
       accept: 'application/json',
       'x-subscription-token': apiKey,
     },
+    signal,
   });
 
   if (!response.ok) {

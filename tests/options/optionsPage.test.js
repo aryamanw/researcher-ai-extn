@@ -92,21 +92,71 @@ describe('gatherSettingsFromForm', () => {
 });
 
 describe('renderSettingsToForm', () => {
-  it('populates form fields from a settings object', () => {
+  it('populates non-secret fields from a settings object', () => {
     const form = buildForm();
     renderSettingsToForm(form, {
       provider: 'anthropic',
       model: 'm1',
-      apiKeys: { anthropic: 'a-key', openai: 'o-key', gemini: 'g-key' },
+      apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
       braveSearchKey: 'b-key',
       resultsCount: 5,
     });
 
     expect(form.provider.value).toBe('anthropic');
     expect(form.model.value).toBe('m1');
-    expect(form.anthropicKey.value).toBe('a-key');
-    expect(form.braveSearchKey.value).toBe('b-key');
     expect(form.resultsCount.value).toBe('5');
+  });
+
+  it('never re-displays a saved key in full - the field stays blank with a masked placeholder hint', () => {
+    const form = buildForm();
+    renderSettingsToForm(form, {
+      provider: 'anthropic',
+      model: 'm1',
+      apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
+      braveSearchKey: 'b-key',
+      resultsCount: 5,
+    });
+
+    expect(form.anthropicKey.value).toBe('');
+    expect(form.anthropicKey.placeholder).toBe('Saved, ending in ****c123');
+    expect(form.braveSearchKey.value).toBe('');
+    expect(form.braveSearchKey.placeholder).toBe('Saved, ending in ****-key');
+  });
+
+  it('leaves the placeholder blank when no key is saved for a field', () => {
+    const form = buildForm();
+    renderSettingsToForm(form, {
+      provider: null,
+      model: null,
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+
+    expect(form.anthropicKey.placeholder).toBe('');
+  });
+});
+
+describe('gatherSettingsFromForm - stored key fallback', () => {
+  it('keeps the previously stored key when its field is left blank', () => {
+    const form = buildForm();
+    form.provider.value = 'anthropic';
+    form.resultsCount.value = '8';
+    // anthropicKey field left blank - simulates the masked, untouched state.
+
+    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' }, 'old-brave-key');
+
+    expect(settings.apiKeys.anthropic).toBe('sk-ant-old');
+    expect(settings.braveSearchKey).toBe('old-brave-key');
+  });
+
+  it('uses the freshly typed value when the field is edited, ignoring the stored one', () => {
+    const form = buildForm();
+    form.anthropicKey.value = 'sk-ant-new';
+
+    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' });
+
+    expect(settings.apiKeys.anthropic).toBe('sk-ant-new');
   });
 });
 

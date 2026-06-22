@@ -1,4 +1,4 @@
-export async function complete({ apiKey, model, prompt }) {
+export async function complete({ apiKey, model, prompt, signal }) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -9,6 +9,7 @@ export async function complete({ apiKey, model, prompt }) {
       model: model || 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
     }),
+    signal,
   });
 
   if (!response.ok) {

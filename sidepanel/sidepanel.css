@@ -51,12 +51,18 @@
   border-radius: var(--radius-sm);
   padding: 0 var(--space-md);
   cursor: pointer;
-  transition: color 150ms var(--ease-out-quart), border-color 150ms var(--ease-out-quart);
+  transition: color 150ms var(--ease-out-quart), border-color 150ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
 }
 
-.cancel-button:hover {
-  color: var(--color-text);
-  border-color: var(--color-text);
+@media (hover: hover) and (pointer: fine) {
+  .cancel-button:hover {
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+}
+
+.cancel-button:active {
+  transform: scale(0.97);
 }
 
 .empty-state {
@@ -80,8 +86,10 @@
   text-underline-offset: 2px;
 }
 
-.setup-prompt a:hover {
-  text-decoration-color: var(--color-text);
+@media (hover: hover) and (pointer: fine) {
+  .setup-prompt a:hover {
+    text-decoration-color: var(--color-text);
+  }
 }
 
 .error {
@@ -102,11 +110,17 @@
   border-radius: var(--radius-sm);
   padding: 0 var(--space-lg);
   cursor: pointer;
-  transition: opacity 150ms var(--ease-out-quart);
+  transition: opacity 150ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
 }
 
-#retry-button:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  #retry-button:hover {
+    opacity: 0.85;
+  }
+}
+
+#retry-button:active {
+  transform: scale(0.97);
 }
 
 .result {
@@ -126,8 +140,10 @@
   max-width: 70ch;
 }
 
-.result a:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .result a:hover {
+    text-decoration: underline;
+  }
 }
 
 .result .snippet {
@@ -191,12 +207,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: background-color 150ms var(--ease-out-quart), color 150ms var(--ease-out-quart);
+  transition: background-color 150ms var(--ease-out-quart), color 150ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
 }
 
-#history-list li > button:hover {
-  background: var(--color-surface);
-  color: var(--color-text);
+@media (hover: hover) and (pointer: fine) {
+  #history-list li > button:hover {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+}
+
+#history-list li > button:active {
+  transform: scale(0.98);
 }
 
 #history-list li.history-empty {
