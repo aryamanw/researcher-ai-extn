@@ -16,15 +16,19 @@ export function getApiKeyFormatWarning(fieldName, value) {
   return hint.message;
 }
 
-function wireKeyValidation(form) {
+function refreshKeyWarnings(form) {
   form.querySelectorAll('.key-input-row input').forEach((input) => {
     const warningEl = form.querySelector(`.key-warning[data-for="${input.name}"]`);
     if (!warningEl) return;
-    input.addEventListener('blur', () => {
-      const warning = getApiKeyFormatWarning(input.name, input.value);
-      warningEl.textContent = warning || '';
-      warningEl.hidden = !warning;
-    });
+    const warning = getApiKeyFormatWarning(input.name, input.value);
+    warningEl.textContent = warning || '';
+    warningEl.hidden = !warning;
+  });
+}
+
+function wireKeyValidation(form) {
+  form.querySelectorAll('.key-input-row input').forEach((input) => {
+    input.addEventListener('blur', () => refreshKeyWarnings(form));
   });
 }
 
@@ -116,6 +120,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
   let hideTimer;
   form.addEventListener('change', async () => {
     syncKeyFieldVisibility(form);
+    refreshKeyWarnings(form);
 
     const current = await getSettings();
     await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys, current.braveSearchKey) });
