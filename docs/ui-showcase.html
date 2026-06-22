@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Research Companion — UI Showcase</title>
+<style>
+/* ---------- design tokens (copied from src/styles/tokens.css) ---------- */
+:root {
+  color-scheme: light dark;
+  --color-bg: oklch(97.1% 0.004 134.8);
+  --color-surface: oklch(92% 0.014 230);
+  --color-text: oklch(27.1% 0.036 229.8);
+  --color-text-secondary: oklch(50% 0.02 230);
+  --color-border: oklch(84% 0.018 230);
+  --color-border-strong: oklch(60% 0.025 230);
+  --color-accent: oklch(50% 0.09 231);
+  --color-accent-secondary: oklch(30.4% 0.077 148.5);
+  --color-focus-ring: var(--color-accent);
+  --shadow-toast: 0 2px 8px oklch(27.1% 0.036 229.8 / 0.12);
+  --font-sans: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+  --text-display: 600 1.125rem/1.3 var(--font-sans);
+  --text-headline: 600 0.9375rem/1.4 var(--font-sans);
+  --text-title: 500 0.875rem/1.4 var(--font-sans);
+  --text-body: 400 0.8125rem/1.5 var(--font-sans);
+  --text-label: 500 0.6875rem/1.4 var(--font-sans);
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --target-min: 44px;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html[data-theme="dark"] {
+  --color-bg: oklch(20% 0.03 230);
+  --color-surface: oklch(30% 0.025 230);
+  --color-text: oklch(95% 0.012 230);
+  --color-text-secondary: oklch(68% 0.022 230);
+  --color-border: oklch(40% 0.025 230);
+  --color-border-strong: oklch(55% 0.025 230);
+  --color-accent: oklch(70% 0.095 231);
+  --color-accent-secondary: oklch(68% 0.1 148);
+  --color-focus-ring: var(--color-accent);
+  --shadow-toast: 0 2px 8px oklch(0% 0 0 / 0.4);
+}
+
+* { box-sizing: border-box; }
+
+/* ---------- showcase page chrome (not part of the extension) ---------- */
+html, body.showcase {
+  margin: 0;
+  background: oklch(94% 0.01 230);
+  color: var(--color-text);
+  font: var(--text-body);
+  font-family: var(--font-sans);
+}
+
+html[data-theme="dark"] body.showcase {
+  background: oklch(14% 0.02 230);
+}
+
+.showcase-header {
+  padding: var(--space-xl);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.showcase-header h1 {
+  font: var(--text-display);
+  font-size: 1.5rem;
+  margin: 0 0 var(--space-xs);
+}
+
+.showcase-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  max-width: 70ch;
+}
+
+.showcase-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.showcase-nav a {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  white-space: nowrap;
+}
+
+.showcase-nav a:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.showcase-section {
+  padding: var(--space-xl);
+}
+
+.showcase-section > h2 {
+  font: var(--text-headline);
+  font-size: 1.125rem;
+  margin: 0 0 var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.showcase-section > h2:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.screen-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-xl);
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.screen-label {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.screen-frame {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 16px oklch(27.1% 0.036 229.8 / 0.08);
+}
+
+.frame-sidepanel { width: 360px; }
+.frame-options { width: 480px; }
+
+/* ---------- sidepanel.css (scoped to .frame-sidepanel) ---------- */
+.frame-sidepanel .panel-header {
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+.frame-sidepanel .panel-header h1 {
+  font: var(--text-display);
+  margin: 0;
+}
+.frame-sidepanel #results {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 64px;
+}
+.frame-sidepanel .status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.frame-sidepanel .status {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+.frame-sidepanel .active-provider {
+  font: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  margin: 0;
+}
+.frame-sidepanel .cancel-button {
+  flex-shrink: 0;
+  height: var(--target-min);
+  min-width: var(--target-min);
+  background: transparent;
+  color: var(--color-accent-secondary);
+  border: 1px solid var(--color-accent-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-md);
+  cursor: pointer;
+  font: var(--text-title);
+}
+.frame-sidepanel .empty-state,
+.frame-sidepanel .setup-prompt {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 70ch;
+}
+.frame-sidepanel .setup-prompt a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+}
+.frame-sidepanel .error {
+  font: var(--text-title);
+  color: var(--color-text);
+  margin: 0;
+  max-width: 70ch;
+}
+.frame-sidepanel #retry-button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-lg);
+  cursor: pointer;
+  font: var(--text-title);
+}
+.frame-sidepanel .result {
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.frame-sidepanel .result a {
+  font: var(--text-title);
+  text-decoration: none;
+  color: var(--color-text);
+  max-width: 70ch;
+}
+.frame-sidepanel .result .snippet {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 70ch;
+}
+.frame-sidepanel .result .relevance-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+}
+.frame-sidepanel .result .relevance {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0 0;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
+}
+.frame-sidepanel .history {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+.frame-sidepanel .history h2 {
+  font: var(--text-headline);
+  margin: 0 0 var(--space-sm);
+  border-top: none;
+  padding-top: 0;
+}
+.frame-sidepanel .history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.frame-sidepanel .history-list li { display: flex; }
+.frame-sidepanel .history-list li > button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 0 var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.frame-sidepanel .history-list li > button.is-active {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.frame-sidepanel .history-list li.history-empty {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 var(--space-md);
+  color: var(--color-text-secondary);
+  font: var(--text-body);
+}
+
+/* ---------- options.css (scoped to .frame-options) ---------- */
+.frame-options {
+  padding: var(--space-xl) var(--space-lg);
+}
+.frame-options .page-header {
+  margin: 0 0 var(--space-xl);
+}
+.frame-options .page-header h1 {
+  font: var(--text-display);
+  margin: 0;
+}
+.frame-options form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+.frame-options label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font: var(--text-title);
+}
+.frame-options label > input,
+.frame-options label > select {
+  height: var(--target-min);
+  font: var(--text-body);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-md);
+}
+.frame-options .field-hint {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+.frame-options .key-warning {
+  font: var(--text-title);
+  color: var(--color-text);
+  margin: 0;
+}
+.frame-options .key-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.frame-options .key-input-row > input { flex: 1; min-width: 0; }
+.frame-options .key-toggle {
+  flex-shrink: 0;
+  height: var(--target-min);
+  min-width: var(--target-min);
+  background: transparent;
+  color: var(--color-accent-secondary);
+  border: 1px solid var(--color-accent-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-md);
+  cursor: pointer;
+  font: var(--text-title);
+}
+.frame-options fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin: 0;
+}
+.frame-options legend {
+  font: var(--text-headline);
+  padding: 0 var(--space-xs);
+}
+.frame-options .openrouter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+.frame-options .button-primary {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-lg);
+  cursor: pointer;
+  font: var(--text-title);
+}
+.frame-options #openrouter-status {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+}
+.frame-options .autosave-status {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+  align-self: flex-end;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-md);
+  box-shadow: var(--shadow-toast);
+}
+
+.theme-toggle {
+  height: var(--target-min);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-md);
+  cursor: pointer;
+  font: var(--text-title);
+}
+</style>
+</head>
+<body class="showcase">
+
+<header class="showcase-header">
+  <h1>Research Companion — UI Showcase</h1>
+  <p>Every screen and state in the app flow, rendered with real markup/CSS from <code>sidepanel/</code> and <code>options/</code>. Static reference only — nothing here is wired up to the extension.</p>
+  <button type="button" class="theme-toggle" id="theme-toggle" style="margin-top: 12px;">Toggle dark mode</button>
+</header>
+
+<nav class="showcase-nav">
+  <a href="#settings">Settings</a>
+  <a href="#setup">Not configured</a>
+  <a href="#loading">Loading</a>
+  <a href="#results">Results</a>
+  <a href="#no-results">No results</a>
+  <a href="#no-content">No content</a>
+  <a href="#error">Error</a>
+  <a href="#history">History</a>
+</nav>
+
+<section class="showcase-section" id="settings">
+  <h2>1. First-time setup — Settings (options.html)</h2>
+  <div class="screen-grid">
+
+    <div class="screen">
+      <span class="screen-label">Unconfigured</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>-- choose --</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" placeholder="" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Anthropic key pasted + saved</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>Anthropic</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" placeholder="claude-sonnet-4-6" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+            <label>Anthropic API key
+              <div class="key-input-row">
+                <input type="password" value="sk-ant-••••••••••••" />
+                <button type="button" class="key-toggle">Show</button>
+              </div>
+            </label>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" value="BSA••••••••••" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+          <p class="autosave-status" style="opacity:1; align-self:flex-end;">Saved</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">OpenRouter — connected via OAuth</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>OpenRouter</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
+            <div class="openrouter-row">
+              <button type="button" class="button-primary">Connect to OpenRouter</button>
+              <span id="openrouter-status">OpenRouter: connected</span>
+            </div>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" value="BSA••••••••••" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="showcase-section" id="setup">
+  <h2>2. Side panel — Empty / not configured</h2>
+  <div class="screen-grid">
+    <div class="screen">
+      <span class="screen-label">No provider or Brave key set</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="setup-prompt">Set up a provider and Brave Search key in <a href="#">Settings</a> to get started.</p>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list">
+            <li class="history-empty">No history yet</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="showcase-section" id="loading">
+  <h2>3. Side panel — Loading (step-aware status)</h2>
+  <div class="screen-grid">
+
+    <div class="screen">
+      <span class="screen-label">Reading page...</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results" aria-busy="true">
+          <div class="status-row">
+            <p class="status">Reading page...</p>
+            <button class="cancel-button">Cancel</button>
+          </div>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Searching...</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results" aria-busy="true">
+          <div class="status-row">
+            <p class="status">Searching...</p>
+            <button class="cancel-button">Cancel</button>
+          </div>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Ranking results...</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results" aria-busy="true">
+          <div class="status-row">
+            <p class="status">Ranking results...</p>
+            <button class="cancel-button">Cancel</button>
+          </div>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="showcase-section" id="results">
+  <h2>4. Side panel — Results</h2>
+  <div class="screen-grid">
+    <div class="screen">
+      <span class="screen-label">Ranked results, multiple providers configured</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="active-provider status">Using Anthropic</p>
+          <article class="result">
+            <a href="#">Attention Is All You Need — the original Transformer paper</a>
+            <p class="snippet">Introduces the Transformer architecture, relying entirely on attention mechanisms and dispensing with recurrence and convolutions.</p>
+            <p class="relevance"><span class="relevance-label">Why this: </span>Directly cited by the architecture discussed on the page you're reading.</p>
+          </article>
+          <article class="result">
+            <a href="#">The Illustrated Transformer</a>
+            <p class="snippet">A visual, step-by-step walkthrough of self-attention and multi-head attention for readers new to the architecture.</p>
+            <p class="relevance"><span class="relevance-label">Why this: </span>Good plain-language companion to the paper's notation.</p>
+          </article>
+          <article class="result">
+            <a href="#">Why positional encodings matter in Transformers</a>
+            <p class="snippet">Explains why Transformers need explicit positional information and compares sinusoidal vs. learned encodings.</p>
+            <p class="relevance"><span class="relevance-label">Why this: </span>Expands on a detail the source page mentions only briefly.</p>
+          </article>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list">
+            <li><button>Attention Is All You Need — arXiv</button></li>
+            <li><button>How transformers changed NLP</button></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="showcase-section" id="no-results">
+  <h2>5. Side panel — No results</h2>
+  <div class="screen-grid">
+    <div class="screen">
+      <span class="screen-label">Search returned nothing relevant</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="empty-state">No similar results found.</p>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="showcase-section" id="no-content">
+  <h2>6. Side panel — No readable content</h2>
+  <div class="screen-grid">
+    <div class="screen">
+      <span class="screen-label">Extraction confidence too low</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="empty-state">Couldn't find readable content on this page.</p>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="showcase-section" id="error">
+  <h2>7. Side panel — Error</h2>
+  <div class="screen-grid">
+
+    <div class="screen">
+      <span class="screen-label">Rejected API key</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="error">Your API key was rejected. Check it in Settings.</p>
+          <button id="retry-button">Retry</button>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Restricted page (chrome://, Web Store)</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="error">Research Companion can't read this page. Browser pages and the Chrome Web Store are off-limits to extensions.</p>
+          <button id="retry-button">Retry</button>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="showcase-section" id="history">
+  <h2>8. Side panel — History</h2>
+  <div class="screen-grid">
+
+    <div class="screen">
+      <span class="screen-label">Empty</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <p class="empty-state">No similar results found.</p>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list"><li class="history-empty">No history yet</li></ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Entry selected — re-rendered from storage</span>
+      <div class="screen-frame frame-sidepanel">
+        <header class="panel-header"><h1>Research Companion</h1></header>
+        <main id="results">
+          <article class="result">
+            <a href="#">The Illustrated Transformer</a>
+            <p class="snippet">A visual, step-by-step walkthrough of self-attention and multi-head attention.</p>
+            <p class="relevance"><span class="relevance-label">Why this: </span>Good plain-language companion to the paper's notation.</p>
+          </article>
+          <article class="result">
+            <a href="#">Self-attention from scratch in PyTorch</a>
+            <p class="snippet">A minimal implementation walking through query/key/value projections and scaled dot-product attention.</p>
+            <p class="relevance"><span class="relevance-label">Why this: </span>Hands-on counterpart to the conceptual explanation above.</p>
+          </article>
+        </main>
+        <section class="history">
+          <h2>History</h2>
+          <ul class="history-list">
+            <li><button class="is-active">Attention Is All You Need — arXiv</button></li>
+            <li><button>How transformers changed NLP</button></li>
+            <li><button>BERT: Pre-training of Deep Bidirectional Transformers</button></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<script>
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
+});
+</script>
+</body>
+</html>

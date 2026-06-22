@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Research Companion Settings</title>
+  <link rel="stylesheet" href="../../src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../options/options.css" />
+  <style>
+    html, body {
+      width: 1280px;
+      height: 800px;
+      margin: 0;
+      background: oklch(94% 0.006 250);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 40px;
+    }
+    #frame {
+      width: 640px;
+      background: var(--bg, #fff);
+      box-shadow: 0 0 0 1px oklch(85% 0.006 250);
+      padding: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="frame">
+    <header class="page-header">
+      <h1>Research Companion Settings</h1>
+    </header>
+    <form id="settings-form">
+      <label>
+        LLM provider
+        <select name="provider">
+          <option value="">-- choose --</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </label>
+      <label>
+        Model (optional, uses provider default if blank)
+        <input type="text" name="model" />
+      </label>
+      <fieldset>
+        <legend>Provider credentials</legend>
+        <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+        <label class="key-field" data-provider="anthropic">
+          Anthropic API key
+          <div class="key-input-row">
+            <input type="password" name="anthropicKey" />
+            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key">Show</button>
+          </div>
+        </label>
+        <label class="key-field" data-provider="openai">
+          OpenAI API key
+          <div class="key-input-row">
+            <input type="password" name="openaiKey" />
+            <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key">Show</button>
+          </div>
+        </label>
+        <label class="key-field" data-provider="gemini">
+          Gemini API key
+          <div class="key-input-row">
+            <input type="password" name="geminiKey" />
+            <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key">Show</button>
+          </div>
+        </label>
+        <div class="key-field" data-provider="openrouter">
+          <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
+          <div class="openrouter-row">
+            <button type="button" id="connect-openrouter" class="button-primary">Connect to OpenRouter</button>
+            <span id="openrouter-status"></span>
+          </div>
+        </div>
+      </fieldset>
+      <label>
+        Brave Search API key
+        <div class="key-input-row">
+          <input type="password" name="braveSearchKey" />
+          <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key">Show</button>
+        </div>
+      </label>
+      <label>
+        Number of results
+        <input type="number" name="resultsCount" min="1" max="20" />
+      </label>
+    </form>
+  </div>
+
+  <script type="module">
+    import { renderSettingsToForm, syncKeyFieldVisibility } from '../../options/optionsPage.js';
+
+    const sampleSettings = {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      apiKeys: {
+        anthropic: 'sk-ant-sample0000000000000000000',
+        openai: '',
+        gemini: '',
+      },
+      braveSearchKey: 'BSA-sample0000000000000000000',
+      resultsCount: 8,
+    };
+
+    const form = document.getElementById('settings-form');
+    renderSettingsToForm(form, sampleSettings);
+    syncKeyFieldVisibility(form);
+  </script>
+</body>
+</html>
