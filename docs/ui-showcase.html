@@ -448,6 +448,7 @@ html[data-theme="dark"] body.showcase {
 
 <nav class="showcase-nav">
   <a href="#settings">Settings</a>
+  <a href="#masked-keys">Masked keys</a>
   <a href="#setup">Not configured</a>
   <a href="#loading">Loading</a>
   <a href="#results">Results</a>
@@ -490,7 +491,7 @@ html[data-theme="dark"] body.showcase {
     </div>
 
     <div class="screen">
-      <span class="screen-label">Anthropic key pasted + saved</span>
+      <span class="screen-label">Anthropic key just typed + saved</span>
       <div class="screen-frame frame-options">
         <header class="page-header"><h1>Research Companion Settings</h1></header>
         <form>
@@ -505,9 +506,45 @@ html[data-theme="dark"] body.showcase {
             <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
             <label>Anthropic API key
               <div class="key-input-row">
-                <input type="password" value="sk-ant-••••••••••••" />
+                <input type="password" value="sk-ant-abc123xyz789" />
                 <button type="button" class="key-toggle">Show</button>
               </div>
+            </label>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" placeholder="Saved, ending in ****k2m9" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+          <p class="autosave-status" style="opacity:1; align-self:flex-end;">Saved</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">Anthropic key doesn't match expected format</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>Anthropic</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" placeholder="claude-sonnet-4-6" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+            <label>Anthropic API key
+              <div class="key-input-row">
+                <input type="password" value="wrong-prefix-key" />
+                <button type="button" class="key-toggle">Show</button>
+              </div>
+              <p class="key-warning">Anthropic keys start with "sk-ant-" — this doesn't look right.</p>
             </label>
           </fieldset>
           <label>Brave Search API key
@@ -519,7 +556,6 @@ html[data-theme="dark"] body.showcase {
           <label>Number of results
             <input type="number" value="8" />
           </label>
-          <p class="autosave-status" style="opacity:1; align-self:flex-end;">Saved</p>
         </form>
       </div>
     </div>
@@ -559,8 +595,89 @@ html[data-theme="dark"] body.showcase {
   </div>
 </section>
 
+<section class="showcase-section" id="masked-keys">
+  <h2>2. Settings — Saved keys are never re-displayed in full</h2>
+  <p style="margin: 0 0 var(--space-lg); color: var(--color-text-secondary); max-width: 70ch;">
+    Reopening the settings page after a key has been saved leaves every key field blank with a masked
+    "ending in" hint instead of repopulating the literal secret. Leaving a field untouched and changing
+    something else (e.g. provider, results count) no longer overwrites the saved key with an empty value —
+    only typing a replacement does. There is no way to view a saved key in full again through the extension.
+  </p>
+  <div class="screen-grid">
+
+    <div class="screen">
+      <span class="screen-label">Reopened — Anthropic key already saved, untouched</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>Anthropic</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" placeholder="claude-sonnet-4-6" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+            <label>Anthropic API key
+              <div class="key-input-row">
+                <input type="password" placeholder="Saved, ending in ****z789" />
+                <button type="button" class="key-toggle">Show</button>
+              </div>
+            </label>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" placeholder="Saved, ending in ****k2m9" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen">
+      <span class="screen-label">No key saved for this field yet</span>
+      <div class="screen-frame frame-options">
+        <header class="page-header"><h1>Research Companion Settings</h1></header>
+        <form>
+          <label>LLM provider
+            <select><option>OpenAI</option></select>
+          </label>
+          <label>Model (optional, uses provider default if blank)
+            <input type="text" />
+          </label>
+          <fieldset>
+            <legend>Provider credentials</legend>
+            <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
+            <label>OpenAI API key
+              <div class="key-input-row">
+                <input type="password" placeholder="" />
+                <button type="button" class="key-toggle">Show</button>
+              </div>
+            </label>
+          </fieldset>
+          <label>Brave Search API key
+            <div class="key-input-row">
+              <input type="password" placeholder="Saved, ending in ****k2m9" />
+              <button type="button" class="key-toggle">Show</button>
+            </div>
+          </label>
+          <label>Number of results
+            <input type="number" value="8" />
+          </label>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <section class="showcase-section" id="setup">
-  <h2>2. Side panel — Empty / not configured</h2>
+  <h2>3. Side panel — Empty / not configured</h2>
   <div class="screen-grid">
     <div class="screen">
       <span class="screen-label">No provider or Brave key set</span>
@@ -581,7 +698,13 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="loading">
-  <h2>3. Side panel — Loading (step-aware status)</h2>
+  <h2>4. Side panel — Loading (step-aware status)</h2>
+  <p style="margin: 0 0 var(--space-lg); color: var(--color-text-secondary); max-width: 70ch;">
+    Cancel now aborts the in-flight LLM/search request at the network level during "Searching..." and
+    "Ranking results...", not just during "Reading page...". No visual change here — the status row and
+    Cancel button look identical to before; only the underlying <code>fetch()</code> calls now receive the
+    same <code>AbortSignal</code> that extraction already used.
+  </p>
   <div class="screen-grid">
 
     <div class="screen">
@@ -639,7 +762,7 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="results">
-  <h2>4. Side panel — Results</h2>
+  <h2>5. Side panel — Results</h2>
   <div class="screen-grid">
     <div class="screen">
       <span class="screen-label">Ranked results, multiple providers configured</span>
@@ -676,7 +799,7 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="no-results">
-  <h2>5. Side panel — No results</h2>
+  <h2>6. Side panel — No results</h2>
   <div class="screen-grid">
     <div class="screen">
       <span class="screen-label">Search returned nothing relevant</span>
@@ -695,7 +818,7 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="no-content">
-  <h2>6. Side panel — No readable content</h2>
+  <h2>7. Side panel — No readable content</h2>
   <div class="screen-grid">
     <div class="screen">
       <span class="screen-label">Extraction confidence too low</span>
@@ -714,7 +837,7 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="error">
-  <h2>7. Side panel — Error</h2>
+  <h2>8. Side panel — Error</h2>
   <div class="screen-grid">
 
     <div class="screen">
@@ -751,7 +874,7 @@ html[data-theme="dark"] body.showcase {
 </section>
 
 <section class="showcase-section" id="history">
-  <h2>8. Side panel — History</h2>
+  <h2>9. Side panel — History</h2>
   <div class="screen-grid">
 
     <div class="screen">

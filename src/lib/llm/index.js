@@ -10,7 +10,7 @@ const PROVIDERS = {
   openrouter: openrouterComplete,
 };
 
-export async function getCompletion(settings, prompt) {
+export async function getCompletion(settings, prompt, signal) {
   const { provider, model } = settings;
   const completeFn = PROVIDERS[provider];
   if (!completeFn) {
@@ -23,5 +23,5 @@ export async function getCompletion(settings, prompt) {
     throw new Error(`No API key/token configured for provider: ${provider}`);
   }
 
-  return completeFn({ apiKey, model, prompt });
+  return completeFn({ apiKey, model, prompt, signal });
 }

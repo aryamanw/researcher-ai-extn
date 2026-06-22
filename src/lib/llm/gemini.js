@@ -1,6 +1,6 @@
 const MODEL_NAME_PATTERN = /^[\w.-]+$/;
 
-export async function complete({ apiKey, model, prompt }) {
+export async function complete({ apiKey, model, prompt, signal }) {
   const modelName = model || 'gemini-1.5-flash';
   if (!MODEL_NAME_PATTERN.test(modelName)) {
     throw new Error(`Invalid Gemini model name: ${modelName}`);
@@ -16,6 +16,7 @@ export async function complete({ apiKey, model, prompt }) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
       }),
+      signal,
     }
   );
 

@@ -111,6 +111,7 @@ describe('render functions', () => {
   });
 
   it('renderSetupPrompt links to settings', () => {
+    global.chrome = { runtime: { getURL: vi.fn((path) => path) } };
     renderSetupPrompt(container);
     expect(container.querySelector('#open-settings')).not.toBeNull();
   });

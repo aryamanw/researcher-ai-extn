@@ -234,8 +234,8 @@ export async function analyzeActiveTab({
   }
 
   renderStatus('Searching...');
-  const llmClient = { complete: (prompt) => getCompletion(settings, prompt) };
-  const searchClient = { search: (query) => braveSearch({ apiKey: settings.braveSearchKey, query }) };
+  const llmClient = { complete: (prompt) => getCompletion(settings, prompt, signal) };
+  const searchClient = { search: (query) => braveSearch({ apiKey: settings.braveSearchKey, query, signal }) };
 
   renderStatus('Ranking results...');
   const results = await runPipeline({

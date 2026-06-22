@@ -255,5 +255,10 @@ Source files: `icons/icon16.png`, `icons/icon48.png`, `icons/icon128.png`. No se
 
 ## Known Gaps
 
-- Secret fields show a reveal toggle, a storage/transmission hint, and a format warning on blur, but settings are still re-populated with the literal stored value on every options-page load rather than a masked "saved, ending in ****1234" representation. The current state addresses verifiability (you can always see what you typed) and obvious paste mistakes (wrong-prefix warning); it does not add masked-by-default re-display, and the format check is advisory-only by design — it can't catch every wrong key, only obviously mis-shaped ones.
-- Cancel during "Searching..."/"Ranking results..." is a soft cancel, not a true network abort (see the Cancel Button entry in Components) — the LLM and search provider modules don't accept an abort signal today. Threading real cancellation through `llm/*.js` and `search/brave.js` would close this gap but touches modules outside this design system's surface; the current behavior is correct from the user's perspective, just not literally instantaneous on the network side.
+- The format check on key fields (`getApiKeyFormatWarning`) remains advisory-only by design — it can't catch every wrong key, only obviously mis-shaped ones (wrong prefix, embedded whitespace).
+- Settings autosave still only writes to `chrome.storage.local` — there's no export/import or sync-across-devices story, since this is a single-device, single-profile tool today.
+
+### Resolved
+
+- ~~Secret fields re-populated with the literal stored value on every options-page load.~~ `renderSettingsToForm` now leaves key fields blank with a `Saved, ending in ****1234` placeholder (`maskedKeyPlaceholder`); a blank field on save falls back to the previously stored value (`gatherSettingsFromForm`'s `keyValueOrStored`) so leaving a field untouched no longer wipes the saved key. Trade-off: there is no way to re-view a saved key in full through the extension once it scrolls out of the input — only a freshly typed replacement is ever shown.
+- ~~Cancel during "Searching..."/"Ranking results..." was a soft cancel, not a true network abort.~~ The existing `AbortSignal` (already threaded through extraction) now also reaches the LLM and search `fetch()` calls (`anthropic.js`, `openai.js`, `gemini.js`, `openrouter.js`, `search/brave.js`), so Cancel now aborts the in-flight network request instead of just discarding its result.

@@ -36,27 +36,44 @@ function clampResultsCount(value, input) {
   return Math.min(max, Math.max(min, parsed));
 }
 
-export function gatherSettingsFromForm(form) {
+// A blank key field means "unchanged" once a key is already saved (see
+// renderSettingsToForm) - fall back to the previously stored value instead
+// of overwriting it with an empty string.
+function keyValueOrStored(input, storedValue) {
+  return input.value || storedValue || '';
+}
+
+export function gatherSettingsFromForm(form, storedApiKeys = {}, storedBraveSearchKey = '') {
   return {
     provider: form.provider.value || null,
     model: form.model.value || null,
     apiKeys: {
-      anthropic: form.anthropicKey.value,
-      openai: form.openaiKey.value,
-      gemini: form.geminiKey.value,
+      anthropic: keyValueOrStored(form.anthropicKey, storedApiKeys.anthropic),
+      openai: keyValueOrStored(form.openaiKey, storedApiKeys.openai),
+      gemini: keyValueOrStored(form.geminiKey, storedApiKeys.gemini),
     },
-    braveSearchKey: form.braveSearchKey.value,
+    braveSearchKey: keyValueOrStored(form.braveSearchKey, storedBraveSearchKey),
     resultsCount: clampResultsCount(form.resultsCount.value, form.resultsCount),
   };
+}
+
+// Saved keys are never re-displayed in full - the field stays blank with a
+// masked hint, and only a freshly typed value is treated as a real edit.
+function maskedKeyPlaceholder(value) {
+  return value ? `Saved, ending in ****${value.slice(-4)}` : '';
 }
 
 export function renderSettingsToForm(form, settings) {
   form.provider.value = settings.provider || '';
   form.model.value = settings.model || '';
-    form.anthropicKey.value = settings.apiKeys.anthropic;
-    form.openaiKey.value = settings.apiKeys.openai;
-    form.geminiKey.value = settings.apiKeys.gemini;
-  form.braveSearchKey.value = settings.braveSearchKey || '';
+  form.anthropicKey.value = '';
+  form.anthropicKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.anthropic);
+  form.openaiKey.value = '';
+  form.openaiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.openai);
+  form.geminiKey.value = '';
+  form.geminiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.gemini);
+  form.braveSearchKey.value = '';
+  form.braveSearchKey.placeholder = maskedKeyPlaceholder(settings.braveSearchKey);
   form.resultsCount.value = settings.resultsCount ?? 8;
 }
 
@@ -94,7 +111,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     syncKeyFieldVisibility(form);
 
     const current = await getSettings();
-    await saveSettings({ ...current, ...gatherSettingsFromForm(form) });
+    await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys, current.braveSearchKey) });
 
     if (autosaveStatusEl) {
       autosaveStatusEl.textContent = 'Saved';
