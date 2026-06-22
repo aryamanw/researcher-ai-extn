@@ -369,6 +369,13 @@ describe('getApiKeyFormatWarning', () => {
     expect(getApiKeyFormatWarning('braveSearchKey', 'pasted with spaces')).toMatch(/spaces/);
     expect(getApiKeyFormatWarning('braveSearchKey', 'a-clean-token')).toBeNull();
   });
+
+  it('flags a Brave Search key that looks like another provider\'s key, since that\'s a likely paste-into-wrong-field mistake', () => {
+    expect(getApiKeyFormatWarning('braveSearchKey', 'sk-ant-abc123')).toMatch(/provider/i);
+    expect(getApiKeyFormatWarning('braveSearchKey', 'sk-abc123')).toMatch(/provider/i);
+    expect(getApiKeyFormatWarning('braveSearchKey', 'AIzaSyAbc123')).toMatch(/provider/i);
+    expect(getApiKeyFormatWarning('braveSearchKey', 'a-clean-token')).toBeNull();
+  });
 });
 
 describe('initOptionsPage key validation', () => {
