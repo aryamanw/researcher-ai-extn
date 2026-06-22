@@ -24,7 +24,7 @@
       </select>
     </label>
 
-    <label>
+    <label class="field-secondary">
       Model (optional, uses provider default if blank)
       <input type="text" name="model" />
     </label>
@@ -65,22 +65,25 @@
       </div>
     </fieldset>
 
-    <label>
-      Search provider
-      <select name="searchProvider">
-        <option value="brave">Brave Search (requires API key)</option>
-        <option value="duckduckgo">DuckDuckGo (no key, completely free)</option>
-      </select>
-    </label>
+    <fieldset>
+      <legend>Search</legend>
+      <label>
+        Search provider
+        <select name="searchProvider">
+          <option value="brave">Brave Search (requires API key)</option>
+          <option value="duckduckgo">DuckDuckGo (no key, completely free)</option>
+        </select>
+      </label>
 
-    <label class="key-field" data-search-provider="brave">
-      Brave Search API key
-      <div class="key-input-row">
-        <input type="password" name="braveSearchKey" />
-        <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
-      </div>
-      <p class="key-warning" data-for="braveSearchKey" hidden></p>
-    </label>
+      <label class="key-field" data-search-provider="brave">
+        Brave Search API key
+        <div class="key-input-row">
+          <input type="password" name="braveSearchKey" />
+          <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
+        </div>
+        <p class="key-warning" data-for="braveSearchKey" hidden></p>
+      </label>
+    </fieldset>
 
     <label>
       Number of results
