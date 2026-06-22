@@ -424,4 +424,52 @@ describe('initOptionsPage key validation', () => {
     form.anthropicKey.dispatchEvent(new Event('blur'));
     expect(warningEl.hidden).toBe(true);
   });
+
+  it('also runs the key format check on a bare change event, not just blur, so autosave cannot bypass it', async () => {
+    getSettings.mockResolvedValue({
+      provider: 'anthropic',
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+
+    document.body.innerHTML = `
+      <form id="settings-form">
+        <select name="provider"><option value="anthropic" selected>Anthropic</option></select>
+        <input type="text" name="model" />
+        <label class="key-field" data-provider="anthropic">
+          <div class="key-input-row">
+            <input type="password" name="anthropicKey" />
+            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
+          </div>
+          <p class="key-warning" data-for="anthropicKey" hidden></p>
+        </label>
+        <input type="password" name="braveSearchKey" />
+        <input type="number" name="resultsCount" min="1" max="20" />
+      </form>
+      <button type="button" id="connect-openrouter">Connect</button>
+      <span id="openrouter-status"></span>
+    `;
+    const form = document.getElementById('settings-form');
+    form.provider = form.elements.namedItem('provider');
+    form.model = form.elements.namedItem('model');
+    form.anthropicKey = form.elements.namedItem('anthropicKey');
+    form.openaiKey = { value: '' };
+    form.geminiKey = { value: '' };
+    form.braveSearchKey = form.elements.namedItem('braveSearchKey');
+    form.resultsCount = form.elements.namedItem('resultsCount');
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+
+    await initOptionsPage(form, connectButton, statusEl);
+
+    const warningEl = form.querySelector('.key-warning[data-for="anthropicKey"]');
+    // Simulate a mouse click moving focus elsewhere without a blur firing on
+    // anthropicKey first - the autosave 'change' listener still runs.
+    form.anthropicKey.value = 'not-a-real-key';
+    form.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(warningEl.hidden).toBe(false));
+    expect(warningEl.textContent).toMatch(/sk-ant-/);
+  });
 });
