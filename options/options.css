@@ -53,10 +53,6 @@ label > select:focus-visible {
   font: var(--text-body);
 }
 
-.field-secondary > input {
-  font: var(--text-body);
-}
-
 .key-field.is-hidden {
   display: none;
 }
