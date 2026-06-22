@@ -9,8 +9,15 @@ const KEY_FORMAT_HINTS = {
   braveSearchKey: { pattern: /^\S+$/, message: "API keys shouldn't contain spaces or line breaks — check what you pasted." },
 };
 
+// Brave Search has no recognizable shape of its own, but an LLM provider key
+// pasted into the wrong field does - catch that specific mistake by name.
+const KNOWN_PROVIDER_KEY_PATTERN = /^(sk-ant-|sk-|AIza)/;
+
 export function getApiKeyFormatWarning(fieldName, value) {
   if (!value) return null;
+  if (fieldName === 'braveSearchKey' && KNOWN_PROVIDER_KEY_PATTERN.test(value)) {
+    return "That looks like an LLM provider's API key, not a Brave Search key — check you pasted the right one.";
+  }
   const hint = KEY_FORMAT_HINTS[fieldName];
   if (!hint || hint.pattern.test(value)) return null;
   return hint.message;
