@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getSettings, saveSettings, getHistory, addHistoryEntry } from '../src/lib/storage.js';
+import { getSettings, saveSettings, getHistory, addHistoryEntry, deleteHistoryEntry, clearHistory } from '../src/lib/storage.js';
 
 function mockChromeStorage(initial = {}) {
   const store = { ...initial };
@@ -76,5 +76,25 @@ describe('history', () => {
     expect(updated).toHaveLength(50);
     expect(updated[0].id).toBe('50');
     expect(updated.find((e) => e.id === '0')).toBeUndefined();
+  });
+
+  it('removes a single entry by id', async () => {
+    await addHistoryEntry({ id: '1', timestamp: 1, sourcePage: { title: 'A', url: 'a.com' }, results: [] });
+    await addHistoryEntry({ id: '2', timestamp: 2, sourcePage: { title: 'B', url: 'b.com' }, results: [] });
+
+    const updated = await deleteHistoryEntry('1');
+
+    expect(updated).toHaveLength(1);
+    expect(updated[0].id).toBe('2');
+    expect(await getHistory()).toEqual(updated);
+  });
+
+  it('clears all history entries', async () => {
+    await addHistoryEntry({ id: '1', timestamp: 1, sourcePage: { title: 'A', url: 'a.com' }, results: [] });
+
+    const updated = await clearHistory();
+
+    expect(updated).toEqual([]);
+    expect(await getHistory()).toEqual([]);
   });
 });

@@ -11,13 +11,34 @@ import {
   toFriendlyErrorMessage,
   countConfiguredProviders,
 } from './sidepanelPage.js';
-import { getHistory, getSettings } from '../src/lib/storage.js';
+import { getHistory, getSettings, deleteHistoryEntry, clearHistory } from '../src/lib/storage.js';
 
 const resultsContainer = document.getElementById('results');
 const historyContainer = document.getElementById('history-list');
 const historySection = document.querySelector('.history');
+const clearHistoryButton = document.getElementById('clear-history');
 
 let isRunning = false;
+
+async function refreshHistory() {
+  const history = await getHistory();
+  renderHistoryList(
+    historyContainer,
+    history,
+    async (id) => {
+      const entry = history.find((h) => h.id === id);
+      if (!entry) return;
+      const settings = await getSettings();
+      const showProvider = countConfiguredProviders(settings) > 1;
+      renderResults(resultsContainer, entry.results, { provider: entry.provider, showProvider });
+    },
+    historySection,
+    async (id) => {
+      await deleteHistoryEntry(id);
+      await refreshHistory();
+    }
+  );
+}
 
 async function run() {
   if (isRunning) return;
@@ -47,17 +68,15 @@ async function run() {
       }
     }
 
-    const history = await getHistory();
-    renderHistoryList(historyContainer, history, async (id) => {
-      const entry = history.find((h) => h.id === id);
-      if (!entry) return;
-      const settings = await getSettings();
-      const showProvider = countConfiguredProviders(settings) > 1;
-      renderResults(resultsContainer, entry.results, { provider: entry.provider, showProvider });
-    }, historySection);
+    await refreshHistory();
   } finally {
     isRunning = false;
   }
 }
+
+clearHistoryButton.addEventListener('click', async () => {
+  await clearHistory();
+  await refreshHistory();
+});
 
 run();

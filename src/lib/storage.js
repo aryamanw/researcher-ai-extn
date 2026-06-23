@@ -32,3 +32,15 @@ export async function addHistoryEntry(entry) {
   await chrome.storage.local.set({ [HISTORY_KEY]: updated });
   return updated;
 }
+
+export async function deleteHistoryEntry(id) {
+  const history = await getHistory();
+  const updated = history.filter((entry) => entry.id !== id);
+  await chrome.storage.local.set({ [HISTORY_KEY]: updated });
+  return updated;
+}
+
+export async function clearHistory() {
+  await chrome.storage.local.set({ [HISTORY_KEY]: [] });
+  return [];
+}
