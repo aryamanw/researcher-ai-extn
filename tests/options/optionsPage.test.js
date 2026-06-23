@@ -398,6 +398,29 @@ describe('initOptionsPage', () => {
     form.dispatchEvent(new Event('change'));
     await vi.waitFor(() => expect(hintEl.hidden).toBe(true));
   });
+
+  it('shows the capped hint live as the user types, before the field loses focus', async () => {
+    getSettings.mockResolvedValue({
+      provider: null,
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+    document.body.insertAdjacentHTML('beforeend', '<p class="field-hint" id="results-count-hint" hidden></p>');
+    const hintEl = document.getElementById('results-count-hint');
+
+    await initOptionsPage(form, connectButton, statusEl, null, hintEl);
+
+    form.resultsCount.value = '999';
+    form.resultsCount.dispatchEvent(new Event('input'));
+
+    expect(hintEl.hidden).toBe(false);
+    expect(hintEl.textContent).toMatch(/Capped to 1.20/);
+  });
 });
 
 describe('syncKeyFieldVisibility', () => {
