@@ -18,6 +18,14 @@ describe('sidepanel.html structure', () => {
     expect(heading.title).toMatch(/Ctrl\+Shift\+R/);
     expect(heading.title).toMatch(/Cmd\+Shift\+R|⌘⇧R/);
   });
+
+  it('shows a persistent, low-weight hint for the re-run shortcut, not just on hover', () => {
+    const doc = loadSidepanelHtml();
+    const hint = doc.querySelector('.shortcut-hint');
+    expect(hint).not.toBeNull();
+    expect(hint.textContent).toMatch(/Ctrl\+Shift\+R/);
+    expect(hint.querySelector('kbd')).not.toBeNull();
+  });
 });
 
 vi.mock('../../src/lib/storage.js', () => ({

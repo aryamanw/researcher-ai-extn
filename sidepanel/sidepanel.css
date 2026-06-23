@@ -8,6 +8,19 @@
   margin: 0;
 }
 
+.shortcut-hint {
+  font: var(--text-label);
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0 0;
+}
+
+.shortcut-hint kbd {
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+}
+
 #results {
   padding: var(--space-lg);
   display: flex;
