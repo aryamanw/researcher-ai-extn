@@ -66,6 +66,22 @@ function clampResultsCount(value, input) {
   return Math.min(max, Math.max(min, parsed));
 }
 
+function refreshResultsCountHint(form, hintEl) {
+  if (!hintEl || !form.resultsCount) return;
+  const raw = form.resultsCount.value;
+  if (raw === '') {
+    hintEl.hidden = true;
+    return;
+  }
+  const clamped = clampResultsCount(raw, form.resultsCount);
+  if (Number(raw) !== clamped) {
+    hintEl.textContent = `Capped to ${form.resultsCount.min}–${form.resultsCount.max}.`;
+    hintEl.hidden = false;
+  } else {
+    hintEl.hidden = true;
+  }
+}
+
 // A blank key field means "unchanged" once a key is already saved (see
 // renderSettingsToForm) - fall back to the previously stored value instead
 // of overwriting it with an empty string.
@@ -135,7 +151,7 @@ function wireKeyToggles(form) {
   });
 }
 
-export async function initOptionsPage(form, connectButton, statusEl, autosaveStatusEl) {
+export async function initOptionsPage(form, connectButton, statusEl, autosaveStatusEl, resultsCountHintEl) {
   const settings = await getSettings();
   renderSettingsToForm(form, settings);
   statusEl.textContent = settings.openrouterToken ? 'Connected to OpenRouter' : 'Not connected to OpenRouter';
@@ -147,6 +163,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
   form.addEventListener('change', async () => {
     syncKeyFieldVisibility(form);
     refreshKeyWarnings(form);
+    refreshResultsCountHint(form, resultsCountHintEl);
 
     const current = await getSettings();
     await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys, current.braveSearchKey) });
