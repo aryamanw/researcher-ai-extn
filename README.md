@@ -35,8 +35,7 @@ Research Companion isn't on the Chrome Web Store yet. Until it is, install it fr
 
 1. Right-click the toolbar icon → **Options** (or `chrome://extensions` → Research Companion → **Details** → **Extension options**).
 2. Connect an AI provider: click **Connect to OpenRouter** to sign in without pasting a key, or paste an Anthropic, OpenAI, or Gemini API key directly.
-3. Paste a [Brave Search](https://brave.com/search/api/) API key. This is what actually finds the related pages.
-4. Pick the provider you just connected from the **LLM provider** dropdown.
+3. Pick the provider you just connected from the **LLM provider** dropdown — that provider's own web search finds the related pages, no separate search key needed.
 
 Settings save automatically as you fill them in.
 
@@ -53,7 +52,7 @@ If a page has no readable content (a PDF, a paywall stub, an app shell), the pan
 
 Research Companion runs entirely in your browser. There's no backend, no account, and no telemetry.
 
-When you click the icon, a one-shot script reads the readable text of the active tab only. It never reads tabs you haven't clicked on, and never runs in the background. That text gets turned into search queries sent to Brave Search with your own API key. Your chosen AI provider (Anthropic, OpenAI, Gemini, or OpenRouter) then writes a short relevance note for each result, again using your own key or OpenRouter connection.
+When you click the icon, a one-shot script reads the readable text of the active tab only. It never reads tabs you haven't clicked on, and never runs in the background. That text is sent to your chosen AI provider (Anthropic, OpenAI, Gemini, or OpenRouter) along with an instruction to use its own web search to find related pages and write a short relevance note for each — using your own key or OpenRouter connection, with no separate search API key.
 
 Your provider settings, API keys, and the last 50 research sessions live only in your browser's local extension storage (`chrome.storage.local`). Nothing syncs, and nothing gets sent anywhere except the provider you configured.
 
