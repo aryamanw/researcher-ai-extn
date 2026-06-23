@@ -79,4 +79,8 @@ clearHistoryButton.addEventListener('click', async () => {
   await refreshHistory();
 });
 
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === 'RUN_SEARCH') run();
+});
+
 run();

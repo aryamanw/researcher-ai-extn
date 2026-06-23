@@ -33,3 +33,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return true;
 });
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'run-search') return;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return;
+  await chrome.sidePanel.open({ tabId: tab.id });
+  chrome.runtime.sendMessage({ type: 'RUN_SEARCH' });
+});

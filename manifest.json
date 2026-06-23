@@ -32,6 +32,15 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "run-search": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+R",
+        "mac": "Command+Shift+R"
+      },
+      "description": "Re-run search on the current page"
+    }
+  },
   "side_panel": {
     "default_path": "sidepanel/sidepanel.html"
   },
