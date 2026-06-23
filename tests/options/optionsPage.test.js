@@ -334,6 +334,32 @@ describe('initOptionsPage', () => {
 
     expect(statusEl.textContent).toBe('OpenRouter rejected the sign-in. Try connecting again.');
   });
+
+  it('shows a capped hint when the entered results count is clamped, and clears it once the value is valid', async () => {
+    getSettings.mockResolvedValue({
+      provider: null,
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+    document.body.insertAdjacentHTML('beforeend', '<p class="field-hint" id="results-count-hint" hidden></p>');
+    const hintEl = document.getElementById('results-count-hint');
+
+    await initOptionsPage(form, connectButton, statusEl, null, hintEl);
+
+    form.resultsCount.value = '999';
+    form.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(hintEl.hidden).toBe(false));
+    expect(hintEl.textContent).toMatch(/Capped to 1.20/);
+
+    form.resultsCount.value = '10';
+    form.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(hintEl.hidden).toBe(true));
+  });
 });
 
 describe('syncKeyFieldVisibility', () => {
