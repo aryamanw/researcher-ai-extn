@@ -74,8 +74,23 @@ async function run() {
   }
 }
 
+const CLEAR_CONFIRM_TIMEOUT_MS = 3000;
+let clearConfirmTimer;
+
 clearHistoryButton.addEventListener('click', async () => {
-  if (!confirm('Clear all history? This cannot be undone.')) return;
+  if (!clearHistoryButton.classList.contains('is-confirming')) {
+    clearHistoryButton.textContent = 'Confirm clear?';
+    clearHistoryButton.classList.add('is-confirming');
+    clearConfirmTimer = setTimeout(() => {
+      clearHistoryButton.textContent = 'Clear';
+      clearHistoryButton.classList.remove('is-confirming');
+    }, CLEAR_CONFIRM_TIMEOUT_MS);
+    return;
+  }
+
+  clearTimeout(clearConfirmTimer);
+  clearHistoryButton.textContent = 'Clear';
+  clearHistoryButton.classList.remove('is-confirming');
   await clearHistory();
   await refreshHistory();
 });
