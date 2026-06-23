@@ -12,19 +12,19 @@ function loadSidepanelHtml() {
 }
 
 describe('sidepanel.html structure', () => {
-  it('hints at the re-run keyboard shortcut on the panel header', () => {
-    const doc = loadSidepanelHtml();
-    const heading = doc.querySelector('.panel-header h1');
-    expect(heading.title).toMatch(/Ctrl\+Shift\+R/);
-    expect(heading.title).toMatch(/Cmd\+Shift\+R|⌘⇧R/);
-  });
-
-  it('shows a persistent, low-weight hint for the re-run shortcut, not just on hover', () => {
+  it('shows both the Windows/Linux and Mac key bindings in one persistent, low-weight hint', () => {
     const doc = loadSidepanelHtml();
     const hint = doc.querySelector('.shortcut-hint');
     expect(hint).not.toBeNull();
     expect(hint.textContent).toMatch(/Ctrl\+Shift\+R/);
+    expect(hint.textContent).toMatch(/Cmd\+Shift\+R/);
     expect(hint.querySelector('kbd')).not.toBeNull();
+  });
+
+  it('does not duplicate the shortcut hint as a redundant title attribute on the heading', () => {
+    const doc = loadSidepanelHtml();
+    const heading = doc.querySelector('.panel-header h1');
+    expect(heading.hasAttribute('title')).toBe(false);
   });
 });
 
