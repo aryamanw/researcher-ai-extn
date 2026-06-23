@@ -223,7 +223,7 @@ describe('initOptionsPage', () => {
 
     await initOptionsPage(form, connectButton, statusEl);
 
-    expect(statusEl.textContent).toBe('OpenRouter: connected');
+    expect(statusEl.textContent).toBe('Connected to OpenRouter');
   });
 
   it('shows not connected when there is no openrouter token', async () => {
@@ -240,7 +240,7 @@ describe('initOptionsPage', () => {
 
     await initOptionsPage(form, connectButton, statusEl);
 
-    expect(statusEl.textContent).toBe('OpenRouter: not connected');
+    expect(statusEl.textContent).toBe('Not connected to OpenRouter');
   });
 
   it('saves settings on form change', async () => {
@@ -312,6 +312,27 @@ describe('initOptionsPage', () => {
     toggle.click();
     expect(form.anthropicKey.type).toBe('password');
     expect(toggle.textContent).toBe('Show');
+  });
+
+  it('shows the friendly OpenRouter error directly in the status text on connect failure, with no technical wrapper', async () => {
+    getSettings.mockResolvedValue({
+      provider: null,
+      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+    await initOptionsPage(form, connectButton, statusEl);
+
+    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+      callback({ ok: false, error: 'OpenRouter key exchange failed: 401' });
+    });
+    connectButton.click();
+
+    expect(statusEl.textContent).toBe('OpenRouter rejected the sign-in. Try connecting again.');
   });
 });
 
