@@ -308,10 +308,31 @@ describe('initOptionsPage', () => {
     toggle.click();
     expect(form.anthropicKey.type).toBe('text');
     expect(toggle.textContent).toBe('Hide');
+    expect(form.anthropicKey.value).toBe('secret-value');
 
     toggle.click();
     expect(form.anthropicKey.type).toBe('password');
     expect(toggle.textContent).toBe('Show');
+  });
+
+  it('does not overwrite a freshly typed key value when Show is clicked', async () => {
+    getSettings.mockResolvedValue({
+      provider: 'anthropic',
+      apiKeys: { anthropic: 'stored-value', openai: '', gemini: '' },
+      openrouterToken: '',
+      braveSearchKey: '',
+      resultsCount: 8,
+    });
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+    await initOptionsPage(form, connectButton, statusEl);
+
+    form.anthropicKey.value = 'freshly-typed';
+    const toggle = form.querySelector('.key-toggle[data-target="anthropicKey"]');
+    toggle.click();
+
+    expect(form.anthropicKey.value).toBe('freshly-typed');
   });
 
   it('shows the friendly OpenRouter error directly in the status text on connect failure, with no technical wrapper', async () => {
