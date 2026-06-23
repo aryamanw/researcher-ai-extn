@@ -75,6 +75,7 @@ async function run() {
 }
 
 clearHistoryButton.addEventListener('click', async () => {
+  if (!confirm('Clear all history? This cannot be undone.')) return;
   await clearHistory();
   await refreshHistory();
 });
