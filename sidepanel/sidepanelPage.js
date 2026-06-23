@@ -140,7 +140,7 @@ export function renderResults(container, results, { provider, showProvider } = {
   });
 }
 
-export function renderHistoryList(container, entries, onSelect, sectionEl) {
+export function renderHistoryList(container, entries, onSelect, sectionEl, onDelete) {
   container.innerHTML = '';
   if (sectionEl) sectionEl.classList.toggle('is-hidden', entries.length === 0);
   if (entries.length === 0) {
@@ -152,13 +152,26 @@ export function renderHistoryList(container, entries, onSelect, sectionEl) {
   }
   entries.forEach((entry) => {
     const li = document.createElement('li');
+
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'history-select';
     button.dir = 'auto';
     button.textContent = entry.sourcePage.title;
     button.title = entry.sourcePage.title;
     button.addEventListener('click', () => onSelect(entry.id));
     li.appendChild(button);
+
+    if (onDelete) {
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'history-delete';
+      deleteButton.textContent = '×';
+      deleteButton.setAttribute('aria-label', `Remove "${entry.sourcePage.title}" from history`);
+      deleteButton.addEventListener('click', () => onDelete(entry.id));
+      li.appendChild(deleteButton);
+    }
+
     container.appendChild(li);
   });
 }

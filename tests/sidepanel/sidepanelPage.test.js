@@ -239,6 +239,41 @@ describe('render functions', () => {
   it('renderHistoryList does not throw when no section element is given', () => {
     expect(() => renderHistoryList(container, [], vi.fn())).not.toThrow();
   });
+
+  it('renderHistoryList includes a delete button per entry when onDelete is given, and omits it otherwise', () => {
+    renderHistoryList(
+      container,
+      [{ id: '1', sourcePage: { title: 'Past page', url: 'https://past.com' } }],
+      vi.fn(),
+      undefined,
+      vi.fn()
+    );
+    expect(container.querySelector('.history-delete')).not.toBeNull();
+
+    renderHistoryList(
+      container,
+      [{ id: '1', sourcePage: { title: 'Past page', url: 'https://past.com' } }],
+      vi.fn()
+    );
+    expect(container.querySelector('.history-delete')).toBeNull();
+  });
+
+  it('renderHistoryList wires the delete button to onDelete with the entry id, without triggering onSelect', () => {
+    const onSelect = vi.fn();
+    const onDelete = vi.fn();
+    renderHistoryList(
+      container,
+      [{ id: '1', sourcePage: { title: 'Past page', url: 'https://past.com' } }],
+      onSelect,
+      undefined,
+      onDelete
+    );
+
+    container.querySelector('.history-delete').click();
+
+    expect(onDelete).toHaveBeenCalledWith('1');
+    expect(onSelect).not.toHaveBeenCalled();
+  });
 });
 
 describe('requestExtraction', () => {
