@@ -1,8 +1,6 @@
 import { getSettings, addHistoryEntry } from '../src/lib/storage.js';
 import { runPipeline } from '../src/lib/pipeline.js';
-import { getCompletion } from '../src/lib/llm/index.js';
-import { search as braveSearch } from '../src/lib/search/brave.js';
-import { search as duckduckgoSearch } from '../src/lib/search/duckduckgo.js';
+import { getSearchResults } from '../src/lib/llm/index.js';
 
 export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
@@ -32,7 +30,7 @@ export function renderSetupPrompt(container) {
   container.removeAttribute('aria-busy');
   const settingsUrl = chrome.runtime.getURL('options/options.html');
   container.innerHTML =
-    `<p class="setup-prompt">Set up a provider and Brave Search key in <a href="${settingsUrl}" id="open-settings">Settings</a> to get started.</p>`;
+    `<p class="setup-prompt">Set up a provider in <a href="${settingsUrl}" id="open-settings">Settings</a> to get started.</p>`;
 }
 
 export function renderNoContent(container) {
@@ -237,9 +235,7 @@ export async function analyzeActiveTab({
   signal,
 }) {
   const settings = await getSettings();
-  const searchProvider = settings.searchProvider || 'brave';
-  const hasSearchConfig = searchProvider === 'duckduckgo' || !!settings.braveSearchKey;
-  if (!settings.provider || !hasSearchConfig) {
+  if (!settings.provider) {
     return { status: 'not-configured' };
   }
 
@@ -251,11 +247,10 @@ export async function analyzeActiveTab({
   }
 
   renderStatus('Searching...');
-  const llmClient = { complete: (prompt) => getCompletion(settings, prompt, signal) };
-  const searchClient =
-    searchProvider === 'duckduckgo'
-      ? { search: (query) => duckduckgoSearch({ query, signal }) }
-      : { search: (query) => braveSearch({ apiKey: settings.braveSearchKey, query, signal }) };
+  const llmClient = {
+    searchAndRank: ({ pageTitle, pageText, resultsCount }) =>
+      getSearchResults(settings, { pageTitle, pageText, resultsCount }, signal),
+  };
 
   renderStatus('Ranking results...');
   const results = await runPipeline({
@@ -263,7 +258,6 @@ export async function analyzeActiveTab({
     pageUrl: extraction.url,
     articleText: extraction.text,
     llmClient,
-    searchClient,
     resultsCount: settings.resultsCount,
   });
 
