@@ -137,13 +137,22 @@ export function syncKeyFieldVisibility(form) {
   });
 }
 
-function wireKeyToggles(form) {
+function wireKeyToggles(form, settings) {
+  const storedValues = {
+    anthropicKey: settings.apiKeys.anthropic,
+    openaiKey: settings.apiKeys.openai,
+    geminiKey: settings.apiKeys.gemini,
+    braveSearchKey: settings.braveSearchKey,
+  };
   form.querySelectorAll('.key-toggle').forEach((button) => {
     const input = form.elements.namedItem(button.dataset.target);
     if (!input) return;
     const label = button.dataset.label || input.name;
     button.addEventListener('click', () => {
       const willShow = input.type === 'password';
+      if (willShow && !input.value) {
+        input.value = storedValues[input.name] || '';
+      }
       input.type = willShow ? 'text' : 'password';
       button.textContent = willShow ? 'Hide' : 'Show';
       button.setAttribute('aria-label', `${willShow ? 'Hide' : 'Show'} ${label}`);
@@ -156,7 +165,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
   renderSettingsToForm(form, settings);
   statusEl.textContent = settings.openrouterToken ? 'Connected to OpenRouter' : 'Not connected to OpenRouter';
   syncKeyFieldVisibility(form);
-  wireKeyToggles(form);
+  wireKeyToggles(form, settings);
   wireKeyValidation(form);
 
   let hideTimer;
