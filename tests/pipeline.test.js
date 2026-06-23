@@ -1,87 +1,81 @@
 import { describe, it, expect, vi } from 'vitest';
 import { runPipeline } from '../src/lib/pipeline.js';
 
-function makeLlmClient(responses) {
-  let call = 0;
-  return { complete: vi.fn(async () => responses[call++]) };
-}
-
 describe('runPipeline', () => {
-  it('generates queries, searches, dedupes, and reranks', async () => {
-    const llmClient = makeLlmClient([
-      JSON.stringify({ topic: 'tidal energy', queries: ['tidal energy investment', 'marine turbine costs'] }),
-      JSON.stringify([
-        { title: 'Tidal Funding Surges', url: 'https://x.com/1', snippet: 's1', relevance: 'Same funding angle' },
-      ]),
-    ]);
-    const searchClient = {
-      search: vi
-        .fn()
-        .mockResolvedValueOnce([{ title: 'Tidal Funding Surges', url: 'https://x.com/1', snippet: 's1' }])
-        .mockResolvedValueOnce([{ title: 'Tidal Funding Surges', url: 'https://x.com/1', snippet: 's1' }]),
-    };
+  it('calls searchAndRank once and returns its results', async () => {
+    const results = [{ title: 'Tidal Funding Surges', url: 'https://x.com/1', snippet: 's1', relevance: 'r' }];
+    const llmClient = { searchAndRank: vi.fn().mockResolvedValue(results) };
 
-    const results = await runPipeline({
+    const outcome = await runPipeline({
       pageTitle: 'Why Tidal Energy Is Finally Getting Investment',
       pageUrl: 'https://example.com/article',
       articleText: 'a'.repeat(300),
       llmClient,
-      searchClient,
       resultsCount: 8,
     });
 
-    expect(results).toEqual([
-      { title: 'Tidal Funding Surges', url: 'https://x.com/1', snippet: 's1', relevance: 'Same funding angle' },
-    ]);
-    expect(searchClient.search).toHaveBeenCalledWith('tidal energy investment');
-    expect(searchClient.search).toHaveBeenCalledWith('marine turbine costs');
+    expect(outcome).toEqual(results);
+    expect(llmClient.searchAndRank).toHaveBeenCalledWith({
+      pageTitle: 'Why Tidal Energy Is Finally Getting Investment',
+      pageText: 'a'.repeat(300),
+      resultsCount: 8,
+    });
   });
 
-  it('excludes the source page URL from candidates', async () => {
-    const llmClient = makeLlmClient([
-      JSON.stringify({ topic: 't', queries: ['q1'] }),
-      JSON.stringify([{ title: 'Other', url: 'https://other.com', snippet: 's', relevance: 'r' }]),
-    ]);
-    const searchClient = {
-      search: vi.fn().mockResolvedValue([
-        { title: 'Self', url: 'https://example.com/article', snippet: 's' },
-        { title: 'Other', url: 'https://other.com', snippet: 's' },
+  it('excludes the source page URL from results', async () => {
+    const llmClient = {
+      searchAndRank: vi.fn().mockResolvedValue([
+        { title: 'Self', url: 'https://example.com/article', snippet: 's', relevance: 'r' },
+        { title: 'Other', url: 'https://other.com', snippet: 's', relevance: 'r' },
       ]),
     };
 
-    await runPipeline({
+    const outcome = await runPipeline({
       pageTitle: 't',
       pageUrl: 'https://example.com/article',
       articleText: 'a'.repeat(300),
       llmClient,
-      searchClient,
       resultsCount: 8,
     });
 
-    const rerankPromptArg = llmClient.complete.mock.calls[1][0];
-    expect(rerankPromptArg).not.toContain('https://example.com/article');
+    expect(outcome).toEqual([{ title: 'Other', url: 'https://other.com', snippet: 's', relevance: 'r' }]);
   });
 
-  it('returns an empty array when search finds no candidates', async () => {
-    const llmClient = makeLlmClient([JSON.stringify({ topic: 't', queries: ['q1'] })]);
-    const searchClient = { search: vi.fn().mockResolvedValue([]) };
+  it('dedupes results by url', async () => {
+    const llmClient = {
+      searchAndRank: vi.fn().mockResolvedValue([
+        { title: 'A', url: 'https://a.com', snippet: 's', relevance: 'r' },
+        { title: 'A again', url: 'https://a.com', snippet: 's', relevance: 'r' },
+      ]),
+    };
 
-    const results = await runPipeline({
+    const outcome = await runPipeline({
       pageTitle: 't',
       pageUrl: 'https://example.com/article',
       articleText: 'a'.repeat(300),
       llmClient,
-      searchClient,
       resultsCount: 8,
     });
 
-    expect(results).toEqual([]);
-    expect(llmClient.complete).toHaveBeenCalledTimes(1);
+    expect(outcome).toEqual([{ title: 'A', url: 'https://a.com', snippet: 's', relevance: 'r' }]);
   });
 
-  it('throws when the LLM does not return valid queries JSON', async () => {
-    const llmClient = makeLlmClient(['not json']);
-    const searchClient = { search: vi.fn() };
+  it('returns an empty array when searchAndRank finds nothing', async () => {
+    const llmClient = { searchAndRank: vi.fn().mockResolvedValue([]) };
+
+    const outcome = await runPipeline({
+      pageTitle: 't',
+      pageUrl: 'https://example.com/article',
+      articleText: 'a'.repeat(300),
+      llmClient,
+      resultsCount: 8,
+    });
+
+    expect(outcome).toEqual([]);
+  });
+
+  it('throws when searchAndRank does not return an array', async () => {
+    const llmClient = { searchAndRank: vi.fn().mockResolvedValue(null) };
 
     await expect(
       runPipeline({
@@ -89,9 +83,8 @@ describe('runPipeline', () => {
         pageUrl: 'https://example.com/article',
         articleText: 'a'.repeat(300),
         llmClient,
-        searchClient,
         resultsCount: 8,
       })
-    ).rejects.toThrow('Could not parse JSON from topic/query generation response');
+    ).rejects.toThrow('LLM did not return a ranked results array');
   });
 });
