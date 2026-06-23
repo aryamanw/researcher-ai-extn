@@ -37,17 +37,6 @@ describe('options.html structure', () => {
     expect(providerLabel.classList.contains('field-secondary')).toBe(false);
   });
 
-  it('groups Search Provider and the Brave Search API key into their own fieldset', () => {
-    const doc = loadOptionsHtml();
-    const searchProviderSelect = doc.querySelector('select[name="searchProvider"]');
-    const braveKeyInput = doc.querySelector('input[name="braveSearchKey"]');
-    const searchFieldset = searchProviderSelect.closest('fieldset');
-
-    expect(searchFieldset).not.toBeNull();
-    expect(searchFieldset.querySelector('legend').textContent).toBe('Search');
-    expect(searchFieldset.contains(braveKeyInput)).toBe(true);
-  });
-
   it('shows model format examples under the Model field', () => {
     const doc = loadOptionsHtml();
     const modelInput = doc.querySelector('input[name="model"]');
@@ -89,13 +78,6 @@ function buildForm() {
         <input type="password" name="geminiKey" />
         <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
       </label>
-      <select name="searchProvider">
-        <option value="brave">Brave</option>
-        <option value="duckduckgo">DuckDuckGo</option>
-      </select>
-      <label class="key-field" data-search-provider="brave">
-        <input type="password" name="braveSearchKey" />
-      </label>
       <input type="number" name="resultsCount" min="1" max="20" />
     </form>
     <button type="button" id="connect-openrouter">Connect</button>
@@ -108,8 +90,6 @@ function buildForm() {
   form.anthropicKey = form.elements.namedItem('anthropicKey');
   form.openaiKey = form.elements.namedItem('openaiKey');
   form.geminiKey = form.elements.namedItem('geminiKey');
-  form.searchProvider = form.elements.namedItem('searchProvider');
-  form.braveSearchKey = form.elements.namedItem('braveSearchKey');
   form.resultsCount = form.elements.namedItem('resultsCount');
   return form;
 }
@@ -120,7 +100,6 @@ describe('gatherSettingsFromForm', () => {
     form.provider.value = 'anthropic';
     form.model.value = 'claude-3-5-sonnet-20241022';
     form.anthropicKey.value = 'a-key';
-    form.braveSearchKey.value = 'b-key';
     form.resultsCount.value = '10';
 
     const settings = gatherSettingsFromForm(form);
@@ -129,8 +108,6 @@ describe('gatherSettingsFromForm', () => {
       provider: 'anthropic',
       model: 'claude-3-5-sonnet-20241022',
       apiKeys: { anthropic: 'a-key', openai: '', gemini: '' },
-      searchProvider: 'brave',
-      braveSearchKey: 'b-key',
       resultsCount: 10,
     });
   });
@@ -158,7 +135,6 @@ describe('renderSettingsToForm', () => {
       provider: 'anthropic',
       model: 'm1',
       apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
-      braveSearchKey: 'b-key',
       resultsCount: 5,
     });
 
@@ -173,14 +149,11 @@ describe('renderSettingsToForm', () => {
       provider: 'anthropic',
       model: 'm1',
       apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
-      braveSearchKey: 'b-key',
       resultsCount: 5,
     });
 
     expect(form.anthropicKey.value).toBe('');
     expect(form.anthropicKey.placeholder).toBe('Saved, ending in ****c123');
-    expect(form.braveSearchKey.value).toBe('');
-    expect(form.braveSearchKey.placeholder).toBe('Saved, ending in ****-key');
   });
 
   it('leaves the placeholder blank when no key is saved for a field', () => {
@@ -189,7 +162,6 @@ describe('renderSettingsToForm', () => {
       provider: null,
       model: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
-      braveSearchKey: '',
       resultsCount: 8,
     });
 
@@ -204,10 +176,9 @@ describe('gatherSettingsFromForm - stored key fallback', () => {
     form.resultsCount.value = '8';
     // anthropicKey field left blank - simulates the masked, untouched state.
 
-    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' }, 'old-brave-key');
+    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' });
 
     expect(settings.apiKeys.anthropic).toBe('sk-ant-old');
-    expect(settings.braveSearchKey).toBe('old-brave-key');
   });
 
   it('uses the freshly typed value when the field is edited, ignoring the stored one', () => {
@@ -231,7 +202,6 @@ describe('initOptionsPage', () => {
       model: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: 'or-token',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -248,7 +218,6 @@ describe('initOptionsPage', () => {
       provider: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -265,7 +234,6 @@ describe('initOptionsPage', () => {
       provider: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -273,11 +241,11 @@ describe('initOptionsPage', () => {
     const statusEl = document.getElementById('openrouter-status');
     await initOptionsPage(form, connectButton, statusEl);
 
-    form.braveSearchKey.value = 'new-key';
+    form.model.value = 'new-model';
     form.dispatchEvent(new Event('change'));
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
 
-    expect(saveSettings.mock.calls.at(-1)[0].braveSearchKey).toBe('new-key');
+    expect(saveSettings.mock.calls.at(-1)[0].model).toBe('new-model');
   });
 
   it('shows only the API key field matching the selected provider', async () => {
@@ -285,7 +253,6 @@ describe('initOptionsPage', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -310,7 +277,6 @@ describe('initOptionsPage', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: 'secret-value', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -337,7 +303,6 @@ describe('initOptionsPage', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: 'stored-value', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -357,7 +322,6 @@ describe('initOptionsPage', () => {
       provider: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -378,7 +342,6 @@ describe('initOptionsPage', () => {
       provider: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -404,7 +367,6 @@ describe('initOptionsPage', () => {
       provider: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
     const form = buildForm();
@@ -434,19 +396,6 @@ describe('syncKeyFieldVisibility', () => {
       expect(field.classList.contains('is-hidden')).toBe(true);
     });
   });
-
-  it('shows the brave key field only when brave is the selected search provider', () => {
-    const form = buildForm();
-    const braveField = form.querySelector('[data-search-provider="brave"]');
-
-    form.searchProvider.value = 'brave';
-    syncKeyFieldVisibility(form);
-    expect(braveField.classList.contains('is-hidden')).toBe(false);
-
-    form.searchProvider.value = 'duckduckgo';
-    syncKeyFieldVisibility(form);
-    expect(braveField.classList.contains('is-hidden')).toBe(true);
-  });
 });
 
 describe('getApiKeyFormatWarning', () => {
@@ -472,18 +421,6 @@ describe('getApiKeyFormatWarning', () => {
     expect(getApiKeyFormatWarning('geminiKey', 'wrong-shape')).toMatch(/AIza/);
     expect(getApiKeyFormatWarning('geminiKey', 'AIzaSyAbc123')).toBeNull();
   });
-
-  it('flags a Brave Search key containing whitespace, since it has no recognizable prefix to check', () => {
-    expect(getApiKeyFormatWarning('braveSearchKey', 'pasted with spaces')).toMatch(/spaces/);
-    expect(getApiKeyFormatWarning('braveSearchKey', 'a-clean-token')).toBeNull();
-  });
-
-  it('flags a Brave Search key that looks like another provider\'s key, since that\'s a likely paste-into-wrong-field mistake', () => {
-    expect(getApiKeyFormatWarning('braveSearchKey', 'sk-ant-abc123')).toMatch(/provider/i);
-    expect(getApiKeyFormatWarning('braveSearchKey', 'sk-abc123')).toMatch(/provider/i);
-    expect(getApiKeyFormatWarning('braveSearchKey', 'AIzaSyAbc123')).toMatch(/provider/i);
-    expect(getApiKeyFormatWarning('braveSearchKey', 'a-clean-token')).toBeNull();
-  });
 });
 
 describe('initOptionsPage key validation', () => {
@@ -496,7 +433,6 @@ describe('initOptionsPage key validation', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
 
@@ -511,7 +447,6 @@ describe('initOptionsPage key validation', () => {
           </div>
           <p class="key-warning" data-for="anthropicKey" hidden></p>
         </label>
-        <input type="password" name="braveSearchKey" />
         <input type="number" name="resultsCount" min="1" max="20" />
       </form>
       <button type="button" id="connect-openrouter">Connect</button>
@@ -523,7 +458,6 @@ describe('initOptionsPage key validation', () => {
     form.anthropicKey = form.elements.namedItem('anthropicKey');
     form.openaiKey = { value: '' };
     form.geminiKey = { value: '' };
-    form.braveSearchKey = form.elements.namedItem('braveSearchKey');
     form.resultsCount = form.elements.namedItem('resultsCount');
     const connectButton = document.getElementById('connect-openrouter');
     const statusEl = document.getElementById('openrouter-status');
@@ -546,7 +480,6 @@ describe('initOptionsPage key validation', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      braveSearchKey: '',
       resultsCount: 8,
     });
 
@@ -561,7 +494,6 @@ describe('initOptionsPage key validation', () => {
           </div>
           <p class="key-warning" data-for="anthropicKey" hidden></p>
         </label>
-        <input type="password" name="braveSearchKey" />
         <input type="number" name="resultsCount" min="1" max="20" />
       </form>
       <button type="button" id="connect-openrouter">Connect</button>
@@ -573,7 +505,6 @@ describe('initOptionsPage key validation', () => {
     form.anthropicKey = form.elements.namedItem('anthropicKey');
     form.openaiKey = { value: '' };
     form.geminiKey = { value: '' };
-    form.braveSearchKey = form.elements.namedItem('braveSearchKey');
     form.resultsCount = form.elements.namedItem('resultsCount');
     const connectButton = document.getElementById('connect-openrouter');
     const statusEl = document.getElementById('openrouter-status');

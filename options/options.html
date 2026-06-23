@@ -66,26 +66,6 @@
       </div>
     </fieldset>
 
-    <fieldset>
-      <legend>Search</legend>
-      <label>
-        Search provider
-        <select name="searchProvider">
-          <option value="brave">Brave Search (requires API key)</option>
-          <option value="duckduckgo">DuckDuckGo (no key, completely free)</option>
-        </select>
-      </label>
-
-      <label class="key-field" data-search-provider="brave">
-        Brave Search API key
-        <div class="key-input-row">
-          <input type="password" name="braveSearchKey" aria-describedby="braveSearchKey-warning" />
-          <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
-        </div>
-        <p class="key-warning" id="braveSearchKey-warning" data-for="braveSearchKey" aria-live="polite" hidden></p>
-      </label>
-    </fieldset>
-
     <label>
       Number of results
       <input type="number" name="resultsCount" min="1" max="20" aria-describedby="results-count-hint" />
