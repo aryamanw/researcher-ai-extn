@@ -167,6 +167,9 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
   syncKeyFieldVisibility(form);
   wireKeyToggles(form, settings);
   wireKeyValidation(form);
+  if (form.resultsCount) {
+    form.resultsCount.addEventListener('input', () => refreshResultsCountHint(form, resultsCountHintEl));
+  }
 
   let hideTimer;
   form.addEventListener('change', async () => {
