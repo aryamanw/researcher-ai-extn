@@ -1,3 +1,5 @@
+import { buildSearchPrompt, parseSearchResults, filterUncitedResults } from './searchResponse.js';
+
 export async function complete({ apiKey, model, prompt, signal }) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -20,4 +22,38 @@ export async function complete({ apiKey, model, prompt, signal }) {
 
   const data = await response.json();
   return data.content?.[0]?.text || '';
+}
+
+export async function searchAndRank({ apiKey, model, pageTitle, pageText, resultsCount, signal }) {
+  const prompt = buildSearchPrompt({ pageTitle, pageText, resultsCount });
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: model || 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: Math.max(resultsCount, 3) }],
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const blocks = data.content || [];
+  const text = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('');
+  const citedUrls = blocks
+    .filter((b) => b.type === 'web_search_tool_result')
+    .flatMap((b) => (Array.isArray(b.content) ? b.content : []))
+    .map((r) => r.url)
+    .filter(Boolean);
+
+  return filterUncitedResults(parseSearchResults(text), citedUrls);
 }
