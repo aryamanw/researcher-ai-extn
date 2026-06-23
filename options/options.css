@@ -98,7 +98,7 @@ label > select:focus-visible {
   border-radius: var(--radius-sm);
   padding: 0 var(--space-md);
   cursor: pointer;
-  transition: color 150ms var(--ease-out-quart), border-color 150ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
+  transition: color 150ms var(--ease-out-quart), border-color 150ms var(--ease-out-quart), transform 150ms var(--ease-out-quart);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -144,7 +144,7 @@ legend {
   border-radius: var(--radius-sm);
   padding: 0 var(--space-lg);
   cursor: pointer;
-  transition: opacity 150ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
+  transition: opacity 150ms var(--ease-out-quart), transform 150ms var(--ease-out-quart);
 }
 
 @media (hover: hover) and (pointer: fine) {
