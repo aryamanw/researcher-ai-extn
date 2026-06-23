@@ -1,4 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+function loadSidepanelHtml() {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const htmlPath = resolve(currentDir, '../../sidepanel/sidepanel.html');
+  const html = readFileSync(htmlPath, 'utf8');
+  return new JSDOM(html).window.document;
+}
+
+describe('sidepanel.html structure', () => {
+  it('hints at the re-run keyboard shortcut on the panel header', () => {
+    const doc = loadSidepanelHtml();
+    const heading = doc.querySelector('.panel-header h1');
+    expect(heading.title).toMatch(/Ctrl\+Shift\+R/);
+    expect(heading.title).toMatch(/Cmd\+Shift\+R|⌘⇧R/);
+  });
+});
 
 vi.mock('../../src/lib/storage.js', () => ({
   getSettings: vi.fn(),
