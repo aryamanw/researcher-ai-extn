@@ -27,8 +27,6 @@ describe('getSettings', () => {
       model: null,
       apiKeys: { anthropic: '', openai: '', gemini: '' },
       openrouterToken: '',
-      searchProvider: 'brave',
-      braveSearchKey: '',
       resultsCount: 8,
     });
   });
@@ -38,7 +36,6 @@ describe('getSettings', () => {
     const settings = await getSettings();
     expect(settings.provider).toBe('anthropic');
     expect(settings.resultsCount).toBe(5);
-    expect(settings.braveSearchKey).toBe('');
   });
 });
 
