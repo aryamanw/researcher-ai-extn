@@ -12,7 +12,7 @@ import { connectOpenRouter } from '../src/lib/oauth/openrouterOAuth.js';
 import { getSettings, saveSettings } from '../src/lib/storage.js';
 
 function setupChromeMock() {
-  const listeners = { onClicked: [], onMessage: [] };
+  const listeners = { onClicked: [], onMessage: [], commands: [] };
   global.chrome = {
     action: {
       onClicked: { addListener: (fn) => listeners.onClicked.push(fn) },
@@ -20,10 +20,17 @@ function setupChromeMock() {
     sidePanel: { open: vi.fn() },
     runtime: {
       onMessage: { addListener: (fn) => listeners.onMessage.push(fn) },
+      sendMessage: vi.fn(),
       lastError: undefined,
     },
     identity: {
       launchWebAuthFlow: vi.fn(),
+    },
+    commands: {
+      onCommand: { addListener: (fn) => listeners.commands.push(fn) },
+    },
+    tabs: {
+      query: vi.fn().mockResolvedValue([{ id: 7 }]),
     },
   };
   return listeners;
@@ -76,5 +83,30 @@ describe('background.js', () => {
     const keepAlive = onMessage({ type: 'SOMETHING_ELSE' }, {}, sendResponse);
     expect(keepAlive).toBe(false);
     expect(sendResponse).not.toHaveBeenCalled();
+  });
+
+  it('opens the side panel and asks the side panel to re-run on the run-search command', async () => {
+    const onCommand = listeners.commands[0];
+    await onCommand('run-search');
+
+    expect(chrome.tabs.query).toHaveBeenCalledWith({ active: true, currentWindow: true });
+    expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 7 });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'RUN_SEARCH' });
+  });
+
+  it('ignores commands other than run-search', async () => {
+    const onCommand = listeners.commands[0];
+    await onCommand('something-else');
+
+    expect(chrome.sidePanel.open).not.toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('does nothing if there is no active tab', async () => {
+    chrome.tabs.query.mockResolvedValue([]);
+    const onCommand = listeners.commands[0];
+    await onCommand('run-search');
+
+    expect(chrome.sidePanel.open).not.toHaveBeenCalled();
   });
 });
