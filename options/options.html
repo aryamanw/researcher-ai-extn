@@ -36,26 +36,26 @@
       <label class="key-field" data-provider="anthropic">
         Anthropic API key
         <div class="key-input-row">
-          <input type="password" name="anthropicKey" />
+          <input type="password" name="anthropicKey" aria-describedby="anthropicKey-warning" />
           <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
         </div>
-        <p class="key-warning" data-for="anthropicKey" hidden></p>
+        <p class="key-warning" id="anthropicKey-warning" data-for="anthropicKey" aria-live="polite" hidden></p>
       </label>
       <label class="key-field" data-provider="openai">
         OpenAI API key
         <div class="key-input-row">
-          <input type="password" name="openaiKey" />
+          <input type="password" name="openaiKey" aria-describedby="openaiKey-warning" />
           <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key" aria-label="Show OpenAI API key">Show</button>
         </div>
-        <p class="key-warning" data-for="openaiKey" hidden></p>
+        <p class="key-warning" id="openaiKey-warning" data-for="openaiKey" aria-live="polite" hidden></p>
       </label>
       <label class="key-field" data-provider="gemini">
         Gemini API key
         <div class="key-input-row">
-          <input type="password" name="geminiKey" />
+          <input type="password" name="geminiKey" aria-describedby="geminiKey-warning" />
           <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
         </div>
-        <p class="key-warning" data-for="geminiKey" hidden></p>
+        <p class="key-warning" id="geminiKey-warning" data-for="geminiKey" aria-live="polite" hidden></p>
       </label>
       <div class="key-field" data-provider="openrouter">
         <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
@@ -79,20 +79,20 @@
       <label class="key-field" data-search-provider="brave">
         Brave Search API key
         <div class="key-input-row">
-          <input type="password" name="braveSearchKey" />
+          <input type="password" name="braveSearchKey" aria-describedby="braveSearchKey-warning" />
           <button type="button" class="key-toggle" data-target="braveSearchKey" data-label="Brave Search API key" aria-label="Show Brave Search API key">Show</button>
         </div>
-        <p class="key-warning" data-for="braveSearchKey" hidden></p>
+        <p class="key-warning" id="braveSearchKey-warning" data-for="braveSearchKey" aria-live="polite" hidden></p>
       </label>
     </fieldset>
 
     <label>
       Number of results
-      <input type="number" name="resultsCount" min="1" max="20" />
+      <input type="number" name="resultsCount" min="1" max="20" aria-describedby="results-count-hint" />
     </label>
-    <p class="field-hint" id="results-count-hint" hidden></p>
+    <p class="field-hint" id="results-count-hint" aria-live="polite" hidden></p>
 
-    <p class="autosave-status" id="autosave-status"></p>
+    <p class="autosave-status" id="autosave-status" role="status" aria-live="polite"></p>
   </form>
 
   <script type="module" src="./main.js"></script>
