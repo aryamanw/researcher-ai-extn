@@ -138,7 +138,7 @@ function wireKeyToggles(form) {
 export async function initOptionsPage(form, connectButton, statusEl, autosaveStatusEl) {
   const settings = await getSettings();
   renderSettingsToForm(form, settings);
-  statusEl.textContent = settings.openrouterToken ? 'OpenRouter: connected' : 'OpenRouter: not connected';
+  statusEl.textContent = settings.openrouterToken ? 'Connected to OpenRouter' : 'Not connected to OpenRouter';
   syncKeyFieldVisibility(form);
   wireKeyToggles(form);
   wireKeyValidation(form);
@@ -163,8 +163,8 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     connectButton.disabled = true;
     chrome.runtime.sendMessage({ type: 'CONNECT_OPENROUTER' }, (response) => {
       statusEl.textContent = response?.ok
-        ? 'OpenRouter: connected'
-        : `OpenRouter: connection failed (${toFriendlyOpenRouterError(response?.error)})`;
+        ? 'Connected to OpenRouter'
+        : toFriendlyOpenRouterError(response?.error);
       connectButton.disabled = false;
     });
   });
