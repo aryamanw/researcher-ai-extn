@@ -4,20 +4,10 @@ const KEY_FORMAT_HINTS = {
   anthropicKey: { pattern: /^sk-ant-/, message: "Anthropic keys start with \"sk-ant-\" — this doesn't look right." },
   openaiKey: { pattern: /^sk-/, message: "OpenAI keys start with \"sk-\" — this doesn't look right." },
   geminiKey: { pattern: /^AIza/, message: "Gemini keys start with \"AIza\" — this doesn't look right." },
-  // Brave Search tokens have no documented, recognizable prefix, so this only
-  // catches paste mistakes (whitespace, surrounding quotes) rather than shape.
-  braveSearchKey: { pattern: /^\S+$/, message: "API keys shouldn't contain spaces or line breaks — check what you pasted." },
 };
-
-// Brave Search has no recognizable shape of its own, but an LLM provider key
-// pasted into the wrong field does - catch that specific mistake by name.
-const KNOWN_PROVIDER_KEY_PATTERN = /^(sk-ant-|sk-|AIza)/;
 
 export function getApiKeyFormatWarning(fieldName, value) {
   if (!value) return null;
-  if (fieldName === 'braveSearchKey' && KNOWN_PROVIDER_KEY_PATTERN.test(value)) {
-    return "That looks like an LLM provider's API key, not a Brave Search key — check you pasted the right one.";
-  }
   const hint = KEY_FORMAT_HINTS[fieldName];
   if (!hint || hint.pattern.test(value)) return null;
   return hint.message;
@@ -89,7 +79,7 @@ function keyValueOrStored(input, storedValue) {
   return input.value || storedValue || '';
 }
 
-export function gatherSettingsFromForm(form, storedApiKeys = {}, storedBraveSearchKey = '') {
+export function gatherSettingsFromForm(form, storedApiKeys = {}) {
   return {
     provider: form.provider.value || null,
     model: form.model.value || null,
@@ -98,8 +88,6 @@ export function gatherSettingsFromForm(form, storedApiKeys = {}, storedBraveSear
       openai: keyValueOrStored(form.openaiKey, storedApiKeys.openai),
       gemini: keyValueOrStored(form.geminiKey, storedApiKeys.gemini),
     },
-    searchProvider: form.searchProvider?.value || 'brave',
-    braveSearchKey: keyValueOrStored(form.braveSearchKey, storedBraveSearchKey),
     resultsCount: clampResultsCount(form.resultsCount.value, form.resultsCount),
   };
 }
@@ -119,20 +107,12 @@ export function renderSettingsToForm(form, settings) {
   form.openaiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.openai);
   form.geminiKey.value = '';
   form.geminiKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.gemini);
-  if (form.searchProvider) form.searchProvider.value = settings.searchProvider || 'brave';
-  form.braveSearchKey.value = '';
-  form.braveSearchKey.placeholder = maskedKeyPlaceholder(settings.braveSearchKey);
   form.resultsCount.value = settings.resultsCount ?? 8;
 }
 
 export function syncKeyFieldVisibility(form) {
   const selectedProvider = form.provider?.value;
-  const selectedSearchProvider = form.searchProvider?.value || 'brave';
   form.querySelectorAll('.key-field').forEach((field) => {
-    if (field.dataset.searchProvider) {
-      field.classList.toggle('is-hidden', field.dataset.searchProvider !== selectedSearchProvider);
-      return;
-    }
     field.classList.toggle('is-hidden', field.dataset.provider !== selectedProvider);
   });
 }
@@ -142,7 +122,6 @@ function wireKeyToggles(form, settings) {
     anthropicKey: settings.apiKeys.anthropic,
     openaiKey: settings.apiKeys.openai,
     geminiKey: settings.apiKeys.gemini,
-    braveSearchKey: settings.braveSearchKey,
   };
   form.querySelectorAll('.key-toggle').forEach((button) => {
     const input = form.elements.namedItem(button.dataset.target);
@@ -178,7 +157,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     refreshResultsCountHint(form, resultsCountHintEl);
 
     const current = await getSettings();
-    await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys, current.braveSearchKey) });
+    await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys) });
 
     if (autosaveStatusEl) {
       autosaveStatusEl.textContent = 'Saved';
