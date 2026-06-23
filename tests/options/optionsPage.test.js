@@ -47,6 +47,23 @@ describe('options.html structure', () => {
     expect(searchFieldset.querySelector('legend').textContent).toBe('Search');
     expect(searchFieldset.contains(braveKeyInput)).toBe(true);
   });
+
+  it('shows model format examples under the Model field', () => {
+    const doc = loadOptionsHtml();
+    const modelInput = doc.querySelector('input[name="model"]');
+    const modelHint = modelInput.closest('label').nextElementSibling;
+    expect(modelHint).not.toBeNull();
+    expect(modelHint.className).toBe('field-hint');
+    expect(modelHint.textContent).toMatch(/claude-3-5-sonnet/);
+  });
+
+  it('links to the privacy policy from the credentials fieldset hint', () => {
+    const doc = loadOptionsHtml();
+    const privacyLink = doc.querySelector('a[href="https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html"]');
+    expect(privacyLink).not.toBeNull();
+    expect(privacyLink.target).toBe('_blank');
+    expect(privacyLink.rel).toBe('noopener');
+  });
 });
 
 function buildForm() {
