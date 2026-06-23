@@ -34,9 +34,7 @@ vi.mock('../../src/lib/storage.js', () => ({
   addHistoryEntry: vi.fn(),
 }));
 vi.mock('../../src/lib/pipeline.js', () => ({ runPipeline: vi.fn() }));
-vi.mock('../../src/lib/llm/index.js', () => ({ getCompletion: vi.fn() }));
-vi.mock('../../src/lib/search/brave.js', () => ({ search: vi.fn() }));
-vi.mock('../../src/lib/search/duckduckgo.js', () => ({ search: vi.fn() }));
+vi.mock('../../src/lib/llm/index.js', () => ({ getCompletion: vi.fn(), getSearchResults: vi.fn() }));
 
 import { getSettings, addHistoryEntry } from '../../src/lib/storage.js';
 import { runPipeline } from '../../src/lib/pipeline.js';
@@ -71,7 +69,7 @@ describe('toFriendlyErrorMessage', () => {
   });
 
   it('maps a 429 provider error to a rate-limit message', () => {
-    expect(toFriendlyErrorMessage(new Error('Brave Search API error: 429')))
+    expect(toFriendlyErrorMessage(new Error('Anthropic API error: 429')))
       .toBe('Rate limited by the provider. Try again in a moment.');
   });
 
@@ -434,8 +432,8 @@ describe('analyzeActiveTab', () => {
     };
   });
 
-  it('returns not-configured when no provider/search key is set', async () => {
-    getSettings.mockResolvedValue({ provider: null, braveSearchKey: '' });
+  it('returns not-configured when no provider is set', async () => {
+    getSettings.mockResolvedValue({ provider: null });
 
     const outcome = await analyzeActiveTab({
       tabId: 1,
@@ -446,44 +444,10 @@ describe('analyzeActiveTab', () => {
     });
 
     expect(outcome).toEqual({ status: 'not-configured' });
-  });
-
-  it('returns not-configured for brave when an llm provider is set but no brave key is set', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', searchProvider: 'brave', braveSearchKey: '' });
-
-    const outcome = await analyzeActiveTab({
-      tabId: 1,
-      renderStatus: vi.fn(),
-      renderResultsFn: vi.fn(),
-      renderNoContentFn: vi.fn(),
-      renderNoResultsFn: vi.fn(),
-    });
-
-    expect(outcome).toEqual({ status: 'not-configured' });
-  });
-
-  it('does not require a brave key when duckduckgo is the selected search provider', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', searchProvider: 'duckduckgo', braveSearchKey: '', resultsCount: 8 });
-    chrome.scripting.executeScript.mockImplementation(async () => []);
-    chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
-      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
-    });
-    const results = [{ title: 'R', url: 'https://r.com', snippet: 's', relevance: 'rel' }];
-    runPipeline.mockResolvedValue(results);
-
-    const outcome = await analyzeActiveTab({
-      tabId: 1,
-      renderStatus: vi.fn(),
-      renderResultsFn: vi.fn(),
-      renderNoContentFn: vi.fn(),
-      renderNoResultsFn: vi.fn(),
-    });
-
-    expect(outcome).toEqual({ status: 'success', results });
   });
 
   it('renders no-content when extraction confidence is low', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k' });
+    getSettings.mockResolvedValue({ provider: 'anthropic' });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
       fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: '', confidence: 'low' } }, { tab: { id: 1 } });
@@ -503,7 +467,7 @@ describe('analyzeActiveTab', () => {
   });
 
   it('runs the pipeline, renders results, and saves history on success', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k', resultsCount: 8 });
+    getSettings.mockResolvedValue({ provider: 'anthropic', resultsCount: 8 });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
       fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
@@ -532,7 +496,6 @@ describe('analyzeActiveTab', () => {
       provider: 'anthropic',
       apiKeys: { anthropic: 'a-key', openai: '', gemini: '' },
       openrouterToken: 'or-token',
-      braveSearchKey: 'k',
       resultsCount: 8,
     });
     chrome.scripting.executeScript.mockImplementation(async () => []);
@@ -555,7 +518,7 @@ describe('analyzeActiveTab', () => {
   });
 
   it('rejects with an AbortError and skips rendering/history when cancelled before results land', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k', resultsCount: 8 });
+    getSettings.mockResolvedValue({ provider: 'anthropic', resultsCount: 8 });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
       fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
@@ -583,7 +546,7 @@ describe('analyzeActiveTab', () => {
   });
 
   it('renders no-results when the pipeline returns an empty array', async () => {
-    getSettings.mockResolvedValue({ provider: 'anthropic', braveSearchKey: 'k', resultsCount: 8 });
+    getSettings.mockResolvedValue({ provider: 'anthropic', resultsCount: 8 });
     chrome.scripting.executeScript.mockImplementation(async () => []);
     chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
       fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
