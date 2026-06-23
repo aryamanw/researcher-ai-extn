@@ -7,8 +7,6 @@ const DEFAULT_SETTINGS = {
   model: null,
   apiKeys: { anthropic: '', openai: '', gemini: '' },
   openrouterToken: '',
-  searchProvider: 'brave',
-  braveSearchKey: '',
   resultsCount: 8,
 };
 
