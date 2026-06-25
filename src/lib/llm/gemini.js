@@ -31,7 +31,7 @@ export async function complete({ apiKey, model, prompt, signal }) {
 }
 
 export async function searchAndRank({ apiKey, model, pageTitle, pageText, resultsCount, signal }) {
-  const modelName = model || 'gemini-1.5-flash';
+  const modelName = model || 'gemini-2.0-flash';
   if (!MODEL_NAME_PATTERN.test(modelName)) {
     throw new Error(`Invalid Gemini model name: ${modelName}`);
   }

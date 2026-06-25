@@ -68,4 +68,19 @@ describe('gemini searchAndRank', () => {
       searchAndRank({ apiKey: 'bad', model: null, pageTitle: 't', pageText: 'x', resultsCount: 5 })
     ).rejects.toThrow('Gemini API error: 401');
   });
+
+  it('defaults to a model that supports the google_search tool', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '[]' }] } }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchAndRank({ apiKey: 'key123', model: null, pageTitle: 't', pageText: 'x', resultsCount: 5 });
+
+    const [url] = fetchMock.mock.calls[0];
+    // The bare `google_search` tool is only valid for Gemini 2.0+; gemini-1.5-* needs
+    // `google_search_retrieval` instead. The default model must stay on the 2.x line.
+    expect(url).toMatch(/models\/gemini-2\./);
+  });
 });

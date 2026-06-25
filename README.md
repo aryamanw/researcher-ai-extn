@@ -35,7 +35,7 @@ Research Companion isn't on the Chrome Web Store yet. Until it is, install it fr
 
 1. Right-click the toolbar icon → **Options** (or `chrome://extensions` → Research Companion → **Details** → **Extension options**).
 2. Connect an AI provider: click **Connect to OpenRouter** to sign in without pasting a key, or paste an Anthropic, OpenAI, or Gemini API key directly.
-3. Pick the provider you just connected from the **LLM provider** dropdown — that provider's own web search finds the related pages, no separate search key needed.
+3. Pick the provider you just connected from the **LLM provider** dropdown — that provider's own web search finds the related pages, no separate search key needed. Result quality depends on which provider's web search you use, so you may notice differences if you switch providers.
 
 Settings save automatically as you fill them in.
 
