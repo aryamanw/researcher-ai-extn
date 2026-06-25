@@ -64,6 +64,9 @@ export function toFriendlyErrorMessage(error) {
     if (status === 429) return 'Rate limited by the provider. Try again in a moment.';
     if (status >= 500) return 'The provider is having trouble right now. Try again shortly.';
   }
+  if (/could not parse json from search response|search response json was not an array|did not return a ranked results array/i.test(message)) {
+    return 'The provider returned an unexpected response. Try again.';
+  }
   return message;
 }
 

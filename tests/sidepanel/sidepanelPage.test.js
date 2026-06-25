@@ -78,6 +78,15 @@ describe('toFriendlyErrorMessage', () => {
       .toBe('The provider is having trouble right now. Try again shortly.');
   });
 
+  it('maps an unparseable or malformed LLM response to an unexpected-response message', () => {
+    expect(toFriendlyErrorMessage(new Error('Could not parse JSON from search response')))
+      .toBe('The provider returned an unexpected response. Try again.');
+    expect(toFriendlyErrorMessage(new Error('Search response JSON was not an array')))
+      .toBe('The provider returned an unexpected response. Try again.');
+    expect(toFriendlyErrorMessage(new Error('LLM did not return a ranked results array')))
+      .toBe('The provider returned an unexpected response. Try again.');
+  });
+
   it('passes through messages it does not recognize, like the extraction timeout', () => {
     const message = "Didn't hear back from the page in time. Try again, or reload the tab if this keeps happening.";
     expect(toFriendlyErrorMessage(new Error(message))).toBe(message);
