@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Research Companion — A reading lamp for your research</title>
+<meta name="description" content="Research Companion reads the page you're on and surfaces related articles, papers, and reports in Chrome's side panel — using your own API keys, no backend in between." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: oklch(27.1% 0.036 229.8);
+    --ink-on-dark: oklch(95% 0.012 230);
+    --text-secondary: oklch(50% 0.02 230);
+    --text-secondary-on-dark: oklch(68% 0.022 230);
+    --bg: oklch(97.1% 0.004 134.8);
+    --bg-dark: oklch(20% 0.03 230);
+    --surface: oklch(92% 0.014 230);
+    --surface-dark: oklch(30% 0.025 230);
+    --border: oklch(84% 0.018 230);
+    --border-dark: oklch(40% 0.025 230);
+    --border-strong: oklch(60% 0.025 230);
+    --border-strong-dark: oklch(55% 0.025 230);
+    --accent: oklch(50% 0.09 231);
+    --accent-dark: oklch(70% 0.095 231);
+    --accent-secondary: oklch(30.4% 0.077 148.5);
+    --accent-secondary-dark: oklch(68% 0.1 148);
+
+    --c-bg: var(--bg);
+    --c-surface: var(--surface);
+    --c-ink: var(--ink);
+    --c-text-2: var(--text-secondary);
+    --c-border: var(--border);
+    --c-border-strong: var(--border-strong);
+    --c-accent: var(--accent);
+    --c-accent-2: var(--accent-secondary);
+
+    --font-display: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+
+    --r-sm: 6px;
+    --r-md: 8px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --c-bg: var(--bg-dark);
+      --c-surface: var(--surface-dark);
+      --c-ink: var(--ink-on-dark);
+      --c-text-2: var(--text-secondary-on-dark);
+      --c-border: var(--border-dark);
+      --c-border-strong: var(--border-strong-dark);
+      --c-accent: var(--accent-dark);
+      --c-accent-2: var(--accent-secondary-dark);
+    }
+  }
+
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  img, svg{ display: block; max-width: 100%; }
+  a{ color: inherit; text-decoration: none; }
+  ::selection{ background: var(--c-accent); color: var(--c-bg); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- Kicker (plain label, no chrome) ---------- */
+  .kicker{
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-2);
+  }
+
+  /* ---------- Nav: flat bar ---------- */
+  .nav{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 40;
+    background: color-mix(in oklab, var(--c-bg) 82%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  .nav-inner{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: -0.01em;
+  }
+  .nav-brand svg{ width: 24px; height: 24px; flex-shrink: 0; }
+  .nav-links{
+    display: flex;
+    gap: 28px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--c-text-2);
+  }
+  .nav-links a{ transition: color 160ms var(--ease-out); }
+  .nav-links a:hover{ color: var(--c-ink); }
+  .nav-right{ display: flex; align-items: center; gap: 16px; }
+  .nav-burger{
+    display: none;
+    width: 30px; height: 30px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--c-border);
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .nav-burger span{
+    position: absolute;
+    left: 7px; right: 7px;
+    height: 1.5px;
+    background: var(--c-ink);
+    transition: transform 250ms var(--ease-out);
+  }
+  .nav-burger span:nth-child(1){ top: 11px; }
+  .nav-burger span:nth-child(2){ top: 17px; }
+  .nav-burger.open span:nth-child(1){ top: 14px; transform: rotate(45deg); }
+  .nav-burger.open span:nth-child(2){ top: 14px; transform: rotate(-45deg); }
+
+  .mobile-menu{
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: var(--c-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 22px;
+    padding: 0 32px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 220ms var(--ease-out);
+  }
+  .mobile-menu.open{ opacity: 1; visibility: visible; }
+  .mobile-menu a{
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 280ms var(--ease-out), transform 280ms var(--ease-out);
+  }
+  .mobile-menu.open a{ opacity: 1; transform: translateY(0); }
+  .mobile-menu.open a:nth-child(1){ transition-delay: 40ms; }
+  .mobile-menu.open a:nth-child(2){ transition-delay: 80ms; }
+  .mobile-menu.open a:nth-child(3){ transition-delay: 120ms; }
+  .mobile-menu.open a:nth-child(4){ transition-delay: 160ms; }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--r-sm);
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0 16px;
+    height: 36px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn-primary{
+    background: var(--c-accent);
+    color: var(--c-bg);
+  }
+  .btn-primary:hover{ opacity: 0.88; }
+  .btn-ghost{
+    background: transparent;
+    border-color: var(--c-border-strong);
+    color: var(--c-ink);
+  }
+  .btn-ghost:hover{ border-color: var(--c-accent-2); color: var(--c-accent-2); }
+  .btn-lg{ height: 44px; padding: 0 22px; font-size: 0.875rem; }
+  .btn-arrow{
+    display: inline-block;
+    transition: transform 160ms var(--ease-out);
+  }
+  .btn:hover .btn-arrow{ transform: translate(2px, -2px); }
+  .btn-row{ display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---------- Reveal ---------- */
+  .reveal{
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 550ms var(--ease-out), transform 550ms var(--ease-out);
+  }
+  .reveal.in{ opacity: 1; transform: translateY(0); }
+  .stagger > *:nth-child(1){ transition-delay: 0ms; }
+  .stagger > *:nth-child(2){ transition-delay: 60ms; }
+  .stagger > *:nth-child(3){ transition-delay: 120ms; }
+  .stagger > *:nth-child(4){ transition-delay: 180ms; }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 100px;
+    padding-bottom: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-lines{
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--c-ink) 6%, transparent) 1px, transparent 1px);
+    background-size: 120px 100%;
+    background-position: center;
+    mask-image: linear-gradient(to bottom, transparent, black 12%, black 55%, transparent);
+    pointer-events: none;
+  }
+  .hero-grid{
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .hero h1{
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    margin: 18px 0 20px;
+  }
+  .hero h1 span{ color: var(--c-accent); }
+  .hero p.lead{
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--c-text-2);
+    max-width: 44ch;
+    margin-bottom: 32px;
+  }
+
+  /* ---------- Panel mockup: flat, single surface ---------- */
+  .mock{
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    padding: 20px;
+  }
+  .mock-title{
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .mock-status{
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--c-text-2);
+    margin-bottom: 12px;
+  }
+  .mock-card{
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .mock-card .t{
+    font-size: 0.8438rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  .mock-card .s{
+    font-size: 0.78125rem;
+    color: var(--c-text-2);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .mock-card .why{
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+    border-top: 1px solid var(--c-border);
+    padding-top: 8px;
+  }
+  .mock-history{
+    font-size: 0.78125rem;
+    color: var(--c-text-2);
+    padding-top: 4px;
+  }
+
+  /* ---------- Section heading ---------- */
+  .section{ padding: 100px 0; border-top: 1px solid var(--c-border); }
+  .section-head{ max-width: 600px; margin-bottom: 56px; }
+  .section-head h2{
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.16;
+    margin-top: 12px;
+  }
+
+  /* ---------- How it works ---------- */
+  .steps{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .step{
+    padding: 26px 22px;
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-border);
+  }
+  .step:first-child{ border-left: none; }
+  .step .num{
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--c-accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+  }
+  .step h3{
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .step p{
+    font-size: 0.84375rem;
+    color: var(--c-text-2);
+    line-height: 1.55;
+  }
+
+  /* ---------- Trust / editorial split ---------- */
+  .split{
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 56px;
+    align-items: start;
+  }
+  .split h2{
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.16;
+  }
+  .trust-list{ display: flex; flex-direction: column; }
+  .trust-row{
+    padding: 18px 0;
+    border-top: 1px solid var(--c-border);
+  }
+  .trust-row:first-child{ border-top: none; padding-top: 0; }
+  .trust-row p{ font-size: 0.9375rem; color: var(--c-text-2); line-height: 1.55; }
+  .trust-row strong{ color: var(--c-ink); font-weight: 600; }
+
+  /* ---------- Providers ---------- */
+  .provider-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .provider-tag{
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--r-sm);
+    padding: 10px 18px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .provider-note{
+    margin-top: 24px;
+    font-size: 0.875rem;
+    color: var(--c-text-2);
+    max-width: 60ch;
+    line-height: 1.6;
+  }
+
+  /* ---------- Final CTA ---------- */
+  .cta-section{
+    padding: 120px 0 100px;
+  }
+  .cta-section h2{
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.8vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 14px 0 12px;
+  }
+  .cta-section p{ color: var(--c-text-2); margin-bottom: 28px; max-width: 50ch; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    border-top: 1px solid var(--c-border);
+    padding: 40px 0;
+  }
+  .foot-grid{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .foot-brand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+  .foot-brand svg{ width: 22px; height: 22px; }
+  .foot-links{
+    display: flex;
+    gap: 24px;
+    font-size: 0.8125rem;
+    color: var(--c-text-2);
+  }
+  .foot-links a{ transition: color 160ms var(--ease-out); }
+  .foot-links a:hover{ color: var(--c-ink); }
+  .foot-copy{
+    font-size: 0.75rem;
+    color: var(--c-text-2);
+    margin-top: 20px;
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 860px){
+    .nav-links{ display: none; }
+    .nav-burger{ display: block; }
+    .nav-right .btn-primary{ display: none; }
+    .hero{ padding-top: 90px; }
+    .hero-grid{ grid-template-columns: 1fr; gap: 40px; }
+    .steps{ grid-template-columns: 1fr; }
+    .step{ border-left: none; border-top: 1px solid var(--c-border); }
+    .step:first-child{ border-top: none; }
+    .split{ grid-template-columns: 1fr; gap: 32px; }
+    .section{ padding: 70px 0; }
+    .cta-section{ padding: 80px 0 70px; }
+    .wrap{ padding: 0 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-lines"></div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand">
+      <svg viewBox="0 0 128 128" aria-hidden="true">
+        <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
+        <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
+        <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
+        <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
+      </svg>
+      Research Companion
+    </a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#providers">Providers</a>
+    </div>
+    <div class="nav-right">
+      <a class="btn btn-primary" href="https://github.com/aryamanw/researcher-ai-extn/releases">Download</a>
+    </div>
+    <button class="nav-burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#how-it-works">How it works</a>
+  <a href="#privacy">Privacy</a>
+  <a href="#providers">Providers</a>
+  <a href="https://github.com/aryamanw/researcher-ai-extn">GitHub</a>
+</div>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 class="reveal in">A reading lamp for your <span>research</span>.</h1>
+        <p class="lead reveal in">Research Companion reads the page you're on and surfaces related articles, papers, and reports — right in Chrome's side panel. Your own API keys, no backend in between, nothing competing for your attention.</p>
+        <div class="btn-row reveal in">
+          <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
+            Download latest release <span class="btn-arrow">→</span>
+          </a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
+        </div>
+      </div>
+      <div class="reveal in">
+        <div class="mock">
+          <p class="mock-title">Research Companion</p>
+          <p class="mock-status">Ranking results...</p>
+          <div class="mock-card">
+            <p class="t">Attention Is All You Need — annotated walkthrough</p>
+            <p class="s">A step-by-step breakdown of the transformer architecture, with diagrams matching the original paper's notation.</p>
+            <p class="why">Why this: Same core architecture discussed on this page, explained in more depth.</p>
+          </div>
+          <div class="mock-card">
+            <p class="t">A Survey of Retrieval-Augmented Generation</p>
+            <p class="s">Covers the retrieval strategies referenced in the section you're reading, with comparative benchmarks.</p>
+            <p class="why">Why this: Cited approach extended with newer benchmark data.</p>
+          </div>
+          <p class="mock-history">History · 3 past sessions</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how-it-works">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="kicker">Core loop</span>
+        <h2>Open the panel. Get back to reading.</h2>
+      </div>
+      <div class="steps stagger">
+        <div class="step reveal">
+          <p class="num">01 — READ</p>
+          <h3>Reads the page you're on</h3>
+          <p>A one-shot script reads the readable text of the active tab only — never tabs you haven't clicked on, never running in the background.</p>
+        </div>
+        <div class="step reveal">
+          <p class="num">02 — SEARCH</p>
+          <h3>Searches with your provider</h3>
+          <p>That text goes to your chosen AI provider, which uses its own web search to find related pages. No separate search API key needed.</p>
+        </div>
+        <div class="step reveal">
+          <p class="num">03 — RANK</p>
+          <h3>Ranks and explains</h3>
+          <p>Each result comes back with a short, honest note on why it's relevant — the product's actual trust signal, not a persuasive flourish.</p>
+        </div>
+        <div class="step reveal">
+          <p class="num">04 — RESULT</p>
+          <h3>Click through, or don't</h3>
+          <p>Past sessions persist in History. Reopening one re-renders instantly — no new searches, no new cost.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="privacy">
+    <div class="wrap split">
+      <h2 class="reveal">No backend. No accounts. No telemetry.</h2>
+      <div class="trust-list stagger">
+        <div class="trust-row reveal">
+          <p><strong>Runs entirely in your browser.</strong> There's no server the developer operates, and no account to create.</p>
+        </div>
+        <div class="trust-row reveal">
+          <p><strong>Your keys, your connection.</strong> Page content and credentials go straight from your browser to the provider you configured — Anthropic, OpenAI, Gemini, or OpenRouter.</p>
+        </div>
+        <div class="trust-row reveal">
+          <p><strong>Local storage only.</strong> Settings, API keys, and your last 50 research sessions live in <code>chrome.storage.local</code>. Nothing syncs.</p>
+        </div>
+        <div class="trust-row reveal">
+          <p><strong>Active tab only.</strong> It reads the page you click the toolbar icon on — nothing else, and nothing in the background.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="providers">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Works with the provider you already trust.</h2>
+      </div>
+      <div class="provider-row reveal stagger">
+        <span class="provider-tag">Anthropic</span>
+        <span class="provider-tag">OpenAI</span>
+        <span class="provider-tag">Gemini</span>
+        <span class="provider-tag">OpenRouter</span>
+      </div>
+      <p class="provider-note reveal">Paste an API key directly, or click <strong>Connect to OpenRouter</strong> to sign in without pasting one. Each provider uses its own web search to find related pages, so result quality can vary slightly depending on which one you pick.</p>
+    </div>
+  </section>
+
+  <section class="cta-section section">
+    <div class="wrap">
+      <h2 class="reveal">Get Research Companion.</h2>
+      <p class="reveal">Not on the Chrome Web Store yet — install from a GitHub release in under a minute.</p>
+      <div class="btn-row reveal">
+        <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
+          Download latest release <span class="btn-arrow">→</span>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <a href="#top" class="foot-brand">
+        <svg viewBox="0 0 128 128" aria-hidden="true">
+          <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
+          <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
+          <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
+        </svg>
+        Research Companion
+      </a>
+      <div class="foot-links">
+        <a href="https://github.com/aryamanw/researcher-ai-extn">GitHub</a>
+        <a href="https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html">Privacy Policy</a>
+        <a href="https://github.com/aryamanw/researcher-ai-extn/blob/main/LICENSE">MIT License</a>
+      </div>
+    </div>
+    <p class="foot-copy">© 2026 Aryaman. Research Companion is open source under the MIT License.</p>
+  </div>
+</footer>
+
+<script>
+  const burger = document.getElementById('burger');
+  const menu = document.getElementById('mobileMenu');
+  burger.addEventListener('click', () => {
+    const open = menu.classList.toggle('open');
+    burger.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open);
+  });
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    menu.classList.remove('open');
+    burger.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+  }));
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal:not(.in)').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
