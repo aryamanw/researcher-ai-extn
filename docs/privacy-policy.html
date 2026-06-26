@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Research Companion</title>
+<meta name="description" content="Privacy policy for the Research Companion Chrome extension." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: oklch(27.1% 0.036 229.8);
+    --ink-on-dark: oklch(95% 0.012 230);
+    --text-secondary: oklch(50% 0.02 230);
+    --text-secondary-on-dark: oklch(68% 0.022 230);
+    --bg: oklch(97.1% 0.004 134.8);
+    --bg-dark: oklch(20% 0.03 230);
+    --surface: oklch(92% 0.014 230);
+    --surface-dark: oklch(30% 0.025 230);
+    --border: oklch(84% 0.018 230);
+    --border-dark: oklch(40% 0.025 230);
+    --border-strong: oklch(60% 0.025 230);
+    --border-strong-dark: oklch(55% 0.025 230);
+    --accent: oklch(50% 0.09 231);
+    --accent-dark: oklch(70% 0.095 231);
+
+    --c-bg: var(--bg);
+    --c-surface: var(--surface);
+    --c-ink: var(--ink);
+    --c-text-2: var(--text-secondary);
+    --c-border: var(--border);
+    --c-border-strong: var(--border-strong);
+    --c-accent: var(--accent);
+
+    --font-display: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --r-sm: 6px;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --c-bg: var(--bg-dark);
+      --c-surface: var(--surface-dark);
+      --c-ink: var(--ink-on-dark);
+      --c-text-2: var(--text-secondary-on-dark);
+      --c-border: var(--border-dark);
+      --c-border-strong: var(--border-strong-dark);
+      --c-accent: var(--accent-dark);
+    }
+  }
+
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
+  body{
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: var(--c-accent); text-decoration: underline; text-decoration-color: var(--c-border-strong); transition: text-decoration-color 160ms var(--ease-out); }
+  a:hover{ text-decoration-color: var(--c-accent); }
+  code{
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.875em;
+  }
+
+  header{
+    border-bottom: 1px solid var(--c-border);
+    padding: 18px 24px;
+  }
+  .nav-inner{
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+  .nav-inner svg{ width: 24px; height: 24px; flex-shrink: 0; }
+
+  main{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px 100px;
+  }
+  .kicker{
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-2);
+    margin-bottom: 14px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .updated{
+    font-size: 0.875rem;
+    color: var(--c-text-2);
+    margin-bottom: 36px;
+  }
+  .intro{
+    font-size: 1.0625rem;
+    color: var(--c-text-2);
+    margin-bottom: 48px;
+    max-width: 60ch;
+  }
+  h2{
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 40px 0 14px;
+    padding-top: 28px;
+    border-top: 1px solid var(--c-border);
+  }
+  section:first-of-type h2{ border-top: none; padding-top: 0; }
+  p, li{
+    font-size: 0.9375rem;
+    color: var(--c-text-2);
+  }
+  p strong, li strong{ color: var(--c-ink); font-weight: 600; }
+  ul{ padding-left: 20px; }
+  li{ margin-bottom: 10px; line-height: 1.6; }
+  li:last-child{ margin-bottom: 0; }
+
+  footer{
+    border-top: 1px solid var(--c-border);
+    padding: 32px 24px;
+  }
+  .foot-inner{
+    max-width: 720px;
+    margin: 0 auto;
+    font-size: 0.8125rem;
+    color: var(--c-text-2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="nav-inner">
+    <svg viewBox="0 0 128 128" aria-hidden="true">
+      <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
+      <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
+      <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
+    </svg>
+    Research Companion
+  </a>
+</header>
+
+<main>
+  <span class="kicker">Legal</span>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: June 21, 2026</p>
+  <p class="intro">Research Companion is a Chrome extension that finds webpages, reports, and articles related to the page you are currently reading. This policy explains what data the extension touches and where it goes.</p>
+
+  <section>
+    <h2>What the extension reads</h2>
+    <p>When you click the toolbar icon, the extension reads the visible article text of the <strong>current tab only</strong>. It does not run in the background and does not read any other tab. It never reads pages you have not explicitly clicked the icon on.</p>
+  </section>
+
+  <section>
+    <h2>Where your data goes</h2>
+    <ul>
+      <li><strong>Page content</strong> you analyze is sent to the LLM provider you configured (Anthropic, OpenAI, Google Gemini, or OpenRouter), which uses its own web search to find related pages and write relevance notes. It is sent directly from your browser to that provider's API — it does not pass through any server operated by the developer of this extension.</li>
+      <li><strong>API keys / OAuth tokens</strong> you enter or connect in Settings are stored only in <code>chrome.storage.local</code> on your device. They are never transmitted anywhere except as the Authorization credential on requests to the provider they belong to.</li>
+      <li><strong>History</strong> of past analyses (the source page's title/URL and the results found) is stored only in <code>chrome.storage.local</code> on your device, capped at the 50 most recent sessions. It is never uploaded anywhere.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What the developer does not collect</h2>
+    <p>The developer of this extension does not operate any backend server, does not receive analytics, and does not collect, store, or have access to your page content, API keys, or history. Everything stays on your device except the direct, on-demand calls described above to the LLM/search providers you chose.</p>
+  </section>
+
+  <section>
+    <h2>Third-party providers</h2>
+    <p>Your use of Anthropic, OpenAI, Google Gemini, and OpenRouter through this extension is subject to those providers' own privacy policies and terms, since your requests go directly to them using your own credentials.</p>
+  </section>
+
+  <section>
+    <h2>Data retention and deletion</h2>
+    <p>All data this extension stores lives in your browser's local extension storage. Uninstalling the extension, or clearing its storage via <code>chrome://extensions</code>, deletes it. Removing a provider's key/connection in Settings deletes that credential immediately.</p>
+  </section>
+
+  <section>
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, the "Last updated" date above will change and the new version will be published at the same URL.</p>
+  </section>
+
+  <section>
+    <h2>Contact</h2>
+    <p>Questions about this policy can be sent to <a href="mailto:aryaman158@gmail.com">aryaman158@gmail.com</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-inner">© 2026 Aryaman. Research Companion is open source under the MIT License.</div>
+</footer>
+
+</body>
+</html>
