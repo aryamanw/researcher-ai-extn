@@ -1,4 +1,4 @@
-import { buildSearchPrompt, parseSearchResults, filterUncitedResults } from './searchResponse.js';
+import { buildSearchPrompt, computeFetchCount, parseSearchResults, filterUncitedResults } from './searchResponse.js';
 
 export async function complete({ apiKey, model, prompt, signal }) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -37,7 +37,7 @@ export async function searchAndRank({ apiKey, model, pageTitle, pageText, result
       model: model || 'claude-3-5-sonnet-20241022',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: Math.max(resultsCount, 3) }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: Math.max(computeFetchCount(resultsCount), 3) }],
     }),
     signal,
   });
