@@ -54,7 +54,7 @@ describe('openrouter searchAndRank', () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
     expect(JSON.parse(options.body).tools).toEqual([
-      { type: 'openrouter:web_search', parameters: { max_results: 5 } },
+      { type: 'openrouter:web_search', parameters: { max_results: 7 } },
     ]);
   });
 
