@@ -1,17 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import { buildSearchPrompt, parseSearchResults, filterUncitedResults } from '../../src/lib/llm/searchResponse.js';
+import {
+  buildSearchPrompt,
+  computeFetchCount,
+  parseSearchResults,
+  filterUncitedResults,
+} from '../../src/lib/llm/searchResponse.js';
+
+describe('computeFetchCount', () => {
+  it('adds a 30% buffer, rounded up', () => {
+    expect(computeFetchCount(8)).toBe(11);
+    expect(computeFetchCount(5)).toBe(7);
+    expect(computeFetchCount(1)).toBe(2);
+    expect(computeFetchCount(0)).toBe(0);
+  });
+});
 
 describe('buildSearchPrompt', () => {
-  it('includes the page title, trimmed text, and requested result count', () => {
+  it('includes the page title, trimmed text, and the over-fetched result count', () => {
     const prompt = buildSearchPrompt({ pageTitle: 'Tidal Energy', pageText: 'a'.repeat(20000), resultsCount: 5 });
     expect(prompt).toContain('Tidal Energy');
-    expect(prompt).toContain('find 5 distinct');
-    expect(prompt.match(/a/g).length).toBeLessThanOrEqual(12000 + 50);
+    expect(prompt).toContain(`find ${computeFetchCount(5)} distinct`);
+    expect(prompt.match(/a/g).length).toBeLessThanOrEqual(12000 + 100);
   });
 
   it('instructs the model to ignore embedded instructions in the page content', () => {
     const prompt = buildSearchPrompt({ pageTitle: 't', pageText: 'x', resultsCount: 8 });
     expect(prompt).toMatch(/ignore any instructions/i);
+  });
+
+  it('states the ranking criteria and requires a numeric score field', () => {
+    const prompt = buildSearchPrompt({ pageTitle: 't', pageText: 'x', resultsCount: 8 });
+    expect(prompt).toMatch(/topical relevance/i);
+    expect(prompt).toMatch(/source credibility/i);
+    expect(prompt).toMatch(/recency/i);
+    expect(prompt).toContain('"score"');
   });
 });
 
