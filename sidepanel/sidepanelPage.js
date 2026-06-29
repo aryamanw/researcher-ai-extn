@@ -9,10 +9,20 @@ export function renderLoading(container, statusText, onCancel) {
   const row = document.createElement('div');
   row.className = 'status-row';
 
+  const statusGroup = document.createElement('div');
+  statusGroup.className = 'status-group';
+
+  const spinner = document.createElement('span');
+  spinner.className = 'spinner';
+  spinner.setAttribute('aria-hidden', 'true');
+  statusGroup.appendChild(spinner);
+
   const p = document.createElement('p');
   p.className = 'status';
   p.textContent = statusText;
-  row.appendChild(p);
+  statusGroup.appendChild(p);
+
+  row.appendChild(statusGroup);
 
   if (onCancel) {
     const cancelButton = document.createElement('button');
