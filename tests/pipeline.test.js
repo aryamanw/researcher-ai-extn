@@ -87,4 +87,64 @@ describe('runPipeline', () => {
       })
     ).rejects.toThrow('LLM did not return a ranked results array');
   });
+
+  it('sorts results by score descending', async () => {
+    const llmClient = {
+      searchAndRank: vi.fn().mockResolvedValue([
+        { title: 'Low', url: 'https://low.com', snippet: 's', relevance: 'r', score: 20 },
+        { title: 'High', url: 'https://high.com', snippet: 's', relevance: 'r', score: 90 },
+        { title: 'Mid', url: 'https://mid.com', snippet: 's', relevance: 'r', score: 50 },
+      ]),
+    };
+
+    const outcome = await runPipeline({
+      pageTitle: 't',
+      pageUrl: 'https://example.com/article',
+      articleText: 'a'.repeat(300),
+      llmClient,
+      resultsCount: 8,
+    });
+
+    expect(outcome.map((r) => r.title)).toEqual(['High', 'Mid', 'Low']);
+  });
+
+  it('sorts missing or non-numeric scores to the bottom without throwing', async () => {
+    const llmClient = {
+      searchAndRank: vi.fn().mockResolvedValue([
+        { title: 'NoScore', url: 'https://noscore.com', snippet: 's', relevance: 'r' },
+        { title: 'Scored', url: 'https://scored.com', snippet: 's', relevance: 'r', score: 10 },
+        { title: 'BadScore', url: 'https://badscore.com', snippet: 's', relevance: 'r', score: 'high' },
+      ]),
+    };
+
+    const outcome = await runPipeline({
+      pageTitle: 't',
+      pageUrl: 'https://example.com/article',
+      articleText: 'a'.repeat(300),
+      llmClient,
+      resultsCount: 8,
+    });
+
+    expect(outcome.map((r) => r.title)).toEqual(['Scored', 'NoScore', 'BadScore']);
+  });
+
+  it('truncates results to resultsCount after sorting', async () => {
+    const llmClient = {
+      searchAndRank: vi.fn().mockResolvedValue([
+        { title: 'A', url: 'https://a.com', snippet: 's', relevance: 'r', score: 10 },
+        { title: 'B', url: 'https://b.com', snippet: 's', relevance: 'r', score: 90 },
+        { title: 'C', url: 'https://c.com', snippet: 's', relevance: 'r', score: 50 },
+      ]),
+    };
+
+    const outcome = await runPipeline({
+      pageTitle: 't',
+      pageUrl: 'https://example.com/article',
+      articleText: 'a'.repeat(300),
+      llmClient,
+      resultsCount: 2,
+    });
+
+    expect(outcome.map((r) => r.title)).toEqual(['B', 'C']);
+  });
 });
