@@ -1,4 +1,4 @@
-import { buildSearchPrompt, parseSearchResults, filterUncitedResults } from './searchResponse.js';
+import { buildSearchPrompt, computeFetchCount, parseSearchResults, filterUncitedResults } from './searchResponse.js';
 
 export async function complete({ apiKey, model, prompt, signal }) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -33,7 +33,7 @@ export async function searchAndRank({ apiKey, model, pageTitle, pageText, result
     body: JSON.stringify({
       model: model || 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      tools: [{ type: 'openrouter:web_search', parameters: { max_results: resultsCount } }],
+      tools: [{ type: 'openrouter:web_search', parameters: { max_results: computeFetchCount(resultsCount) } }],
     }),
     signal,
   });
