@@ -57,7 +57,7 @@ describe('anthropic searchAndRank', () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://api.anthropic.com/v1/messages');
     const body = JSON.parse(options.body);
-    expect(body.tools).toEqual([{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }]);
+    expect(body.tools).toEqual([{ type: 'web_search_20250305', name: 'web_search', max_uses: 7 }]);
   });
 
   it('throws when the response is not ok', async () => {
