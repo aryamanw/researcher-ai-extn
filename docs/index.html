@@ -93,11 +93,25 @@
     color: var(--c-text-2);
   }
 
+  /* ---------- Always-dark zones (hero, and the nav while it sits over the hero) ---------- */
+  .hero, .nav.on-dark{
+    --c-bg: var(--bg-dark);
+    --c-surface: var(--surface-dark);
+    --c-ink: var(--ink-on-dark);
+    --c-text-2: var(--text-secondary-on-dark);
+    --c-border: var(--border-dark);
+    --c-border-strong: var(--border-strong-dark);
+    --c-accent: var(--accent-dark);
+    --c-accent-2: var(--accent-secondary-dark);
+  }
+
   /* ---------- Nav: flat bar ---------- */
   .nav{
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 40;
+    color: var(--c-ink);
+    transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out), color 300ms var(--ease-out);
     background: color-mix(in oklab, var(--c-bg) 82%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -222,26 +236,59 @@
   /* ---------- Reveal ---------- */
   .reveal{
     opacity: 0;
-    transform: translateY(14px);
-    transition: opacity 550ms var(--ease-out), transform 550ms var(--ease-out);
+    transform: translateY(32px);
+    transition: opacity 850ms var(--ease-out), transform 850ms var(--ease-out);
   }
   .reveal.in{ opacity: 1; transform: translateY(0); }
   .stagger > *:nth-child(1){ transition-delay: 0ms; }
-  .stagger > *:nth-child(2){ transition-delay: 60ms; }
-  .stagger > *:nth-child(3){ transition-delay: 120ms; }
-  .stagger > *:nth-child(4){ transition-delay: 180ms; }
+  .stagger > *:nth-child(2){ transition-delay: 90ms; }
+  .stagger > *:nth-child(3){ transition-delay: 180ms; }
+  .stagger > *:nth-child(4){ transition-delay: 270ms; }
 
-  /* ---------- Hero ---------- */
+  /* ---------- Hero: the reading lamp ---------- */
   .hero{
+    --mx: 62vw;
+    --my: 42vh;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-top: 100px;
-    padding-bottom: 60px;
+    padding-top: 110px;
+    padding-bottom: 80px;
     position: relative;
     overflow: hidden;
+    background: var(--c-bg);
+    color: var(--c-ink);
   }
+  .lamp-text{
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    padding: 72px 24px;
+    font-size: 1rem;
+    line-height: 2.1;
+    text-align: justify;
+    color: var(--c-text-2);
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    -webkit-mask-image: radial-gradient(circle 260px at var(--mx) var(--my), #000 0%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.06) 100%);
+            mask-image: radial-gradient(circle 260px at var(--mx) var(--my), #000 0%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.06) 100%);
+  }
+  .lamp-text em{ font-style: normal; font-weight: 600; color: var(--c-accent); }
+  .lamp-glow{
+    position: absolute;
+    left: 0; top: 0;
+    z-index: 0;
+    width: 680px; height: 680px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in oklab, var(--c-accent) 20%, transparent), transparent 62%);
+    transform: translate3d(calc(var(--mx) - 50%), calc(var(--my) - 50%), 0);
+    pointer-events: none;
+  }
+  .hero-inner{ position: relative; z-index: 1; }
+  .hero h1 .word{ display: inline-block; white-space: nowrap; }
+  .hero h1 .ch{ display: inline-block; }
   .hero-lines{
     position: fixed;
     inset: 0;
@@ -253,28 +300,21 @@
     mask-image: linear-gradient(to bottom, transparent, black 12%, black 55%, transparent);
     pointer-events: none;
   }
-  .hero-grid{
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    gap: 56px;
-    align-items: center;
-  }
   .hero h1{
     font-family: var(--font-display);
-    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
-    font-weight: 700;
-    line-height: 1.06;
-    letter-spacing: -0.02em;
-    margin: 18px 0 20px;
+    font-size: clamp(2.8rem, 7.4vw, 6rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    max-width: 12ch;
+    margin: 0 0 28px;
   }
-  .hero h1 span{ color: var(--c-accent); }
+  .hero h1 .accent{ color: var(--c-accent); }
   .hero p.lead{
-    font-size: 1.0625rem;
+    font-size: 1.125rem;
     line-height: 1.6;
     color: var(--c-text-2);
-    max-width: 44ch;
+    max-width: 52ch;
     margin-bottom: 32px;
   }
 
@@ -325,6 +365,14 @@
     color: var(--c-accent);
     border-top: 1px solid var(--c-border);
     padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .mock-card .score{
+    color: var(--c-accent-2);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
   .mock-history{
     font-size: 0.78125rem;
@@ -344,40 +392,94 @@
     margin-top: 12px;
   }
 
-  /* ---------- How it works ---------- */
-  .steps{
+  /* ---------- How it works: pinned scroll story ---------- */
+  .story-section{ border-top: 1px solid var(--c-border); }
+  .story{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 90px 0 50px;
+  }
+  .story .section-head{ margin-bottom: 36px; }
+  .story-stage{
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    border: 1px solid var(--c-border);
-    border-radius: var(--r-md);
-    overflow: hidden;
+    grid-template-columns: 210px 1fr 340px;
+    gap: 32px;
+    align-items: start;
   }
-  .step{
-    padding: 26px 22px;
-    background: var(--c-bg);
-    border-left: 1px solid var(--c-border);
+  .story-steps{ list-style: none; display: flex; flex-direction: column; gap: 20px; }
+  .story-step{
+    border-left: 2px solid var(--c-border);
+    padding-left: 14px;
+    transition: opacity 300ms var(--ease-out), border-color 300ms var(--ease-out);
   }
-  .step:first-child{ border-left: none; }
-  .step .num{
+  .story.is-animated .story-step{ opacity: 0.32; }
+  .story.is-animated .story-step.active{ opacity: 1; border-left-color: var(--c-accent); }
+  .story.is-animated .story-step:not(.active) p:not(.num){ display: none; }
+  .story-panel .mock-card .s{ display: none; }
+  .story-panel .mock-card .t{ margin-bottom: 8px; }
+  .story-step .num{
     font-family: var(--font-display);
     font-size: 0.6875rem;
     font-weight: 700;
     color: var(--c-accent);
     letter-spacing: 0.06em;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
   }
-  .step h3{
+  .story-step h3{
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.9375rem;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
-  .step p{
-    font-size: 0.84375rem;
+  .story-step p{
+    font-size: 0.8125rem;
     color: var(--c-text-2);
-    line-height: 1.55;
+    line-height: 1.5;
   }
+  .story-article{
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    padding: 20px 24px 8px;
+  }
+  .story-article .bar{ display: flex; gap: 6px; margin-bottom: 18px; }
+  .story-article .bar i{ width: 8px; height: 8px; border-radius: 50%; background: var(--c-border-strong); }
+  .story-article h4{
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  .story-article p{
+    font-size: 0.875rem;
+    line-height: 1.75;
+    color: var(--c-text-2);
+    margin-bottom: 12px;
+  }
+  .story-article .hl{
+    color: var(--c-ink);
+    font-weight: 600;
+    background-image: linear-gradient(color-mix(in oklab, var(--c-accent) 38%, transparent), color-mix(in oklab, var(--c-accent) 38%, transparent));
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 100% 42%;
+  }
+  .story-query{ display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; margin-bottom: 12px; }
+  .chip{
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--c-accent);
+    color: var(--c-bg);
+    white-space: nowrap;
+  }
+  .chip-fly{ position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; visibility: hidden; opacity: 0; }
 
   /* ---------- Trust / editorial split ---------- */
   .split{
@@ -478,10 +580,11 @@
     .nav-burger{ display: block; }
     .nav-right .btn-primary{ display: none; }
     .hero{ padding-top: 90px; }
-    .hero-grid{ grid-template-columns: 1fr; gap: 40px; }
-    .steps{ grid-template-columns: 1fr; }
-    .step{ border-left: none; border-top: 1px solid var(--c-border); }
-    .step:first-child{ border-top: none; }
+    .lamp-text{ font-size: 0.875rem; padding: 64px 18px; }
+    .story{ min-height: 0; padding: 70px 0; }
+    .story-stage{ grid-template-columns: 1fr; gap: 20px; }
+    .story-steps{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .story-step p{ display: none; }
     .split{ grid-template-columns: 1fr; gap: 32px; }
     .section{ padding: 70px 0; }
     .cta-section{ padding: 80px 0 70px; }
@@ -493,7 +596,7 @@
 
 <div class="hero-lines"></div>
 
-<nav class="nav">
+<nav class="nav on-dark">
   <div class="nav-inner">
     <a href="#top" class="nav-brand">
       <svg viewBox="0 0 128 128" aria-hidden="true">
@@ -527,64 +630,87 @@
 
 <main id="top">
 
-  <section class="hero">
-    <div class="wrap hero-grid">
-      <div>
-        <h1 class="reveal in">A reading lamp for your <span>research</span>.</h1>
-        <p class="lead reveal in">Research Companion reads the page you're on and surfaces related articles, papers, and reports — right in Chrome's side panel. Your own API keys, no backend in between, nothing competing for your attention.</p>
-        <div class="btn-row reveal in">
-          <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
-            Download latest release <span class="btn-arrow">→</span>
-          </a>
-          <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
-        </div>
-      </div>
-      <div class="reveal in">
-        <div class="mock">
-          <p class="mock-title">Research Companion</p>
-          <p class="mock-status">Ranking results...</p>
-          <div class="mock-card">
-            <p class="t">Attention Is All You Need — annotated walkthrough</p>
-            <p class="s">A step-by-step breakdown of the transformer architecture, with diagrams matching the original paper's notation.</p>
-            <p class="why">Why this: Same core architecture discussed on this page, explained in more depth.</p>
-          </div>
-          <div class="mock-card">
-            <p class="t">A Survey of Retrieval-Augmented Generation</p>
-            <p class="s">Covers the retrieval strategies referenced in the section you're reading, with comparative benchmarks.</p>
-            <p class="why">Why this: Cited approach extended with newer benchmark data.</p>
-          </div>
-          <p class="mock-history">History · 3 past sessions</p>
-        </div>
+  <section class="hero" id="hero">
+    <div class="lamp-text" aria-hidden="true">
+      <p>Transformers dispensed with recurrence, relying on <em>self-attention</em> to relate every token to every other. Retrieval-augmented generation pairs a language model with a <em>search index</em>, grounding its answers in documents it can cite. Scaling laws suggest loss falls predictably with <em>compute</em>, data, and parameters, though the exponents remain debated. Sparse attention, linear attention, and state-space models each trade expressiveness for <em>long-context</em> efficiency. Evaluation is contested: benchmarks saturate, leak into training data, and reward pattern-matching over <em>reasoning</em>. Meta-analyses of reading comprehension find that annotation and spaced review outperform rereading. Citation graphs reveal <em>clusters</em> of related work that keyword search misses. A good literature review is less a list than a <em>map</em>: who answered whom, which results replicated, where the open questions are. Systematic reviews follow a protocol to reduce selection bias; narrative reviews trade rigor for <em>synthesis</em>. Preprints move faster than peer review, and the gap between them is where most <em>surprises</em> live.</p>
+    </div>
+    <div class="lamp-glow" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <h1>A reading lamp for your <span class="accent">research</span>.</h1>
+      <p class="lead">Research Companion reads the page you're on and surfaces related articles, papers, and reports — right in Chrome's side panel. Your own API keys, no backend in between, nothing competing for your attention.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
+          Download latest release <span class="btn-arrow">→</span>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
       </div>
     </div>
   </section>
 
-  <section class="section" id="how-it-works">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <span class="kicker">Core loop</span>
-        <h2>Open the panel. Get back to reading.</h2>
-      </div>
-      <div class="steps stagger">
-        <div class="step reveal">
-          <p class="num">01 — READ</p>
-          <h3>Reads the page you're on</h3>
-          <p>A one-shot script reads the readable text of the active tab only — never tabs you haven't clicked on, never running in the background.</p>
+  <section class="story-section" id="how-it-works">
+    <div class="story">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="kicker">Core loop</span>
+          <h2>Open the panel. Get back to reading.</h2>
         </div>
-        <div class="step reveal">
-          <p class="num">02 — SEARCH</p>
-          <h3>Searches with your provider</h3>
-          <p>That text goes to your chosen AI provider, which uses its own web search to find related pages. No separate search API key needed.</p>
-        </div>
-        <div class="step reveal">
-          <p class="num">03 — RANK</p>
-          <h3>Ranks and explains</h3>
-          <p>Each result comes back with a short, honest note on why it's relevant — the product's actual trust signal, not a persuasive flourish.</p>
-        </div>
-        <div class="step reveal">
-          <p class="num">04 — RESULT</p>
-          <h3>Click through, or don't</h3>
-          <p>Past sessions persist in History. Reopening one re-renders instantly — no new searches, no new cost.</p>
+        <div class="story-stage">
+          <ol class="story-steps">
+            <li class="story-step">
+              <p class="num">01 — READ</p>
+              <h3>Reads the page you're on</h3>
+              <p>A one-shot script reads the readable text of the active tab only — never tabs you haven't clicked on, never running in the background.</p>
+            </li>
+            <li class="story-step">
+              <p class="num">02 — SEARCH</p>
+              <h3>Searches with your provider</h3>
+              <p>That text goes to your chosen AI provider, which uses its own web search to find related pages. No separate search API key needed.</p>
+            </li>
+            <li class="story-step">
+              <p class="num">03 — RANK</p>
+              <h3>Ranks and explains</h3>
+              <p>Each result comes back with a short, honest note on why it's relevant — the product's actual trust signal, not a persuasive flourish.</p>
+            </li>
+            <li class="story-step">
+              <p class="num">04 — RESULT</p>
+              <h3>Click through, or don't</h3>
+              <p>Past sessions persist in History. Reopening one re-renders instantly — no new searches, no new cost.</p>
+            </li>
+          </ol>
+
+          <div class="story-article" aria-label="Example page being read">
+            <div class="bar"><i></i><i></i><i></i></div>
+            <h4>Why attention replaced recurrence</h4>
+            <p>The transformer dispenses with recurrence entirely, relying instead on <span class="hl">self-attention</span> to model dependencies across a whole sequence at once.</p>
+            <p>Later work paired these models with <span class="hl">retrieval</span> over an external corpus, improving factual accuracy on open-domain questions.</p>
+            <p>How to measure progress is still contested. Most comparisons now lean on <span class="hl">long-context benchmarks</span>, and they don't always agree.</p>
+          </div>
+
+          <div class="mock story-panel">
+            <p class="mock-title">Research Companion</p>
+            <p class="mock-status">3 related results</p>
+            <div class="story-query">
+              <span class="chip">self-attention</span>
+              <span class="chip">retrieval</span>
+              <span class="chip">long-context benchmarks</span>
+            </div>
+            <div class="mock-card">
+              <p class="t">Attention Is All You Need — annotated walkthrough</p>
+              <p class="s">A step-by-step breakdown of the transformer, with diagrams matching the paper's notation.</p>
+              <p class="why"><span>Why this: same core architecture, in more depth</span><span class="score" data-score="94">94</span></p>
+            </div>
+            <div class="mock-card">
+              <p class="t">A Survey of Retrieval-Augmented Generation</p>
+              <p class="s">Covers the retrieval strategies this page references, with comparative benchmarks.</p>
+              <p class="why"><span>Why this: cited approach, newer data</span><span class="score" data-score="88">88</span></p>
+            </div>
+            <div class="mock-card">
+              <p class="t">Long-context evaluation: where benchmarks disagree</p>
+              <p class="s">A review of how leading long-context benchmarks rank the same models differently.</p>
+              <p class="why"><span>Why this: the open question this page ends on</span><span class="score" data-score="81">81</span></p>
+            </div>
+            <p class="mock-history">History · 3 past sessions</p>
+          </div>
         </div>
       </div>
     </div>
@@ -662,6 +788,8 @@
   </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
 <script>
   const burger = document.getElementById('burger');
   const menu = document.getElementById('mobileMenu');
@@ -686,6 +814,186 @@
   }, { threshold: 0.15 });
 
   document.querySelectorAll('.reveal:not(.in)').forEach(el => observer.observe(el));
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hero = document.getElementById('hero');
+  const nav = document.querySelector('.nav');
+
+  // Nav takes the hero's dark palette while it sits over the hero.
+  const updateNav = () => nav.classList.toggle('on-dark', hero.getBoundingClientRect().bottom > 60);
+  addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+
+  // ---------- Reading lamp ----------
+  const lampText = hero.querySelector('.lamp-text');
+  lampText.innerHTML = lampText.innerHTML.repeat(4);
+
+  if (!reduceMotion) {
+    const noHover = matchMedia('(hover: none)').matches;
+    const lamp = { x: innerWidth * 0.62, y: innerHeight * 0.42, tx: 0, ty: 0 };
+    let pointerActive = false;
+    let heroVisible = true;
+
+    hero.addEventListener('pointermove', e => {
+      if (e.pointerType !== 'mouse') return;
+      const r = hero.getBoundingClientRect();
+      lamp.tx = e.clientX - r.left;
+      lamp.ty = e.clientY - r.top;
+      pointerActive = true;
+    });
+    hero.addEventListener('pointerleave', () => { pointerActive = false; });
+    new IntersectionObserver(([entry]) => { heroVisible = entry.isIntersecting; }).observe(hero);
+
+    const tick = (now) => {
+      if (heroVisible) {
+        if (noHover || !pointerActive) {
+          // Slow drift when there is no cursor to follow.
+          const t = now / 1000;
+          lamp.tx = hero.clientWidth * (0.55 + 0.3 * Math.sin(t * 0.33));
+          lamp.ty = hero.clientHeight * (0.45 + 0.25 * Math.sin(t * 0.47 + 1));
+        }
+        lamp.x += (lamp.tx - lamp.x) * 0.08;
+        lamp.y += (lamp.ty - lamp.y) * 0.08;
+        hero.style.setProperty('--mx', lamp.x.toFixed(1) + 'px');
+        hero.style.setProperty('--my', lamp.y.toFixed(1) + 'px');
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // Splits text into per-character spans, grouped by word so lines only break between words.
+  function splitChars(el) {
+    const chars = [];
+    const frag = document.createDocumentFragment();
+    let word = null;
+    el.childNodes.forEach(node => {
+      const cls = node.nodeType === 1 ? node.className : '';
+      node.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); word = null; return; }
+        if (!word) {
+          word = document.createElement('span');
+          word.className = 'word';
+          word.setAttribute('aria-hidden', 'true');
+          frag.appendChild(word);
+        }
+        for (const c of part) {
+          const s = document.createElement('span');
+          s.className = cls ? 'ch ' + cls : 'ch';
+          s.textContent = c;
+          word.appendChild(s);
+          chars.push(s);
+        }
+      });
+    });
+    el.setAttribute('aria-label', el.textContent);
+    el.textContent = '';
+    el.appendChild(frag);
+    return chars;
+  }
+
+  if (window.gsap && window.ScrollTrigger) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    // ---------- Hero intro ----------
+    if (!reduceMotion) {
+      const chars = splitChars(hero.querySelector('h1'));
+      gsap.from(lampText, { opacity: 0, duration: 1.8, ease: 'power2.out' });
+      gsap.from(chars, { yPercent: 110, rotate: 8, opacity: 0, duration: 1, ease: 'power4.out', stagger: 0.024, delay: 0.15 });
+      gsap.from(['.hero .lead', '.hero .btn-row'], { y: 28, opacity: 0, duration: 1, ease: 'power3.out', stagger: 0.12, delay: 0.7 });
+    }
+
+    // ---------- How it works: scroll story ----------
+    const story = document.querySelector('.story');
+    const stage = story.querySelector('.story-stage');
+    const phrases = [...story.querySelectorAll('.hl')];
+    const slots = [...story.querySelectorAll('.story-query .chip')];
+    const steps = [...story.querySelectorAll('.story-step')];
+    const cards = [...story.querySelectorAll('.story-panel .mock-card')];
+    const scores = cards.map(c => c.querySelector('.score'));
+    const status = story.querySelector('.mock-status');
+    const history = story.querySelector('.mock-history');
+    const STATUS = ['Reading page…', 'Searching the web…', 'Ranking results…', '3 related results'];
+
+    const flyers = slots.map(slot => {
+      const f = slot.cloneNode(true);
+      f.classList.add('chip-fly');
+      f.setAttribute('aria-hidden', 'true');
+      stage.appendChild(f);
+      return f;
+    });
+    const rel = el => {
+      const a = el.getBoundingClientRect(), b = stage.getBoundingClientRect();
+      return { x: a.left - b.left, y: a.top - b.top };
+    };
+
+    let current = -1;
+    const setStep = i => {
+      if (i === current) return;
+      current = i;
+      steps.forEach((s, k) => s.classList.toggle('active', k === i));
+      status.textContent = STATUS[i];
+    };
+
+    // Four beats of one time unit each: read, search, rank, result.
+    const buildTimeline = () => {
+      gsap.set(phrases, { backgroundSize: '0% 42%' });
+      gsap.set(slots, { autoAlpha: 0 });
+      gsap.set(flyers, { autoAlpha: 0 });
+      gsap.set(cards, { clipPath: 'inset(0% 0% 100% 0%)', y: 18 });
+      gsap.set(history, { autoAlpha: 0, y: 8 });
+      scores.forEach(s => { s.textContent = '0'; });
+      current = -1;
+      setStep(0);
+
+      const tl = gsap.timeline({
+        onUpdate() { setStep(Math.min(3, Math.floor(tl.progress() * 4))); },
+      });
+
+      // 01 Read: key phrases get highlighted.
+      tl.to(phrases, { backgroundSize: '100% 42%', duration: 0.5, ease: 'power2.inOut', stagger: 0.2 }, 0.1);
+
+      // 02 Search: phrases lift off and fly into the panel's query row.
+      flyers.forEach((f, i) => {
+        const t = 1.05 + i * 0.14;
+        tl.fromTo(f,
+          { x: () => rel(phrases[i]).x, y: () => rel(phrases[i]).y, autoAlpha: 0, scale: 0.9 },
+          { x: () => rel(phrases[i]).x, y: () => rel(phrases[i]).y - 14, autoAlpha: 1, scale: 1.05, duration: 0.12, ease: 'power2.out' }, t);
+        tl.to(f, { x: () => rel(slots[i]).x, y: () => rel(slots[i]).y, scale: 1, duration: 0.55, ease: 'power3.inOut' }, t + 0.12);
+        tl.set(slots[i], { autoAlpha: 1 }, t + 0.67);
+        tl.set(f, { autoAlpha: 0 }, t + 0.67);
+      });
+
+      // 03 Rank: result cards build in and their scores count up.
+      tl.to(cards, { clipPath: 'inset(0% 0% 0% 0%)', y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.16 }, 2.05);
+      scores.forEach((s, i) => {
+        const o = { v: 0 };
+        tl.to(o, { v: +s.dataset.score, duration: 0.5, ease: 'power1.out', onUpdate: () => { s.textContent = Math.round(o.v); } }, 2.1 + i * 0.16);
+      });
+
+      // 04 Result: history appears.
+      tl.to(history, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' }, 3.1);
+      tl.set({}, {}, 4);
+      return tl;
+    };
+
+    const mm = gsap.matchMedia();
+    mm.add({
+      desktop: '(min-width: 861px) and (prefers-reduced-motion: no-preference)',
+      mobile: '(max-width: 860px) and (prefers-reduced-motion: no-preference)',
+    }, ctx => {
+      story.classList.add('is-animated');
+      const tl = buildTimeline();
+      if (ctx.conditions.desktop) {
+        ScrollTrigger.create({ trigger: story, start: 'top top', end: '+=300%', pin: true, scrub: 0.6, animation: tl, invalidateOnRefresh: true });
+      } else {
+        tl.pause().timeScale(0.8);
+        ScrollTrigger.create({ trigger: story, start: 'top 60%', once: true, onEnter: () => tl.play() });
+      }
+      return () => story.classList.remove('is-animated');
+    });
+  }
 </script>
 
 </body>
