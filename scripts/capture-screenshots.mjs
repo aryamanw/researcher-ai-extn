@@ -43,6 +43,10 @@ async function main() {
   await page.waitForSelector('#frame select[name="provider"]');
   await page.screenshot({ path: 'store-assets/screenshot-options.png' });
 
+  const promo = await browser.newPage({ viewport: { width: 440, height: 280 } });
+  await promo.goto(`http://127.0.0.1:${port}/scripts/screenshots/promo-small.html`);
+  await promo.screenshot({ path: 'store-assets/promo-small-440x280.png' });
+
   await browser.close();
   server.close();
 }

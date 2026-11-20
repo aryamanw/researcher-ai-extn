@@ -117,12 +117,10 @@ export function syncKeyFieldVisibility(form) {
   });
 }
 
-function wireKeyToggles(form, settings) {
-  const storedValues = {
-    anthropicKey: settings.apiKeys.anthropic,
-    openaiKey: settings.apiKeys.openai,
-    geminiKey: settings.apiKeys.gemini,
-  };
+const KEY_FIELD_TO_PROVIDER = { anthropicKey: 'anthropic', openaiKey: 'openai', geminiKey: 'gemini' };
+
+// getApiKeys is read at click time so a removed key can never be revealed.
+function wireKeyToggles(form, getApiKeys) {
   form.querySelectorAll('.key-toggle').forEach((button) => {
     const input = form.elements.namedItem(button.dataset.target);
     if (!input) return;
@@ -130,7 +128,7 @@ function wireKeyToggles(form, settings) {
     button.addEventListener('click', () => {
       const willShow = input.type === 'password';
       if (willShow && !input.value) {
-        input.value = storedValues[input.name] || '';
+        input.value = getApiKeys()[KEY_FIELD_TO_PROVIDER[input.name]] || '';
       }
       input.type = willShow ? 'text' : 'password';
       button.textContent = willShow ? 'Hide' : 'Show';
@@ -139,12 +137,41 @@ function wireKeyToggles(form, settings) {
   });
 }
 
+function wireRemoveKeys(form, statusEl, onRemoved) {
+  const button = form.querySelector('#remove-keys');
+  if (!button) return;
+  const idleLabel = button.textContent;
+  let confirming = false;
+  button.addEventListener('click', async () => {
+    if (!confirming) {
+      confirming = true;
+      button.textContent = 'Confirm remove?';
+      return;
+    }
+    confirming = false;
+    button.textContent = idleLabel;
+    const current = await getSettings();
+    const cleared = { anthropic: '', openai: '', gemini: '' };
+    const updated = { ...current, apiKeys: cleared, openrouterToken: '' };
+    await saveSettings(updated);
+    onRemoved(cleared);
+    renderSettingsToForm(form, updated);
+    statusEl.textContent = 'Not connected to OpenRouter';
+  });
+  button.addEventListener('blur', () => {
+    confirming = false;
+    button.textContent = idleLabel;
+  });
+}
+
 export async function initOptionsPage(form, connectButton, statusEl, autosaveStatusEl, resultsCountHintEl) {
   const settings = await getSettings();
   renderSettingsToForm(form, settings);
   statusEl.textContent = settings.openrouterToken ? 'Connected to OpenRouter' : 'Not connected to OpenRouter';
   syncKeyFieldVisibility(form);
-  wireKeyToggles(form, settings);
+  let apiKeys = settings.apiKeys;
+  wireKeyToggles(form, () => apiKeys);
+  wireRemoveKeys(form, statusEl, (cleared) => { apiKeys = cleared; });
   wireKeyValidation(form);
   if (form.resultsCount) {
     form.resultsCount.addEventListener('input', () => refreshResultsCountHint(form, resultsCountHintEl));

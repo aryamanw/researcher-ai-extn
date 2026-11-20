@@ -79,8 +79,8 @@ describe('gemini searchAndRank', () => {
     await searchAndRank({ apiKey: 'key123', model: null, pageTitle: 't', pageText: 'x', resultsCount: 5 });
 
     const [url] = fetchMock.mock.calls[0];
-    // The bare `google_search` tool is only valid for Gemini 2.0+; gemini-1.5-* needs
-    // `google_search_retrieval` instead. The default model must stay on the 2.x line.
-    expect(url).toMatch(/models\/gemini-2\./);
+    // The bare `google_search` tool needs Gemini 2.0+ (1.5 needs `google_search_retrieval`),
+    // and 2.0 Flash was shut down 2026-06-01. Default must be a current 3.x model.
+    expect(url).toMatch(/models\/gemini-3\./);
   });
 });

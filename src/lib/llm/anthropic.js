@@ -9,8 +9,8 @@ export async function complete({ apiKey, model, prompt, signal }) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: model || 'claude-3-5-sonnet-20241022',
-      max_tokens: 2048,
+      model: model || 'claude-opus-5-5',
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     }),
     signal,
@@ -34,10 +34,10 @@ export async function searchAndRank({ apiKey, model, pageTitle, pageText, result
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: model || 'claude-3-5-sonnet-20241022',
-      max_tokens: 2048,
+      model: model || 'claude-opus-5-5',
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: Math.max(computeFetchCount(resultsCount), 3) }],
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: Math.max(computeFetchCount(resultsCount), 3) }],
     }),
     signal,
   });

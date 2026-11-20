@@ -8,7 +8,7 @@ export async function complete({ apiKey, model, prompt, signal }) {
       authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: model || 'gpt-4o-mini',
+      model: model || 'gpt-6-luna',
       messages: [{ role: 'user', content: prompt }],
     }),
     signal,
@@ -31,7 +31,7 @@ export async function searchAndRank({ apiKey, model, pageTitle, pageText, result
       authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: model || 'gpt-4o-mini',
+      model: model || 'gpt-6-luna',
       input: prompt,
       tools: [{ type: 'web_search' }],
     }),

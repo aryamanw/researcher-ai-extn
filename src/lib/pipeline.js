@@ -9,6 +9,14 @@ function dedupeByUrl(results) {
   return deduped;
 }
 
+function isHttpUrl(url) {
+  try {
+    return /^https?:$/.test(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
+
 function toScore(score) {
   return typeof score === 'number' && Number.isFinite(score) ? score : 0;
 }
@@ -24,6 +32,6 @@ export async function runPipeline({ pageTitle, pageUrl, articleText, llmClient, 
     throw new Error('LLM did not return a ranked results array');
   }
 
-  const filtered = dedupeByUrl(results).filter((result) => result.url !== pageUrl);
+  const filtered = dedupeByUrl(results).filter((result) => isHttpUrl(result.url) && result.url !== pageUrl);
   return sortByScore(filtered).slice(0, resultsCount);
 }

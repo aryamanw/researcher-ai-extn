@@ -16,8 +16,8 @@ describe('sidepanel.html structure', () => {
     const doc = loadSidepanelHtml();
     const hint = doc.querySelector('.shortcut-hint');
     expect(hint).not.toBeNull();
-    expect(hint.textContent).toMatch(/Ctrl\+Shift\+R/);
-    expect(hint.textContent).toMatch(/Cmd\+Shift\+R/);
+    expect(hint.textContent).toMatch(/Alt\+Shift\+R/);
+    expect(hint.textContent).toMatch(/Option\+Shift\+R/);
     expect(hint.querySelector('kbd')).not.toBeNull();
   });
 
@@ -236,6 +236,14 @@ describe('render functions', () => {
     expect(container.textContent).toContain('<img src=x onerror="window.__pwned = true">');
     expect(container.querySelector('img')).toBeNull();
     delete window.__pwned;
+  });
+
+  it('renderResults uses noopener noreferrer and tolerates missing fields', () => {
+    renderResults(container, [{ url: 'https://a.com' }]);
+    const a = container.querySelector('a');
+    expect(a.rel).toBe('noopener noreferrer');
+    expect(a.textContent).toBe('https://a.com');
+    expect(container.textContent).not.toContain('undefined');
   });
 
   it('renderHistoryList renders entries as keyboard-accessible buttons and wires click selection', () => {

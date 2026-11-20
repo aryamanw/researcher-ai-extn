@@ -4,16 +4,13 @@ dist/
 .env
 .worktrees/
 research-companion-v*.zip
+
+# Internal / local-only
 CLAUDE.md
 DESIGN.md
 PRODUCT.md
-docs/APP-FLOW.md
-docs/DEVELOPING.md
 docs/PRD.md
 docs/TRD.md
-docs/chrome-web-store-listing.md
-docs/privacy-policy.md
+docs/APP-FLOW.md
 docs/superpowers/
-store-assets/
-scripts/screenshots/
 .superpowers/

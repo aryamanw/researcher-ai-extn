@@ -74,6 +74,9 @@ export function toFriendlyErrorMessage(error) {
     if (status === 429) return 'Rate limited by the provider. Try again in a moment.';
     if (status >= 500) return 'The provider is having trouble right now. Try again shortly.';
   }
+  if (/failed to fetch|networkerror|load failed/i.test(message)) {
+    return "Couldn't reach the provider. Check your connection and try again.";
+  }
   if (/could not parse json from search response|search response json was not an array|did not return a ranked results array/i.test(message)) {
     return 'The provider returned an unexpected response. Try again.';
   }
@@ -122,10 +125,10 @@ export function renderResults(container, results, { provider, showProvider } = {
     article.className = 'result';
 
     const a = document.createElement('a');
-    a.textContent = r.title;
+    a.textContent = String(r.title ?? r.url ?? '');
     a.dir = 'auto';
     a.target = '_blank';
-    a.rel = 'noopener';
+    a.rel = 'noopener noreferrer';
     try {
       const u = new URL(r.url);
       if (/^https?:$/.test(u.protocol)) a.href = r.url;
@@ -136,7 +139,7 @@ export function renderResults(container, results, { provider, showProvider } = {
     const snippet = document.createElement('p');
     snippet.className = 'snippet';
     snippet.dir = 'auto';
-    snippet.textContent = r.snippet;
+    snippet.textContent = String(r.snippet ?? '');
 
     const relevance = document.createElement('p');
     relevance.className = 'relevance';
@@ -144,7 +147,7 @@ export function renderResults(container, results, { provider, showProvider } = {
     const relevanceLabel = document.createElement('span');
     relevanceLabel.className = 'relevance-label';
     relevanceLabel.textContent = 'Why this: ';
-    relevance.append(relevanceLabel, document.createTextNode(r.relevance));
+    relevance.append(relevanceLabel, document.createTextNode(String(r.relevance ?? '')));
 
     article.append(a, snippet, relevance);
     container.appendChild(article);

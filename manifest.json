@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Research Companion",
-  "version": "0.1.3",
+  "version": "0.1.4",
+  "minimum_chrome_version": "116",
   "description": "Suggests similar webpages, reports, and articles to what you're currently reading.",
+  "homepage_url": "https://aryamanw.github.io/researcher-ai-extn/",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -33,8 +35,8 @@
   "commands": {
     "run-search": {
       "suggested_key": {
-        "default": "Ctrl+Shift+R",
-        "mac": "Command+Shift+R"
+        "default": "Alt+Shift+R",
+        "mac": "Alt+Shift+R"
       },
       "description": "Re-run search on the current page"
     }

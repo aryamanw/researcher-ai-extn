@@ -43,7 +43,7 @@ describe('options.html structure', () => {
     const modelHint = modelInput.closest('label').nextElementSibling;
     expect(modelHint).not.toBeNull();
     expect(modelHint.className).toBe('field-hint');
-    expect(modelHint.textContent).toMatch(/claude-3-5-sonnet/);
+    expect(modelHint.textContent).toMatch(/claude-opus-5-5/);
   });
 
   it('links to the privacy policy from the credentials fieldset hint', () => {
@@ -79,6 +79,7 @@ function buildForm() {
         <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
       </label>
       <input type="number" name="resultsCount" min="1" max="20" />
+      <button type="button" id="remove-keys">Remove saved keys</button>
     </form>
     <button type="button" id="connect-openrouter">Connect</button>
     <span id="openrouter-status"></span>
@@ -211,6 +212,40 @@ describe('initOptionsPage', () => {
     await initOptionsPage(form, connectButton, statusEl);
 
     expect(statusEl.textContent).toBe('Connected to OpenRouter');
+  });
+
+  it('removes saved keys and the OpenRouter token after a confirm click', async () => {
+    const stored = {
+      provider: 'anthropic',
+      model: null,
+      apiKeys: { anthropic: 'sk-ant-secret1234', openai: 'sk-o', gemini: 'AIzaX' },
+      openrouterToken: 'or-token',
+      resultsCount: 8,
+    };
+    getSettings.mockResolvedValue(stored);
+    saveSettings.mockResolvedValue();
+    const form = buildForm();
+    const connectButton = document.getElementById('connect-openrouter');
+    const statusEl = document.getElementById('openrouter-status');
+    await initOptionsPage(form, connectButton, statusEl);
+
+    const removeButton = document.getElementById('remove-keys');
+    removeButton.click();
+    expect(saveSettings).not.toHaveBeenCalled();
+    expect(removeButton.textContent).toMatch(/confirm/i);
+
+    removeButton.click();
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    const saved = saveSettings.mock.calls.at(-1)[0];
+    expect(saved.apiKeys).toEqual({ anthropic: '', openai: '', gemini: '' });
+    expect(saved.openrouterToken).toBe('');
+    expect(saved.provider).toBe('anthropic');
+    await vi.waitFor(() => expect(form.anthropicKey.placeholder).toBe(''));
+    expect(statusEl.textContent).toBe('Not connected to OpenRouter');
+
+    // "Show" must not reveal the removed key
+    form.querySelector('.key-toggle[data-target="anthropicKey"]').click();
+    expect(form.anthropicKey.value).toBe('');
   });
 
   it('shows not connected when there is no openrouter token', async () => {

@@ -19,12 +19,15 @@ It connects directly to the AI provider and search service you choose, using you
 
 ### Install
 
+<!-- TODO: replace REPLACE_WITH_ITEM_ID with the Chrome Web Store item ID once the listing is published. -->
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-lightgrey?logo=googlechrome&logoColor=white" alt="Chrome Web Store, coming soon" /></a>
+  <a href="https://chromewebstore.google.com/detail/REPLACE_WITH_ITEM_ID"><img src="https://img.shields.io/badge/Chrome%20Web%20Store-Add%20to%20Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Add to Chrome from the Chrome Web Store" /></a>
   <a href="https://github.com/aryamanw/researcher-ai-extn/releases"><img src="https://img.shields.io/github/v/release/aryamanw/researcher-ai-extn?label=Download&logo=github" alt="Download latest release" /></a>
 </p>
 
-Research Companion isn't on the Chrome Web Store yet. Until it is, install it from a GitHub release:
+**Recommended:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/REPLACE_WITH_ITEM_ID).
+
+**Alternative:** install from a GitHub release (useful for testing a specific version):
 
 1. Go to [Releases](https://github.com/aryamanw/researcher-ai-extn/releases) and download the latest `research-companion-vX.Y.Z.zip`.
 2. Unzip it.
@@ -56,8 +59,18 @@ When you click the icon, a one-shot script reads the readable text of the active
 
 Your provider settings, API keys, and the last 50 research sessions live only in your browser's local extension storage (`chrome.storage.local`). Nothing syncs, and nothing gets sent anywhere except the provider you configured.
 
-Full details: [privacy policy](https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html).
+Full details: [Privacy Policy](https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html) and [Terms of Use](https://aryamanw.github.io/researcher-ai-extn/terms.html).
 
 ---
 
-Want to build or contribute? See [docs/DEVELOPING.md](docs/DEVELOPING.md).
+## Contributing
+
+Want to build or contribute? Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPING.md](docs/DEVELOPING.md). Release history is in the [changelog](CHANGELOG.md). Everyone participating is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE). Third-party components are credited in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

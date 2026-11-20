@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Terms of Use — Research Companion</title>
+<meta name="description" content="Terms of Use for the Research Companion Chrome extension." />
+<style>
+  :root{
+    --ink: oklch(27.1% 0.036 229.8);
+    --ink-on-dark: oklch(95% 0.012 230);
+    --text-secondary: oklch(50% 0.02 230);
+    --text-secondary-on-dark: oklch(68% 0.022 230);
+    --bg: oklch(97.1% 0.004 134.8);
+    --bg-dark: oklch(20% 0.03 230);
+    --surface: oklch(92% 0.014 230);
+    --surface-dark: oklch(30% 0.025 230);
+    --border: oklch(84% 0.018 230);
+    --border-dark: oklch(40% 0.025 230);
+    --border-strong: oklch(60% 0.025 230);
+    --border-strong-dark: oklch(55% 0.025 230);
+    --accent: oklch(50% 0.09 231);
+    --accent-dark: oklch(70% 0.095 231);
+
+    --c-bg: var(--bg);
+    --c-surface: var(--surface);
+    --c-ink: var(--ink);
+    --c-text-2: var(--text-secondary);
+    --c-border: var(--border);
+    --c-border-strong: var(--border-strong);
+    --c-accent: var(--accent);
+
+    --font-display: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --r-sm: 6px;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --c-bg: var(--bg-dark);
+      --c-surface: var(--surface-dark);
+      --c-ink: var(--ink-on-dark);
+      --c-text-2: var(--text-secondary-on-dark);
+      --c-border: var(--border-dark);
+      --c-border-strong: var(--border-strong-dark);
+      --c-accent: var(--accent-dark);
+    }
+  }
+
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
+  body{
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: var(--c-accent); text-decoration: underline; text-decoration-color: var(--c-border-strong); transition: text-decoration-color 160ms var(--ease-out); }
+  a:hover{ text-decoration-color: var(--c-accent); }
+  code{
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.875em;
+  }
+
+  header{
+    border-bottom: 1px solid var(--c-border);
+    padding: 18px 24px;
+  }
+  .nav-inner{
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+  .nav-inner svg{ width: 24px; height: 24px; flex-shrink: 0; }
+
+  main{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px 100px;
+  }
+  .kicker{
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-2);
+    margin-bottom: 14px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .updated{
+    font-size: 0.875rem;
+    color: var(--c-text-2);
+    margin-bottom: 36px;
+  }
+  .intro{
+    font-size: 1.0625rem;
+    color: var(--c-text-2);
+    margin-bottom: 48px;
+    max-width: 60ch;
+  }
+  h2{
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 40px 0 14px;
+    padding-top: 28px;
+    border-top: 1px solid var(--c-border);
+  }
+  section:first-of-type h2{ border-top: none; padding-top: 0; }
+  p, li{
+    font-size: 0.9375rem;
+    color: var(--c-text-2);
+  }
+  p strong, li strong{ color: var(--c-ink); font-weight: 600; }
+  ul{ padding-left: 20px; }
+  li{ margin-bottom: 10px; line-height: 1.6; }
+  li:last-child{ margin-bottom: 0; }
+
+  footer{
+    border-top: 1px solid var(--c-border);
+    padding: 32px 24px;
+  }
+  .foot-inner{
+    max-width: 720px;
+    margin: 0 auto;
+    font-size: 0.8125rem;
+    color: var(--c-text-2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="nav-inner">
+    <svg viewBox="0 0 128 128" aria-hidden="true">
+      <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
+      <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
+      <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
+    </svg>
+    Research Companion
+  </a>
+</header>
+
+<main>
+  <span class="kicker">Legal</span>
+  <h1>Terms of Use</h1>
+  <p class="updated">Effective and last updated: November 20, 2026</p>
+  <p class="intro">These terms apply to your use of the Research Companion Chrome extension and this website. By installing or using the extension you agree to them. If you do not agree, do not use it.</p>
+
+  <section>
+    <h2>Open source and license</h2>
+    <p>Research Companion is free, open-source software released under the <a href="https://github.com/aryamanw/researcher-ai-extn/blob/main/LICENSE">MIT License</a>. The license governs your rights to the source code. These terms govern your use of the published extension and do not restrict any rights the MIT License grants you. Bundled third-party components remain under their own licenses (see <a href="https://github.com/aryamanw/researcher-ai-extn/blob/main/THIRD_PARTY_NOTICES.md">THIRD_PARTY_NOTICES.md</a>).</p>
+  </section>
+
+  <section>
+    <h2>Provided "as is"</h2>
+    <p>The extension is provided <strong>"as is" and "as available", without warranty of any kind</strong>, express or implied, including warranties of merchantability, fitness for a particular purpose, accuracy, availability, and non-infringement. It may contain bugs, stop working when a provider changes its API, or be discontinued at any time.</p>
+  </section>
+
+  <section>
+    <h2>Your API keys, costs, and provider terms</h2>
+    <ul>
+      <li>The extension works only with credentials you supply: your own API key (Anthropic, OpenAI, Google Gemini) or an OpenRouter account you connect. You are responsible for keeping those credentials secure.</li>
+      <li><strong>You are solely responsible for all charges</strong> incurred with your provider, including web-search tool fees and token usage. Each analysis sends up to roughly 12,000 characters of page text and triggers provider-side web searches, which may be billed.</li>
+      <li>You must comply with each provider's terms of service, usage policies, and any rate limits. Your content is processed by the provider under its terms; see our <a href="privacy-policy.html">Privacy Policy</a>.</li>
+      <li>You are responsible for ensuring you have the right to analyze the pages you use the extension on, and for not sending confidential or regulated information to a provider where that is not permitted.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>AI-generated content may be inaccurate</h2>
+    <p>Related pages, rankings, scores, snippets, and relevance notes are produced by third-party AI models and search tools. They can be wrong, outdated, incomplete, biased, or point to pages that do not exist or do not say what is described. Verify anything important at the source. Nothing in the extension is professional, legal, medical, financial, or academic advice. The developer does not control or endorse the third-party pages that are suggested.</p>
+  </section>
+
+  <section>
+    <h2>Acceptable use</h2>
+    <p>Do not use the extension to violate any law or third-party rights, to circumvent a website's access controls, or in a way that breaches your provider's terms.</p>
+  </section>
+
+  <section>
+    <h2>No affiliation; trademarks</h2>
+    <p>Research Companion is an independent project. It is <strong>not affiliated with, sponsored by, or endorsed by</strong> Anthropic, OpenAI, Google, or OpenRouter. Claude, Anthropic, OpenAI, ChatGPT, Google, Gemini, Chrome, and OpenRouter are trademarks of their respective owners and are used here only to describe compatibility.</p>
+  </section>
+
+  <section>
+    <h2>Limitation of liability</h2>
+    <p>To the maximum extent permitted by law, the developer and contributors will not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss of data, profits, or goodwill, or for provider charges, arising from or related to your use of (or inability to use) the extension, even if advised of the possibility. Where liability cannot be excluded, it is limited to the amount you paid for the extension, which is zero. Some jurisdictions do not allow certain limitations, so parts of this section may not apply to you.</p>
+  </section>
+
+  <section>
+    <h2>Changes</h2>
+    <p>These terms may be updated from time to time. The "Effective and last updated" date above will change and the new version will be published at this URL. Continued use after a change means you accept the updated terms.</p>
+  </section>
+
+  <section>
+    <h2>Contact</h2>
+    <p>Questions about these terms: please open an issue at <a href="https://github.com/aryamanw/researcher-ai-extn/issues">github.com/aryamanw/researcher-ai-extn/issues</a>. See also the <a href="privacy-policy.html">Privacy Policy</a>.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-inner">© 2026 Aryaman. Research Companion is open source under the MIT License. <a href="privacy-policy.html">Privacy Policy</a></div>
+</footer>
+
+</body>
+</html>

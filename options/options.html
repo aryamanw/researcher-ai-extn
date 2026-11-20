@@ -28,7 +28,7 @@
       Model (optional, uses provider default if blank)
       <input type="text" name="model" />
     </label>
-    <p class="field-hint">Examples: claude-3-5-sonnet-20241022 (Anthropic), gpt-4o (OpenAI), gemini-1.5-pro (Gemini).</p>
+    <p class="field-hint">Examples: claude-opus-5-5 (Anthropic), gpt-6-luna (OpenAI), gemini-3.8-flash (Gemini), openai/gpt-6-luna (OpenRouter).</p>
 
     <fieldset>
       <legend>Provider credentials</legend>
@@ -63,6 +63,10 @@
           <button type="button" id="connect-openrouter" class="button-primary">Connect to OpenRouter</button>
           <span id="openrouter-status"></span>
         </div>
+      </div>
+      <div class="remove-keys-row">
+        <button type="button" id="remove-keys" class="button-secondary">Remove saved keys</button>
+        <p class="field-hint">Deletes every saved API key and disconnects OpenRouter on this device.</p>
       </div>
     </fieldset>
 
