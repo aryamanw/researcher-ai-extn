@@ -14,7 +14,7 @@ const readState = page => page.locator('[data-reading-text]').evaluateAll(nodes 
     const style = getComputedStyle(node);
     return {
       text: node.textContent,
-      x: Math.round(rect.x), y: Math.round(rect.y),
+      x: Math.round(rect.x + scrollX), y: Math.round(rect.y + scrollY),
       opacity: style.opacity, filter: style.filter,
     };
   })
@@ -22,8 +22,9 @@ const readState = page => page.locator('[data-reading-text]').evaluateAll(nodes 
 
 try {
   for (const width of [320, 390, 768, 1280, 1440, 1920]) {
+    console.log(`Checking landing at ${width}px`);
     const context = await browser.newContext({
-      viewport: { width, height: width >= 1280 ? 900 : 844 },
+      viewport: { width, height: width === 1280 ? 800 : width >= 1440 ? 900 : 844 },
       reducedMotion: 'no-preference',
     });
     const page = await context.newPage();
@@ -41,6 +42,16 @@ try {
     assert.ok(copy && demo);
     assert.ok(copy.x + copy.width <= demo.x + 1 || copy.y + copy.height <= demo.y + 1,
       'Marketing copy overlaps the demo');
+    if (width >= 1280) {
+      assert.equal(await page.locator('h1, .hero-copy .actions, [data-result]').evaluateAll(nodes =>
+        [nodes[0], nodes[1], nodes[2]].every(node => {
+          const rect = node.getBoundingClientRect();
+          return rect.top >= 0 && rect.bottom <= innerHeight;
+        })), true, 'Headline, actions, and first result must fit in the first screen');
+    }
+    for (const link of await page.locator('.demo-source a, [data-result] a').all()) {
+      assert.ok((await link.boundingBox()).height >= 44, 'Demo links need 44px touch targets');
+    }
     await page.locator('#demo').scrollIntoViewIfNeeded();
     const before = await readState(page);
     assert.ok(before.length >= 4, 'Missing reading-text hooks');
@@ -58,16 +69,36 @@ try {
     assert.equal(await play.isVisible(), true, 'GSAP failed to load; motion QA is blocked');
     await play.click();
     await page.waitForFunction(() => document.querySelector('#demo').dataset.playing === 'true');
+    assert.equal(await play.getAttribute('aria-disabled'), 'true');
     assert.deepEqual(await readState(page), before, 'Replay moves or fades reading text');
-    await page.waitForFunction(() => document.querySelector('#demo').dataset.playing === 'false');
+    try {
+      await page.waitForFunction(() => document.querySelector('#demo').dataset.playing === 'false');
+    } catch (error) {
+      console.error('Replay diagnostic', await page.evaluate(() => ({
+        visibility: document.visibilityState,
+        playing: document.querySelector('#demo').dataset.playing,
+        ticker: window.gsap.ticker.time,
+        timelines: window.gsap.globalTimeline.getChildren().map(animation => ({
+          time: animation.time(), duration: animation.duration(), paused: animation.paused(),
+        })),
+      })));
+      throw error;
+    }
     assert.deepEqual(await readState(page), before);
     await play.click();
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.waitForFunction(() => document.querySelector('[data-demo-play]').hidden);
     assert.deepEqual(await readState(page), before, 'Reduced motion loses the resting view');
     assert.equal(await page.locator('#demo').getAttribute('data-playing'), 'false');
+    assert.equal(await page.locator('#demo').evaluate(node => node === document.activeElement),
+      true, 'Hiding the focused replay control must preserve focus in the demo');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.waitForFunction(() => !document.querySelector('[data-demo-play]').hidden);
+    // Capture a resting initial view, without full-page fixed-position artifacts.
+    await page.evaluate(() => {
+      document.activeElement?.blur();
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    });
     await page.screenshot({ path: path.join(output, `landing-${width}.png`), fullPage: true });
     assert.deepEqual(errors, []);
     await context.close();

@@ -1,1001 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Research Companion — A reading lamp for your research</title>
-<meta name="description" content="Research Companion reads the page you're on and surfaces related articles, papers, and reports in Chrome's side panel — using your own API keys, no backend in between." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink: oklch(27.1% 0.036 229.8);
-    --ink-on-dark: oklch(95% 0.012 230);
-    --text-secondary: oklch(50% 0.02 230);
-    --text-secondary-on-dark: oklch(68% 0.022 230);
-    --bg: oklch(97.1% 0.004 134.8);
-    --bg-dark: oklch(20% 0.03 230);
-    --surface: oklch(92% 0.014 230);
-    --surface-dark: oklch(30% 0.025 230);
-    --border: oklch(84% 0.018 230);
-    --border-dark: oklch(40% 0.025 230);
-    --border-strong: oklch(60% 0.025 230);
-    --border-strong-dark: oklch(55% 0.025 230);
-    --accent: oklch(50% 0.09 231);
-    --accent-dark: oklch(70% 0.095 231);
-    --accent-secondary: oklch(30.4% 0.077 148.5);
-    --accent-secondary-dark: oklch(68% 0.1 148);
-
-    --c-bg: var(--bg);
-    --c-surface: var(--surface);
-    --c-ink: var(--ink);
-    --c-text-2: var(--text-secondary);
-    --c-border: var(--border);
-    --c-border-strong: var(--border-strong);
-    --c-accent: var(--accent);
-    --c-accent-2: var(--accent-secondary);
-
-    --font-display: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-    --font-body: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-
-    --r-sm: 6px;
-    --r-md: 8px;
-
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --c-bg: var(--bg-dark);
-      --c-surface: var(--surface-dark);
-      --c-ink: var(--ink-on-dark);
-      --c-text-2: var(--text-secondary-on-dark);
-      --c-border: var(--border-dark);
-      --c-border-strong: var(--border-strong-dark);
-      --c-accent: var(--accent-dark);
-      --c-accent-2: var(--accent-secondary-dark);
-    }
-  }
-
-  *{ box-sizing: border-box; margin: 0; padding: 0; }
-  html{ scroll-behavior: smooth; }
-  body{
-    background: var(--c-bg);
-    color: var(--c-ink);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-  img, svg{ display: block; max-width: 100%; }
-  a{ color: inherit; text-decoration: none; }
-  ::selection{ background: var(--c-accent); color: var(--c-bg); }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
-  }
-
-  .wrap{
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* ---------- Kicker (plain label, no chrome) ---------- */
-  .kicker{
-    display: block;
-    font-family: var(--font-display);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--c-text-2);
-  }
-
-  /* ---------- Always-dark zones (hero, and the nav while it sits over the hero) ---------- */
-  .hero, .nav.on-dark{
-    --c-bg: var(--bg-dark);
-    --c-surface: var(--surface-dark);
-    --c-ink: var(--ink-on-dark);
-    --c-text-2: var(--text-secondary-on-dark);
-    --c-border: var(--border-dark);
-    --c-border-strong: var(--border-strong-dark);
-    --c-accent: var(--accent-dark);
-    --c-accent-2: var(--accent-secondary-dark);
-  }
-
-  /* ---------- Nav: flat bar ---------- */
-  .nav{
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 40;
-    color: var(--c-ink);
-    transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out), color 300ms var(--ease-out);
-    background: color-mix(in oklab, var(--c-bg) 82%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--c-border);
-  }
-  .nav-inner{
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 24px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .nav-brand{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 0.875rem;
-    letter-spacing: -0.01em;
-  }
-  .nav-brand svg{ width: 24px; height: 24px; flex-shrink: 0; }
-  .nav-links{
-    display: flex;
-    gap: 28px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--c-text-2);
-  }
-  .nav-links a{ transition: color 160ms var(--ease-out); }
-  .nav-links a:hover{ color: var(--c-ink); }
-  .nav-right{ display: flex; align-items: center; gap: 16px; }
-  .nav-burger{
-    display: none;
-    width: 30px; height: 30px;
-    border-radius: var(--r-sm);
-    border: 1px solid var(--c-border);
-    background: transparent;
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .nav-burger span{
-    position: absolute;
-    left: 7px; right: 7px;
-    height: 1.5px;
-    background: var(--c-ink);
-    transition: transform 250ms var(--ease-out);
-  }
-  .nav-burger span:nth-child(1){ top: 11px; }
-  .nav-burger span:nth-child(2){ top: 17px; }
-  .nav-burger.open span:nth-child(1){ top: 14px; transform: rotate(45deg); }
-  .nav-burger.open span:nth-child(2){ top: 14px; transform: rotate(-45deg); }
-
-  .mobile-menu{
-    position: fixed;
-    inset: 0;
-    z-index: 35;
-    background: var(--c-bg);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 22px;
-    padding: 0 32px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 220ms var(--ease-out);
-  }
-  .mobile-menu.open{ opacity: 1; visibility: visible; }
-  .mobile-menu a{
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 600;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 280ms var(--ease-out), transform 280ms var(--ease-out);
-  }
-  .mobile-menu.open a{ opacity: 1; transform: translateY(0); }
-  .mobile-menu.open a:nth-child(1){ transition-delay: 40ms; }
-  .mobile-menu.open a:nth-child(2){ transition-delay: 80ms; }
-  .mobile-menu.open a:nth-child(3){ transition-delay: 120ms; }
-  .mobile-menu.open a:nth-child(4){ transition-delay: 160ms; }
-
-  /* ---------- Buttons ---------- */
-  .btn{
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: var(--r-sm);
-    font-family: var(--font-display);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    padding: 0 16px;
-    height: 36px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
-  }
-  .btn:active{ transform: scale(0.97); }
-  .btn-primary{
-    background: var(--c-accent);
-    color: var(--c-bg);
-  }
-  .btn-primary:hover{ opacity: 0.88; }
-  .btn-ghost{
-    background: transparent;
-    border-color: var(--c-border-strong);
-    color: var(--c-ink);
-  }
-  .btn-ghost:hover{ border-color: var(--c-accent-2); color: var(--c-accent-2); }
-  .btn-lg{ height: 44px; padding: 0 22px; font-size: 0.875rem; }
-  .btn-arrow{
-    display: inline-block;
-    transition: transform 160ms var(--ease-out);
-  }
-  .btn:hover .btn-arrow{ transform: translate(2px, -2px); }
-  .btn-row{ display: flex; gap: 12px; flex-wrap: wrap; }
-
-  /* ---------- Reveal ---------- */
-  .reveal{
-    opacity: 0;
-    transform: translateY(32px);
-    transition: opacity 850ms var(--ease-out), transform 850ms var(--ease-out);
-  }
-  .reveal.in{ opacity: 1; transform: translateY(0); }
-  .stagger > *:nth-child(1){ transition-delay: 0ms; }
-  .stagger > *:nth-child(2){ transition-delay: 90ms; }
-  .stagger > *:nth-child(3){ transition-delay: 180ms; }
-  .stagger > *:nth-child(4){ transition-delay: 270ms; }
-
-  /* ---------- Hero: the reading lamp ---------- */
-  .hero{
-    --mx: 62vw;
-    --my: 42vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-top: 110px;
-    padding-bottom: 80px;
-    position: relative;
-    overflow: hidden;
-    background: var(--c-bg);
-    color: var(--c-ink);
-  }
-  .lamp-text{
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    padding: 72px 24px;
-    font-size: 1rem;
-    line-height: 2.1;
-    text-align: justify;
-    color: var(--c-text-2);
-    overflow: hidden;
-    pointer-events: none;
-    user-select: none;
-    -webkit-mask-image: radial-gradient(circle 260px at var(--mx) var(--my), #000 0%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.06) 100%);
-            mask-image: radial-gradient(circle 260px at var(--mx) var(--my), #000 0%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.06) 100%);
-  }
-  .lamp-text em{ font-style: normal; font-weight: 600; color: var(--c-accent); }
-  .lamp-glow{
-    position: absolute;
-    left: 0; top: 0;
-    z-index: 0;
-    width: 680px; height: 680px;
-    border-radius: 50%;
-    background: radial-gradient(circle, color-mix(in oklab, var(--c-accent) 20%, transparent), transparent 62%);
-    transform: translate3d(calc(var(--mx) - 50%), calc(var(--my) - 50%), 0);
-    pointer-events: none;
-  }
-  .hero-inner{ position: relative; z-index: 1; }
-  .hero h1 .word{ display: inline-block; white-space: nowrap; }
-  .hero h1 .ch{ display: inline-block; }
-  .hero-lines{
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--c-ink) 6%, transparent) 1px, transparent 1px);
-    background-size: 120px 100%;
-    background-position: center;
-    mask-image: linear-gradient(to bottom, transparent, black 12%, black 55%, transparent);
-    pointer-events: none;
-  }
-  .hero h1{
-    font-family: var(--font-display);
-    font-size: clamp(2.8rem, 7.4vw, 6rem);
-    font-weight: 800;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
-    max-width: 12ch;
-    margin: 0 0 28px;
-  }
-  .hero h1 .accent{ color: var(--c-accent); }
-  .hero p.lead{
-    font-size: 1.125rem;
-    line-height: 1.6;
-    color: var(--c-text-2);
-    max-width: 52ch;
-    margin-bottom: 32px;
-  }
-
-  /* ---------- Panel mockup: flat, single surface ---------- */
-  .mock{
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--r-md);
-    padding: 20px;
-  }
-  .mock-title{
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-  .mock-status{
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--c-text-2);
-    margin-bottom: 12px;
-  }
-  .mock-card{
-    background: var(--c-bg);
-    border: 1px solid var(--c-border);
-    border-radius: var(--r-sm);
-    padding: 12px 14px;
-    margin-bottom: 10px;
-  }
-  .mock-card .t{
-    font-size: 0.8438rem;
-    font-weight: 500;
-    margin-bottom: 5px;
-  }
-  .mock-card .s{
-    font-size: 0.78125rem;
-    color: var(--c-text-2);
-    line-height: 1.5;
-    margin-bottom: 8px;
-  }
-  .mock-card .why{
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--c-accent);
-    border-top: 1px solid var(--c-border);
-    padding-top: 8px;
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .mock-card .score{
-    color: var(--c-accent-2);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-  }
-  .mock-history{
-    font-size: 0.78125rem;
-    color: var(--c-text-2);
-    padding-top: 4px;
-  }
-
-  /* ---------- Section heading ---------- */
-  .section{ padding: 100px 0; border-top: 1px solid var(--c-border); }
-  .section-head{ max-width: 600px; margin-bottom: 56px; }
-  .section-head h2{
-    font-family: var(--font-display);
-    font-size: clamp(1.75rem, 3vw, 2.4rem);
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.16;
-    margin-top: 12px;
-  }
-
-  /* ---------- How it works: pinned scroll story ---------- */
-  .story-section{ border-top: 1px solid var(--c-border); }
-  .story{
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 90px 0 50px;
-  }
-  .story .section-head{ margin-bottom: 36px; }
-  .story-stage{
-    position: relative;
-    display: grid;
-    grid-template-columns: 210px 1fr 340px;
-    gap: 32px;
-    align-items: start;
-  }
-  .story-steps{ list-style: none; display: flex; flex-direction: column; gap: 20px; }
-  .story-step{
-    border-left: 2px solid var(--c-border);
-    padding-left: 14px;
-    transition: opacity 300ms var(--ease-out), border-color 300ms var(--ease-out);
-  }
-  .story.is-animated .story-step{ opacity: 0.32; }
-  .story.is-animated .story-step.active{ opacity: 1; border-left-color: var(--c-accent); }
-  .story.is-animated .story-step:not(.active) p:not(.num){ display: none; }
-  .story-panel .mock-card .s{ display: none; }
-  .story-panel .mock-card .t{ margin-bottom: 8px; }
-  .story-step .num{
-    font-family: var(--font-display);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--c-accent);
-    letter-spacing: 0.06em;
-    margin-bottom: 6px;
-  }
-  .story-step h3{
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .story-step p{
-    font-size: 0.8125rem;
-    color: var(--c-text-2);
-    line-height: 1.5;
-  }
-  .story-article{
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--r-md);
-    padding: 20px 24px 8px;
-  }
-  .story-article .bar{ display: flex; gap: 6px; margin-bottom: 18px; }
-  .story-article .bar i{ width: 8px; height: 8px; border-radius: 50%; background: var(--c-border-strong); }
-  .story-article h4{
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin-bottom: 12px;
-  }
-  .story-article p{
-    font-size: 0.875rem;
-    line-height: 1.75;
-    color: var(--c-text-2);
-    margin-bottom: 12px;
-  }
-  .story-article .hl{
-    color: var(--c-ink);
-    font-weight: 600;
-    background-image: linear-gradient(color-mix(in oklab, var(--c-accent) 38%, transparent), color-mix(in oklab, var(--c-accent) 38%, transparent));
-    background-repeat: no-repeat;
-    background-position: 0 88%;
-    background-size: 100% 42%;
-  }
-  .story-query{ display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; margin-bottom: 12px; }
-  .chip{
-    display: inline-block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--c-accent);
-    color: var(--c-bg);
-    white-space: nowrap;
-  }
-  .chip-fly{ position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; visibility: hidden; opacity: 0; }
-
-  /* ---------- Trust / editorial split ---------- */
-  .split{
-    display: grid;
-    grid-template-columns: 0.9fr 1.1fr;
-    gap: 56px;
-    align-items: start;
-  }
-  .split h2{
-    font-family: var(--font-display);
-    font-size: clamp(1.9rem, 3.2vw, 2.6rem);
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.16;
-  }
-  .trust-list{ display: flex; flex-direction: column; }
-  .trust-row{
-    padding: 18px 0;
-    border-top: 1px solid var(--c-border);
-  }
-  .trust-row:first-child{ border-top: none; padding-top: 0; }
-  .trust-row p{ font-size: 0.9375rem; color: var(--c-text-2); line-height: 1.55; }
-  .trust-row strong{ color: var(--c-ink); font-weight: 600; }
-
-  /* ---------- Providers ---------- */
-  .provider-row{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .provider-tag{
-    border: 1px solid var(--c-border-strong);
-    border-radius: var(--r-sm);
-    padding: 10px 18px;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-  .provider-note{
-    margin-top: 24px;
-    font-size: 0.875rem;
-    color: var(--c-text-2);
-    max-width: 60ch;
-    line-height: 1.6;
-  }
-
-  /* ---------- Final CTA ---------- */
-  .cta-section{
-    padding: 120px 0 100px;
-  }
-  .cta-section h2{
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 3.8vw, 2.8rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 14px 0 12px;
-  }
-  .cta-section p{ color: var(--c-text-2); margin-bottom: 28px; max-width: 50ch; }
-
-  /* ---------- Footer ---------- */
-  footer{
-    border-top: 1px solid var(--c-border);
-    padding: 40px 0;
-  }
-  .foot-grid{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  .foot-brand{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 0.875rem;
-  }
-  .foot-brand svg{ width: 22px; height: 22px; }
-  .foot-links{
-    display: flex;
-    gap: 24px;
-    font-size: 0.8125rem;
-    color: var(--c-text-2);
-  }
-  .foot-links a{ transition: color 160ms var(--ease-out); }
-  .foot-links a:hover{ color: var(--c-ink); }
-  .foot-copy{
-    font-size: 0.75rem;
-    color: var(--c-text-2);
-    margin-top: 20px;
-  }
-
-  /* ---------- Mobile ---------- */
-  @media (max-width: 860px){
-    .nav-links{ display: none; }
-    .nav-burger{ display: block; }
-    .nav-right .btn-primary{ display: none; }
-    .hero{ padding-top: 90px; }
-    .lamp-text{ font-size: 0.875rem; padding: 64px 18px; }
-    .story{ min-height: 0; padding: 70px 0; }
-    .story-stage{ grid-template-columns: 1fr; gap: 20px; }
-    .story-steps{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .story-step p{ display: none; }
-    .split{ grid-template-columns: 1fr; gap: 32px; }
-    .section{ padding: 70px 0; }
-    .cta-section{ padding: 80px 0 70px; }
-    .wrap{ padding: 0 18px; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Research Companion | Find your next source</title>
+  <meta name="description" content="Find related articles, papers, and reports beside the page you’re reading. An open-source Chrome extension using your chosen AI provider.">
+  <meta property="og:title" content="Research Companion | Find your next source">
+  <meta property="og:description" content="Find related articles, papers, and reports beside the page you’re reading. An open-source Chrome extension using your chosen AI provider.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aryamanw.github.io/researcher-ai-extn/">
+  <link rel="canonical" href="https://aryamanw.github.io/researcher-ai-extn/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20aria-hidden%3D%22true%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2228%22%20fill%3D%22oklch%2825%25%20.045%20230%29%22%2F%3E%3Cpath%20d%3D%22M44%2086%2084%2044%22%20stroke%3D%22oklch%2878%25%20.09%20231%29%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2244%22%20cy%3D%2286%22%20r%3D%2214%22%20fill%3D%22oklch%2896%25%20.009%20230%29%22%2F%3E%3Ccircle%20cx%3D%2284%22%20cy%3D%2244%22%20r%3D%2219%22%20fill%3D%22oklch%2878%25%20.09%20231%29%22%2F%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="./assets/landing.css">
 </head>
 <body>
-
-<div class="hero-lines"></div>
-
-<nav class="nav on-dark">
-  <div class="nav-inner">
-    <a href="#top" class="nav-brand">
-      <svg viewBox="0 0 128 128" aria-hidden="true">
-        <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
-        <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
-        <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
-        <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
-      </svg>
-      Research Companion
-    </a>
-    <div class="nav-links">
-      <a href="#how-it-works">How it works</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#providers">Providers</a>
+  <a class="skip-link" href="#top">Skip to content</a>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top"><svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="var(--stage)"/><path d="M44 86 84 44" stroke="var(--light)" stroke-width="8" stroke-linecap="round"/><circle cx="44" cy="86" r="14" fill="var(--stage-ink)"/><circle cx="84" cy="44" r="19" fill="var(--light)"/></svg><span>Research Companion</span></a>
+      <nav class="nav-links" aria-label="Main">
+        <a href="#demo">Example</a>
+        <a href="#how-it-works">How it works</a>
+        <a class="nav-download" href="#install">Download <span aria-hidden="true">↗</span></a>
+      </nav>
     </div>
-    <div class="nav-right">
-      <a class="btn btn-primary" href="https://github.com/aryamanw/researcher-ai-extn/releases">Download</a>
+  </header>
+  <main id="top" tabindex="-1">
+<section class="hero wrap" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="eyebrow">Related research, inside Chrome</p>
+    <h1 id="hero-title" data-reading-text>Find your next source. <span class="headline-secondary">Keep your place.</span></h1>
+    <p class="lead" data-reading-text>Research Companion uses the page you’re reading to find related articles, papers, and reports in Chrome’s side panel.</p>
+    <div class="actions">
+      <a class="button button-primary" href="#demo">Explore the example</a>
+      <a class="button" href="#install">Download for Chrome</a>
     </div>
-    <button class="nav-burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
-      <span></span><span></span>
-    </button>
+    <p class="small">Open source. Bring your own AI provider.</p>
   </div>
-</nav>
-
-<div class="mobile-menu" id="mobileMenu">
-  <a href="#how-it-works">How it works</a>
-  <a href="#privacy">Privacy</a>
-  <a href="#providers">Providers</a>
-  <a href="https://github.com/aryamanw/researcher-ai-extn">GitHub</a>
-</div>
-
-<main id="top">
-
-  <section class="hero" id="hero">
-    <div class="lamp-text" aria-hidden="true">
-      <p>Transformers dispensed with recurrence, relying on <em>self-attention</em> to relate every token to every other. Retrieval-augmented generation pairs a language model with a <em>search index</em>, grounding its answers in documents it can cite. Scaling laws suggest loss falls predictably with <em>compute</em>, data, and parameters, though the exponents remain debated. Sparse attention, linear attention, and state-space models each trade expressiveness for <em>long-context</em> efficiency. Evaluation is contested: benchmarks saturate, leak into training data, and reward pattern-matching over <em>reasoning</em>. Meta-analyses of reading comprehension find that annotation and spaced review outperform rereading. Citation graphs reveal <em>clusters</em> of related work that keyword search misses. A good literature review is less a list than a <em>map</em>: who answered whom, which results replicated, where the open questions are. Systematic reviews follow a protocol to reduce selection bias; narrative reviews trade rigor for <em>synthesis</em>. Preprints move faster than peer review, and the gap between them is where most <em>surprises</em> live.</p>
-    </div>
-    <div class="lamp-glow" aria-hidden="true"></div>
-    <div class="wrap hero-inner">
-      <h1>A reading lamp for your <span class="accent">research</span>.</h1>
-      <p class="lead">Research Companion reads the page you're on and surfaces related articles, papers, and reports — right in Chrome's side panel. Your own API keys, no backend in between, nothing competing for your attention.</p>
-      <div class="btn-row">
-        <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
-          Download latest release <span class="btn-arrow">→</span>
-        </a>
-        <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
+  <figure id="demo" class="demo-stage" data-playing="false" tabindex="-1" aria-labelledby="demo-title">
+    <div class="demo-lamp" data-demo-lamp aria-hidden="true"></div>
+    <div class="demo-heading">
+      <h2 id="demo-title">One page. A useful next connection.</h2>
+      <div class="demo-controls">
+        <button class="button replay" type="button" data-demo-play hidden>Replay the connection</button>
       </div>
     </div>
-  </section>
-
-  <section class="story-section" id="how-it-works">
-    <div class="story">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <span class="kicker">Core loop</span>
-          <h2>Open the panel. Get back to reading.</h2>
-        </div>
-        <div class="story-stage">
-          <ol class="story-steps">
-            <li class="story-step">
-              <p class="num">01 — READ</p>
-              <h3>Reads the page you're on</h3>
-              <p>A one-shot script reads the readable text of the active tab only — never tabs you haven't clicked on, never running in the background.</p>
-            </li>
-            <li class="story-step">
-              <p class="num">02 — SEARCH</p>
-              <h3>Searches with your provider</h3>
-              <p>That text goes to your chosen AI provider, which uses its own web search to find related pages. No separate search API key needed.</p>
-            </li>
-            <li class="story-step">
-              <p class="num">03 — RANK</p>
-              <h3>Ranks and explains</h3>
-              <p>Each result comes back with a short, honest note on why it's relevant — the product's actual trust signal, not a persuasive flourish.</p>
-            </li>
-            <li class="story-step">
-              <p class="num">04 — RESULT</p>
-              <h3>Click through, or don't</h3>
-              <p>Past sessions persist in History. Reopening one re-renders instantly — no new searches, no new cost.</p>
-            </li>
-          </ol>
-
-          <div class="story-article" aria-label="Example page being read">
-            <div class="bar"><i></i><i></i><i></i></div>
-            <h4>Why attention replaced recurrence</h4>
-            <p>The transformer dispenses with recurrence entirely, relying instead on <span class="hl">self-attention</span> to model dependencies across a whole sequence at once.</p>
-            <p>Later work paired these models with <span class="hl">retrieval</span> over an external corpus, improving factual accuracy on open-domain questions.</p>
-            <p>How to measure progress is still contested. Most comparisons now lean on <span class="hl">long-context benchmarks</span>, and they don't always agree.</p>
-          </div>
-
-          <div class="mock story-panel">
-            <p class="mock-title">Research Companion</p>
-            <p class="mock-status">3 related results</p>
-            <div class="story-query">
-              <span class="chip">self-attention</span>
-              <span class="chip">retrieval</span>
-              <span class="chip">long-context benchmarks</span>
-            </div>
-            <div class="mock-card">
-              <p class="t">Attention Is All You Need — annotated walkthrough</p>
-              <p class="s">A step-by-step breakdown of the transformer, with diagrams matching the paper's notation.</p>
-              <p class="why"><span>Why this: same core architecture, in more depth</span><span class="score" data-score="94">94</span></p>
-            </div>
-            <div class="mock-card">
-              <p class="t">A Survey of Retrieval-Augmented Generation</p>
-              <p class="s">Covers the retrieval strategies this page references, with comparative benchmarks.</p>
-              <p class="why"><span>Why this: cited approach, newer data</span><span class="score" data-score="88">88</span></p>
-            </div>
-            <div class="mock-card">
-              <p class="t">Long-context evaluation: where benchmarks disagree</p>
-              <p class="s">A review of how leading long-context benchmarks rank the same models differently.</p>
-              <p class="why"><span>Why this: the open question this page ends on</span><span class="score" data-score="81">81</span></p>
-            </div>
-            <p class="mock-history">History · 3 past sessions</p>
-          </div>
-        </div>
-      </div>
+    <div class="demo-address" aria-hidden="true"><span class="window-dots"><i></i><i></i><i></i></span><span>Chrome / Research Companion</span></div>
+    <div class="demo-panes">
+      <article class="demo-source">
+        <p class="eyebrow">You’re reading</p><p class="source-domain">nlp.seas.harvard.edu</p>
+        <h3 data-reading-text><a href="https://nlp.seas.harvard.edu/annotated-transformer/">The Annotated Transformer</a></h3>
+        <p class="small">Example summary</p>
+        <p data-reading-text>A practical implementation of the Transformer, connecting attention mechanisms, encoder and decoder layers, and model training.</p>
+        <span class="source-accent" data-demo-accent aria-hidden="true"></span>
+      </article>
+      <div class="demo-connection" data-demo-accent aria-hidden="true"></div>
+      <section class="demo-results" aria-labelledby="results-title">
+        <span class="result-accent" data-demo-accent aria-hidden="true"></span>
+        <h3 id="results-title">Related reading</h3>
+        <ol>
+          <li data-result>
+            <h4 data-reading-text><a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a></h4>
+            <p data-reading-text><strong>Why this:</strong> The original architecture behind the implementation.</p>
+          </li>
+          <li data-result>
+            <h4 data-reading-text><a href="https://jalammar.github.io/illustrated-transformer/">The Illustrated Transformer</a></h4>
+            <p data-reading-text><strong>Why this:</strong> A visual explanation of the same attention and encoder-decoder concepts.</p>
+          </li>
+        </ol>
+      </section>
     </div>
-  </section>
-
-  <section class="section" id="privacy">
-    <div class="wrap split">
-      <h2 class="reveal">No backend. No accounts. No telemetry.</h2>
-      <div class="trust-list stagger">
-        <div class="trust-row reveal">
-          <p><strong>Runs entirely in your browser.</strong> There's no server the developer operates, and no account to create.</p>
-        </div>
-        <div class="trust-row reveal">
-          <p><strong>Your keys, your connection.</strong> Page content and credentials go straight from your browser to the provider you configured — Anthropic, OpenAI, Gemini, or OpenRouter.</p>
-        </div>
-        <div class="trust-row reveal">
-          <p><strong>Local storage only.</strong> Settings, API keys, and your last 50 research sessions live in <code>chrome.storage.local</code>. Nothing syncs.</p>
-        </div>
-        <div class="trust-row reveal">
-          <p><strong>Active tab only.</strong> It reads the page you click the toolbar icon on — nothing else, and nothing in the background.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="providers">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <h2>Works with the provider you already trust.</h2>
-      </div>
-      <div class="provider-row reveal stagger">
-        <span class="provider-tag">Anthropic</span>
-        <span class="provider-tag">OpenAI</span>
-        <span class="provider-tag">Gemini</span>
-        <span class="provider-tag">OpenRouter</span>
-      </div>
-      <p class="provider-note reveal">Paste an API key directly, or click <strong>Connect to OpenRouter</strong> to sign in without pasting one. Each provider uses its own web search to find related pages, so result quality can vary slightly depending on which one you pick.</p>
-    </div>
-  </section>
-
-  <section class="cta-section section">
-    <div class="wrap">
-      <h2 class="reveal">Get Research Companion.</h2>
-      <p class="reveal">Not on the Chrome Web Store yet — install from a GitHub release in under a minute.</p>
-      <div class="btn-row reveal">
-        <a class="btn btn-primary btn-lg" href="https://github.com/aryamanw/researcher-ai-extn/releases">
-          Download latest release <span class="btn-arrow">→</span>
-        </a>
-        <a class="btn btn-ghost btn-lg" href="https://github.com/aryamanw/researcher-ai-extn">View on GitHub</a>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<footer>
+    <figcaption data-example-label>Curated example with real sources. Live results depend on your provider.</figcaption>
+    <p class="sr-only" data-demo-status role="status" aria-live="polite">Example ready.</p>
+  </figure>
+</section>
+<section class="section" id="how-it-works" aria-labelledby="workflow-title">
   <div class="wrap">
-    <div class="foot-grid">
-      <a href="#top" class="foot-brand">
-        <svg viewBox="0 0 128 128" aria-hidden="true">
-          <rect width="128" height="128" rx="28" fill="var(--bg-dark)"/>
-          <line x1="44" y1="86" x2="84" y2="44" stroke="var(--accent-dark)" stroke-width="8" stroke-linecap="round"/>
-          <circle cx="44" cy="86" r="14" fill="var(--ink-on-dark)"/>
-          <circle cx="84" cy="44" r="19" fill="var(--accent-dark)"/>
-        </svg>
-        Research Companion
-      </a>
-      <div class="foot-links">
-        <a href="https://github.com/aryamanw/researcher-ai-extn">GitHub</a>
-        <a href="https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html">Privacy Policy</a>
-        <a href="https://aryamanw.github.io/researcher-ai-extn/terms.html">Terms of Use</a>
-        <a href="https://github.com/aryamanw/researcher-ai-extn/blob/main/LICENSE">MIT License</a>
-      </div>
-    </div>
-    <p class="foot-copy">© 2026 Aryaman. Research Companion is open source under the MIT License.</p>
+    <h2 id="workflow-title">A useful next step, right beside the page.</h2>
+    <ol class="workflow">
+      <li><div><h3>Read the active page</h3><p>Click the extension while reading an article, report, or paper. Research Companion reads that page when you ask.</p></div></li>
+      <li><div><h3>Find related sources</h3><p>Your selected AI provider searches for related reading. Results appear beside the page with a short explanation of why each one matters.</p></div></li>
+      <li><div><h3>Keep the useful connections</h3><p>Open a source to continue reading. Your last 50 research sessions stay in local history, ready to revisit without repeating the search.</p></div></li>
+    </ol>
   </div>
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
-<script>
-  const burger = document.getElementById('burger');
-  const menu = document.getElementById('mobileMenu');
-  burger.addEventListener('click', () => {
-    const open = menu.classList.toggle('open');
-    burger.classList.toggle('open', open);
-    burger.setAttribute('aria-expanded', open);
-  });
-  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    menu.classList.remove('open');
-    burger.classList.remove('open');
-    burger.setAttribute('aria-expanded', 'false');
-  }));
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
-
-  document.querySelectorAll('.reveal:not(.in)').forEach(el => observer.observe(el));
-
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const hero = document.getElementById('hero');
-  const nav = document.querySelector('.nav');
-
-  // Nav takes the hero's dark palette while it sits over the hero.
-  const updateNav = () => nav.classList.toggle('on-dark', hero.getBoundingClientRect().bottom > 60);
-  addEventListener('scroll', updateNav, { passive: true });
-  updateNav();
-
-  // ---------- Reading lamp ----------
-  const lampText = hero.querySelector('.lamp-text');
-  lampText.innerHTML = lampText.innerHTML.repeat(4);
-
-  if (!reduceMotion) {
-    const noHover = matchMedia('(hover: none)').matches;
-    const lamp = { x: innerWidth * 0.62, y: innerHeight * 0.42, tx: 0, ty: 0 };
-    let pointerActive = false;
-    let heroVisible = true;
-
-    hero.addEventListener('pointermove', e => {
-      if (e.pointerType !== 'mouse') return;
-      const r = hero.getBoundingClientRect();
-      lamp.tx = e.clientX - r.left;
-      lamp.ty = e.clientY - r.top;
-      pointerActive = true;
-    });
-    hero.addEventListener('pointerleave', () => { pointerActive = false; });
-    new IntersectionObserver(([entry]) => { heroVisible = entry.isIntersecting; }).observe(hero);
-
-    const tick = (now) => {
-      if (heroVisible) {
-        if (noHover || !pointerActive) {
-          // Slow drift when there is no cursor to follow.
-          const t = now / 1000;
-          lamp.tx = hero.clientWidth * (0.55 + 0.3 * Math.sin(t * 0.33));
-          lamp.ty = hero.clientHeight * (0.45 + 0.25 * Math.sin(t * 0.47 + 1));
-        }
-        lamp.x += (lamp.tx - lamp.x) * 0.08;
-        lamp.y += (lamp.ty - lamp.y) * 0.08;
-        hero.style.setProperty('--mx', lamp.x.toFixed(1) + 'px');
-        hero.style.setProperty('--my', lamp.y.toFixed(1) + 'px');
-      }
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
-
-  // Splits text into per-character spans, grouped by word so lines only break between words.
-  function splitChars(el) {
-    const chars = [];
-    const frag = document.createDocumentFragment();
-    let word = null;
-    el.childNodes.forEach(node => {
-      const cls = node.nodeType === 1 ? node.className : '';
-      node.textContent.split(/(\s+)/).forEach(part => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); word = null; return; }
-        if (!word) {
-          word = document.createElement('span');
-          word.className = 'word';
-          word.setAttribute('aria-hidden', 'true');
-          frag.appendChild(word);
-        }
-        for (const c of part) {
-          const s = document.createElement('span');
-          s.className = cls ? 'ch ' + cls : 'ch';
-          s.textContent = c;
-          word.appendChild(s);
-          chars.push(s);
-        }
-      });
-    });
-    el.setAttribute('aria-label', el.textContent);
-    el.textContent = '';
-    el.appendChild(frag);
-    return chars;
-  }
-
-  if (window.gsap && window.ScrollTrigger) {
-    gsap.registerPlugin(ScrollTrigger);
-
-    // ---------- Hero intro ----------
-    if (!reduceMotion) {
-      const chars = splitChars(hero.querySelector('h1'));
-      gsap.from(lampText, { opacity: 0, duration: 1.8, ease: 'power2.out' });
-      gsap.from(chars, { yPercent: 110, rotate: 8, opacity: 0, duration: 1, ease: 'power4.out', stagger: 0.024, delay: 0.15 });
-      gsap.from(['.hero .lead', '.hero .btn-row'], { y: 28, opacity: 0, duration: 1, ease: 'power3.out', stagger: 0.12, delay: 0.7 });
-    }
-
-    // ---------- How it works: scroll story ----------
-    const story = document.querySelector('.story');
-    const stage = story.querySelector('.story-stage');
-    const phrases = [...story.querySelectorAll('.hl')];
-    const slots = [...story.querySelectorAll('.story-query .chip')];
-    const steps = [...story.querySelectorAll('.story-step')];
-    const cards = [...story.querySelectorAll('.story-panel .mock-card')];
-    const scores = cards.map(c => c.querySelector('.score'));
-    const status = story.querySelector('.mock-status');
-    const history = story.querySelector('.mock-history');
-    const STATUS = ['Reading page…', 'Searching the web…', 'Ranking results…', '3 related results'];
-
-    const flyers = slots.map(slot => {
-      const f = slot.cloneNode(true);
-      f.classList.add('chip-fly');
-      f.setAttribute('aria-hidden', 'true');
-      stage.appendChild(f);
-      return f;
-    });
-    const rel = el => {
-      const a = el.getBoundingClientRect(), b = stage.getBoundingClientRect();
-      return { x: a.left - b.left, y: a.top - b.top };
-    };
-
-    let current = -1;
-    const setStep = i => {
-      if (i === current) return;
-      current = i;
-      steps.forEach((s, k) => s.classList.toggle('active', k === i));
-      status.textContent = STATUS[i];
-    };
-
-    // Four beats of one time unit each: read, search, rank, result.
-    const buildTimeline = () => {
-      gsap.set(phrases, { backgroundSize: '0% 42%' });
-      gsap.set(slots, { autoAlpha: 0 });
-      gsap.set(flyers, { autoAlpha: 0 });
-      gsap.set(cards, { clipPath: 'inset(0% 0% 100% 0%)', y: 18 });
-      gsap.set(history, { autoAlpha: 0, y: 8 });
-      scores.forEach(s => { s.textContent = '0'; });
-      current = -1;
-      setStep(0);
-
-      const tl = gsap.timeline({
-        onUpdate() { setStep(Math.min(3, Math.floor(tl.progress() * 4))); },
-      });
-
-      // 01 Read: key phrases get highlighted.
-      tl.to(phrases, { backgroundSize: '100% 42%', duration: 0.5, ease: 'power2.inOut', stagger: 0.2 }, 0.1);
-
-      // 02 Search: phrases lift off and fly into the panel's query row.
-      flyers.forEach((f, i) => {
-        const t = 1.05 + i * 0.14;
-        tl.fromTo(f,
-          { x: () => rel(phrases[i]).x, y: () => rel(phrases[i]).y, autoAlpha: 0, scale: 0.9 },
-          { x: () => rel(phrases[i]).x, y: () => rel(phrases[i]).y - 14, autoAlpha: 1, scale: 1.05, duration: 0.12, ease: 'power2.out' }, t);
-        tl.to(f, { x: () => rel(slots[i]).x, y: () => rel(slots[i]).y, scale: 1, duration: 0.55, ease: 'power3.inOut' }, t + 0.12);
-        tl.set(slots[i], { autoAlpha: 1 }, t + 0.67);
-        tl.set(f, { autoAlpha: 0 }, t + 0.67);
-      });
-
-      // 03 Rank: result cards build in and their scores count up.
-      tl.to(cards, { clipPath: 'inset(0% 0% 0% 0%)', y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.16 }, 2.05);
-      scores.forEach((s, i) => {
-        const o = { v: 0 };
-        tl.to(o, { v: +s.dataset.score, duration: 0.5, ease: 'power1.out', onUpdate: () => { s.textContent = Math.round(o.v); } }, 2.1 + i * 0.16);
-      });
-
-      // 04 Result: history appears.
-      tl.to(history, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' }, 3.1);
-      tl.set({}, {}, 4);
-      return tl;
-    };
-
-    const mm = gsap.matchMedia();
-    mm.add({
-      desktop: '(min-width: 861px) and (prefers-reduced-motion: no-preference)',
-      mobile: '(max-width: 860px) and (prefers-reduced-motion: no-preference)',
-    }, ctx => {
-      story.classList.add('is-animated');
-      const tl = buildTimeline();
-      if (ctx.conditions.desktop) {
-        ScrollTrigger.create({ trigger: story, start: 'top top', end: '+=300%', pin: true, scrub: 0.6, animation: tl, invalidateOnRefresh: true });
-      } else {
-        tl.pause().timeScale(0.8);
-        ScrollTrigger.create({ trigger: story, start: 'top 60%', once: true, onEnter: () => tl.play() });
-      }
-      return () => story.classList.remove('is-animated');
-    });
-  }
-</script>
-
+</section>
+<section class="section" id="privacy" aria-labelledby="trust-title">
+  <div class="wrap">
+    <h2 id="trust-title">Your browser. Your provider. Your choice.</h2>
+    <div class="trust-copy">
+      <div><h3>Only when you ask</h3><p>The extension reads the active page after you invoke it. It does not monitor your browsing in the background.</p></div>
+      <div><h3>A direct connection</h3><p>Page content goes from your browser to your configured AI provider. There is no developer-operated backend in between.</p></div>
+      <div><h3>History stays here</h3><p>Settings, credentials, and research history are stored in your browser’s local extension storage.</p></div>
+      <div><h3>Choose your provider</h3><p>Connect OpenRouter or configure your own provider key. Provider accounts, charges, and data policies still apply.</p></div>
+    </div>
+    <p class="providers">Supported connections: Anthropic, OpenAI, Gemini, and OpenRouter.</p>
+    <p><a href="./privacy-policy.html">Read the privacy policy</a></p>
+  </div>
+</section>
+<section class="section closing" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <h2 id="install-title">Go deeper into what you’re reading.</h2>
+    <p>Install the preview from GitHub. Research Companion is not currently listed in the Chrome Web Store.</p>
+    <ol class="install-steps">
+      <li>Download and unzip the latest release.</li>
+      <li>Open <code>chrome://extensions</code> in Chrome and enable Developer mode.</li>
+      <li>Select <strong>Load unpacked</strong>, choose the unzipped folder, and pin the extension.</li>
+    </ol>
+    <p>Open the extension’s options to connect OpenRouter or configure a supported provider key. Usage may incur charges from your provider.</p>
+    <div class="actions">
+      <a class="button" href="https://github.com/aryamanw/researcher-ai-extn/releases/latest">Download latest release</a>
+      <a href="https://github.com/aryamanw/researcher-ai-extn">Explore the source</a>
+    </div>
+    <p><a href="https://github.com/aryamanw">Built by Aryaman. Follow the project on GitHub.</a></p>
+  </div>
+</section>
+  </main>
+  <footer>
+    <div class="wrap foot-grid">
+      <a class="brand" href="#top"><svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="var(--stage)"/><path d="M44 86 84 44" stroke="var(--light)" stroke-width="8" stroke-linecap="round"/><circle cx="44" cy="86" r="14" fill="var(--stage-ink)"/><circle cx="84" cy="44" r="19" fill="var(--light)"/></svg><span>Research Companion</span></a>
+      <nav class="foot-links" aria-label="Legal and source">
+        <a href="https://github.com/aryamanw/researcher-ai-extn">GitHub</a>
+        <a href="./privacy-policy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms of Use</a>
+        <a href="https://github.com/aryamanw/researcher-ai-extn/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="small foot-copy">© 2026 Aryaman. Open source under the MIT License.</p>
+    </div>
+  </footer>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+  <script defer src="./assets/landing.js"></script>
 </body>
 </html>
