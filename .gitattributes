@@ -1,2 +1,3 @@
 # Preserve the pinned third-party distribution, including upstream whitespace.
 docs/assets/vendor/gsap.min.js -whitespace
+docs/assets/vendor/ScrollTrigger.min.js -whitespace

@@ -25,52 +25,46 @@ const EXAMPLES = {
   },
 };
 
-function initPageMotion(gsap) {
-  const targets = [...document.querySelectorAll('.section h2, .workflow li, .trust-copy > div, .install-steps li')];
+function initPageMotion(gsap, ScrollTrigger) {
+  const targets = [...document.querySelectorAll('.section h2, .workflow li, .trust-copy > div')];
+  const rules = [...document.querySelectorAll('[data-section-rule]')];
   const hero = [...document.querySelectorAll('.hero-copy > *, #demo')];
-  const seen = new WeakSet();
-  const tweens = new Set();
-  let observer;
+  const animations = [];
   let intro;
   let configured = false;
 
   function setEnabled(enabled) {
-    observer?.disconnect();
     intro?.kill();
-    tweens.forEach(tween => tween.kill());
-    tweens.clear();
-    gsap?.set([...targets, ...hero], { clearProps: 'transform,opacity,visibility' });
+    animations.splice(0).forEach(animation => { animation.scrollTrigger?.kill(); animation.kill(); });
+    gsap?.set([...targets, ...rules, ...hero], { clearProps: 'transform,opacity,visibility' });
     const firstVisit = !configured;
     configured = true;
-    if (!enabled || !gsap) {
+    if (!enabled || !gsap || !ScrollTrigger) {
       document.documentElement.dataset.intro = 'complete';
       return;
     }
     if (firstVisit && scrollY < 80) {
       document.documentElement.dataset.intro = 'playing';
-      intro = gsap.timeline({ onComplete: () => { document.documentElement.dataset.intro = 'complete'; } });
+      intro = gsap.timeline({ onComplete: () => {
+        ScrollTrigger.refresh();
+        document.documentElement.dataset.intro = 'complete';
+      } });
       intro.from('.hero-copy > *', { y: 24, opacity: 0, duration: .68, stagger: .075, ease: 'power3.out', clearProps: 'transform,opacity' }, 0);
       intro.from('#demo', { y: 32, opacity: 0, duration: .9, ease: 'power3.out', clearProps: 'transform,opacity' }, .08);
     } else document.documentElement.dataset.intro = 'complete';
-    observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting || seen.has(entry.target)) return;
-        seen.add(entry.target);
-        observer.unobserve(entry.target);
-        const tween = gsap.from(entry.target, {
-          y: 24, opacity: 0, duration: .72, ease: 'power3.out', clearProps: 'transform,opacity',
-          onComplete: () => tweens.delete(tween),
-        });
-        tweens.add(tween);
-      });
-    }, { threshold: .12 });
-    targets.forEach(target => { if (!seen.has(target)) observer.observe(target); });
+    targets.forEach(target => animations.push(gsap.fromTo(target, { y: target.closest('.trust-copy') ? 16 : 24 }, {
+      y: 0, ease: 'none',
+      scrollTrigger: { trigger: target.tagName === 'H2' ? target.parentElement : target, start: 'top 90%', end: 'top 58%', scrub: .3, invalidateOnRefresh: true },
+    })));
+    rules.forEach(rule => animations.push(gsap.fromTo(rule, { scaleX: 0 }, {
+      scaleX: 1, ease: 'none',
+      scrollTrigger: { trigger: rule.closest('.section').querySelector('.wrap'), start: 'top 90%', end: 'top 58%', scrub: .3, invalidateOnRefresh: true },
+    })));
   }
   return { setEnabled, destroy: () => setEnabled(false) };
 }
 
-function initDemo(root, gsap, updatePageMotion) {
-  const playButton = root.querySelector('[data-demo-play]');
+function initDemo(root, gsap, ScrollTrigger, updatePageMotion) {
   const motionButton = root.querySelector('[data-motion-toggle]');
   const signal = root.querySelector('[data-flow-signal]');
   const fill = root.querySelector('[data-flow-fill]');
@@ -82,91 +76,63 @@ function initDemo(root, gsap, updatePageMotion) {
   const description = root.querySelector('[data-phase-description]');
   const status = root.querySelector('[data-demo-status]');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
-  const descriptions = ['Start with the page you’re already reading.', 'Follow the ideas that connect it to other sources.', 'Open a related source, with a reason to read it.'];
+  const descriptions = ['Scroll to follow the ideas in this page.', 'Follow the ideas that connect it to other sources.', 'Open a related source, with a reason to read it.'];
   let enabled = false;
   let override = null;
-  let timeline;
-  let queued;
-  let visible = false;
-  let autoplayed = false;
+  let story;
+  let refreshFrame;
 
   root.querySelector('[data-demo-controls]').hidden = false;
   root.querySelector('[data-example-picker]').hidden = false;
   root.querySelector('[data-demo-navigation]').hidden = false;
-  motionButton.disabled = !gsap;
+  motionButton.disabled = !(gsap && ScrollTrigger);
 
-  function setPhase(index, setFill = true) {
+  function setPhase(index) {
+    const changed = root.dataset.phase !== String(index);
     root.dataset.phase = String(index);
-    steps.forEach((step, i) => step.setAttribute('aria-pressed', String(i === index)));
+    steps.forEach((step, i) => {
+      if (i === index) step.setAttribute('aria-current', 'step');
+      else step.removeAttribute('aria-current');
+    });
     description.textContent = descriptions[index];
     root.querySelector('.demo-source').classList.toggle('is-active', index < 2);
     root.querySelector('.demo-results').classList.toggle('is-active', index === 2);
-    if (setFill && gsap) gsap.set(fill, { scaleX: index / 2 });
-    else if (setFill) fill.style.transform = `scaleX(${index / 2})`;
+    if (changed) status.textContent = descriptions[index];
   }
 
-  function stop() {
-    queued?.kill();
-    queued = null;
-    timeline?.kill();
-    timeline = null;
-    root.dataset.playing = 'false';
-    playButton.removeAttribute('aria-disabled');
-    if (root.dataset.autoplay === 'playing') root.dataset.autoplay = 'complete';
-    if (gsap) {
-      gsap.set([signal, lamp], { opacity: 0 });
-      gsap.set(accents, { clearProps: 'transform,opacity' });
-    }
+  function destroyStory() {
+    story?.scrollTrigger?.kill();
+    story?.kill();
+    story = null;
+    gsap?.set([signal, fill, lamp, ...accents], { clearProps: 'transform,opacity' });
   }
 
-  function finish() {
-    stop();
-    setPhase(2);
-    status.textContent = 'Example ready. Choose a topic or explore a step.';
-  }
-
-  function play(automatic = false) {
-    if (root.dataset.playing === 'true') return;
-    stop();
-    autoplayed = true;
-    root.dataset.autoplay = automatic ? 'playing' : 'complete';
-    if (!enabled) { finish(); return; }
-    root.dataset.playing = 'true';
-    playButton.setAttribute('aria-disabled', 'true');
-    status.textContent = 'Playing the prepared source connection.';
-    setPhase(0);
-    const halfway = () => (track.clientWidth - signal.offsetWidth) / 2;
-    const end = () => track.clientWidth - signal.offsetWidth;
-    timeline = gsap.timeline({ onComplete: finish });
-    timeline.set(signal, { x: 0, opacity: 1 });
-    timeline.to(lamp, { x: 70, opacity: .8, duration: .8, ease: 'power3.out' }, 0);
-    timeline.to(signal, { x: halfway, duration: 1.4, ease: 'power2.inOut' }, .2);
-    timeline.to(fill, { scaleX: .5, duration: 1.4, ease: 'power2.inOut' }, .2);
-    timeline.call(() => setPhase(1, false), null, 1.6);
-    timeline.to(signal, { x: end, duration: 1.35, ease: 'power2.inOut' }, 1.7);
-    timeline.to(fill, { scaleX: 1, duration: 1.35, ease: 'power2.inOut' }, 1.7);
-    timeline.call(() => setPhase(2, false), null, 3.05);
-    timeline.to(accents, { opacity: 1, duration: .45, stagger: .12, ease: 'power3.out' }, 2.8);
-    timeline.to(signal, { opacity: 0, duration: .5 }, 3.6);
-    timeline.to(lamp, { opacity: 0, duration: .5 }, 3.6);
-  }
-
-  function traceStep(index) {
-    stop();
-    autoplayed = true;
-    root.dataset.autoplay = 'complete';
-    setPhase(index);
-    status.textContent = descriptions[index];
-    if (!enabled) return;
-    const target = (track.clientWidth - signal.offsetWidth) * index / 2;
-    root.dataset.playing = 'true';
-    timeline = gsap.timeline({ onComplete: () => { stop(); setPhase(index); } });
-    timeline.fromTo(signal, { x: Math.max(0, target - 70), opacity: 1 }, { x: target, duration: .65, ease: 'power3.out' });
-    timeline.to(signal, { opacity: 0, duration: .3 });
+  function createStory() {
+    const trackTop = () => track.getBoundingClientRect().top + scrollY;
+    const start = () => Math.max(0, trackTop() - innerHeight * .74);
+    gsap.set(fill, { scaleX: 0 });
+    gsap.set(signal, { x: 0, opacity: 1 });
+    gsap.set(lamp, { x: 0, opacity: 0 });
+    gsap.set(accents, { opacity: .35 });
+    story = gsap.timeline({ paused: true });
+    story.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'none' }, 0);
+    story.fromTo(signal, { x: 0, opacity: 1 }, { x: () => Math.max(0, track.clientWidth - signal.offsetWidth), duration: 1, ease: 'none' }, 0);
+    story.fromTo(lamp, { x: 0, opacity: 0 }, { x: 45, opacity: .75, duration: .5, ease: 'none' }, 0);
+    story.to(lamp, { x: 90, opacity: 0, duration: .5, ease: 'none' }, .5);
+    story.fromTo(accents, { opacity: .35 }, { opacity: 1, duration: 1, ease: 'none' }, 0);
+    const update = trigger => {
+      root.dataset.demoProgress = trigger.progress.toFixed(3);
+      setPhase(Math.min(2, Math.floor(trigger.progress * 3)));
+    };
+    ScrollTrigger.create({
+      id: 'demo-scroll', trigger: track, animation: story,
+      start, end: () => Math.max(start() + 1, trackTop() - innerHeight * .20),
+      scrub: .25, invalidateOnRefresh: true,
+      onUpdate: update, onRefresh: update,
+    });
   }
 
   function chooseExample(key) {
-    stop();
     const example = EXAMPLES[key];
     root.dataset.topic = key;
     const source = root.querySelector('[data-source-link]');
@@ -181,26 +147,26 @@ function initDemo(root, gsap, updatePageMotion) {
       row.querySelector('[data-result-reason]').textContent = reason;
     });
     topics.forEach(topic => topic.setAttribute('aria-pressed', String(topic.dataset.example === key)));
-    play();
-  }
-
-  function queueAutoplay() {
-    if (!enabled || !visible || autoplayed || queued || document.hidden) return;
-    queued = gsap.delayedCall(1.15, () => { queued = null; play(true); });
+    status.textContent = `${example.title}. Related sources updated.`;
+    cancelAnimationFrame(refreshFrame);
+    if (enabled) refreshFrame = requestAnimationFrame(() => ScrollTrigger.refresh());
   }
 
   function applyMotion() {
-    stop();
-    enabled = Boolean(gsap) && (override ?? !preference.matches);
+    destroyStory();
+    enabled = Boolean(gsap && ScrollTrigger) && (override ?? !preference.matches);
     root.dataset.motion = enabled ? 'on' : 'off';
     document.documentElement.dataset.motion = root.dataset.motion;
     motionButton.setAttribute('aria-pressed', String(enabled));
     motionButton.textContent = enabled ? 'Motion on' : 'Motion off';
     updatePageMotion(enabled);
-    if (!enabled && !autoplayed) root.dataset.autoplay = 'skipped';
-    setPhase(2);
-    status.textContent = 'Example ready. Choose a topic or explore a step.';
-    queueAutoplay();
+    if (enabled) createStory();
+    else {
+      root.dataset.demoProgress = '1';
+      fill.style.transform = 'scaleX(1)';
+      setPhase(2);
+    }
+    status.textContent = enabled ? 'Scroll to explore the connection.' : 'Example ready. Choose a topic to explore related sources.';
   }
 
   const listeners = [];
@@ -208,24 +174,12 @@ function initDemo(root, gsap, updatePageMotion) {
     target.addEventListener(event, handler);
     listeners.push(() => target.removeEventListener(event, handler));
   }
-  listen(playButton, 'click', () => play());
-  listen(motionButton, 'click', () => {
-    override = !enabled;
-    applyMotion();
-    if (enabled) play();
-  });
+  listen(motionButton, 'click', () => { override = !enabled; applyMotion(); });
   topics.forEach(topic => listen(topic, 'click', () => chooseExample(topic.dataset.example)));
-  steps.forEach((step, index) => listen(step, 'click', () => traceStep(index)));
   listen(preference, 'change', () => { override = null; applyMotion(); });
-  listen(document, 'visibilitychange', () => { if (document.hidden) finish(); else queueAutoplay(); });
-  const observer = new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting && entry.intersectionRatio >= .75;
-    if (visible) queueAutoplay();
-    else finish();
-  }, { threshold: .75, rootMargin: '-24px 0px -24px 0px' });
+  listen(document, 'visibilitychange', () => { if (enabled && !document.hidden) ScrollTrigger.refresh(); });
   applyMotion();
-  observer.observe(track);
-  return () => { stop(); observer.disconnect(); listeners.forEach(remove => remove()); };
+  return () => { cancelAnimationFrame(refreshFrame); destroyStory(); listeners.forEach(remove => remove()); };
 }
 
 function initProviders() {
@@ -266,8 +220,9 @@ function initScrollProgress() {
   return () => { removeEventListener('scroll', request); removeEventListener('resize', request); cancelAnimationFrame(frame); };
 }
 
-const pageMotion = initPageMotion(window.gsap);
-const cleanupDemo = initDemo(document.querySelector('#demo'), window.gsap, pageMotion.setEnabled);
+if (window.gsap && window.ScrollTrigger) window.gsap.registerPlugin(window.ScrollTrigger);
+const pageMotion = initPageMotion(window.gsap, window.ScrollTrigger);
+const cleanupDemo = initDemo(document.querySelector('#demo'), window.gsap, window.ScrollTrigger, pageMotion.setEnabled);
 const cleanupProviders = initProviders();
 const cleanupProgress = initScrollProgress();
 addEventListener('pagehide', event => {

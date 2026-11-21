@@ -25,7 +25,7 @@
   }
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 8rem; }
+html { scroll-padding-top: 8rem; }
 body { margin: 0; color: var(--ink); background: var(--page); line-height: 1.6; }
 [hidden] { display: none !important; }
 a { color: inherit; text-underline-offset: .22em; }
@@ -58,8 +58,6 @@ h1 { font-size: clamp(3.25rem, 5vw, 5rem); line-height: 1.03; letter-spacing: -.
 .demo-heading { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1.25rem; background: var(--stage); }
 .demo-heading h2 { flex: 1 1 13rem; font-size: 1.25rem; }
 .demo-controls { flex: 0 0 11.75rem; min-height: 44px; }
-.replay { font-size: .8125rem; background: var(--stage); color: var(--stage-ink); border-color: var(--light); }
-.demo-stage .replay:focus-visible { outline-color: var(--light); }
 .demo-panes { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, .9fr) 1.25rem minmax(0, 1.1fr); align-items: start; }
 .demo-source, .demo-results { position: relative; min-width: 0; padding: 1.125rem; border: 1px solid var(--line); border-radius: .375rem; background: var(--paper); color: var(--ink); }
 .demo-source h3, .demo-results h3 { margin-block: .75rem; font-size: 1.0625rem; }
@@ -129,8 +127,6 @@ footer { padding-block: 2rem; }
 .demo-heading { align-items: center; gap: .625rem; margin-bottom: 1rem; }
 .demo-heading h2 { flex-basis: 12rem; }
 .demo-controls { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 100%; }
-.replay { gap: .4rem; padding-inline: .75rem; }
-.replay > span { font-size: 1.25rem; }
 .motion-toggle { min-height: 44px; padding: .5rem .625rem; border: 0; border-radius: .375rem; font-size: .75rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); cursor: pointer; }
 .motion-toggle::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: .4rem; border-radius: 50%; background: var(--stage-ink); }
 .motion-toggle[aria-pressed="true"]::before { background: var(--light); box-shadow: 0 0 0 3px oklch(78% .09 231 / .15); }
@@ -141,10 +137,10 @@ footer { padding-block: 2rem; }
 .example-picker button[aria-pressed="true"] { background: var(--light); color: var(--stage); }
 #demo button:focus-visible { outline-color: var(--light); }
 .demo-flow { position: relative; z-index: 2; margin-top: .875rem; }
-.flow-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.flow-steps button { display: flex; align-items: center; justify-content: center; gap: .375rem; min-width: 0; min-height: 44px; padding: .5rem .25rem; border: 0; border-radius: .25rem; font-size: .8125rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); cursor: pointer; }
-.flow-steps button span { font-size: .6875rem; color: var(--light); }
-.flow-steps button[aria-pressed="true"] { color: var(--light); }
+.flow-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flow-steps li { display: flex; align-items: center; justify-content: center; gap: .375rem; min-width: 0; min-height: 44px; padding: .5rem .25rem; border: 0; border-radius: .25rem; font-size: .8125rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); }
+.flow-steps li span { font-size: .6875rem; color: var(--light); }
+.flow-steps li[aria-current="step"] { color: var(--light); }
 .flow-track { position: relative; height: 2px; margin: .375rem 7px .875rem; background: oklch(78% .09 231 / .3); }
 .flow-fill { position: absolute; inset: 0; background: var(--light); transform: scaleX(1); transform-origin: left center; }
 .flow-signal { position: absolute; top: -6px; left: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--stage-ink); box-shadow: 0 0 0 5px oklch(78% .09 231 / .22); opacity: 0; pointer-events: none; }
@@ -157,21 +153,25 @@ footer { padding-block: 2rem; }
 .provider-picker button { color: var(--accent); background: var(--paper); border-color: var(--accent); }
 .provider-picker button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); }
 .provider-picker + .providers { min-height: 3.5rem; margin-top: 1rem; }
-.example-picker button, .provider-picker button, .motion-toggle, .flow-steps button { transition: transform 180ms var(--ease); }
+.example-picker button, .provider-picker button, .motion-toggle { transition: transform 180ms var(--ease); }
 @media (hover: hover) and (pointer: fine) {
-  .example-picker button:hover, .provider-picker button:hover, .flow-steps button:hover { transform: translateY(-2px); }
+  .example-picker button:hover, .provider-picker button:hover { transform: translateY(-2px); }
 }
 html[data-motion="off"] { scroll-behavior: auto; }
-html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button) { transition: none; }
-html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button):hover { transform: none; }
+html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle) { transition: none; }
+html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle):hover { transform: none; }
 [data-motion="off"] .flow-signal { opacity: 0 !important; }
 @media (max-width: 639px) {
   .demo-heading h2 { flex-basis: 100%; }
   .demo-controls { min-height: 44px; }
   .example-picker button { padding-inline: .75rem; }
-  .flow-steps button { gap: .25rem; font-size: .75rem; }
+  .flow-steps li { gap: .25rem; font-size: .75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button { transition: none; }
-  .example-picker button:hover, .provider-picker button:hover, .flow-steps button:hover { transform: none; }
+  .example-picker button, .provider-picker button, .motion-toggle { transition: none; }
+  .example-picker button:hover, .provider-picker button:hover { transform: none; }
 }
+
+.scroll-cue { color: var(--light); font-size: .75rem; padding-inline: .25rem; }
+.section-rule { display: block; width: 5rem; height: 2px; margin-bottom: 2rem; background: var(--accent); transform-origin: left center; }
+.closing .section-rule { background: var(--light); }
