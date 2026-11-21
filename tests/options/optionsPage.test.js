@@ -502,6 +502,8 @@ describe('model picker', () => {
     choose(el(form, 'model'), 'b');
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
     expect(saveSettings.mock.calls.at(-1)[0].models).toEqual({ anthropic: 'keep', openai: 'b' });
+    await vi.waitFor(() => expect(document.getElementById('autosave-status').textContent).toBe('Saved'));
+    await new Promise((r) => setTimeout(r, 0));
     choose(el(form, 'model'), '__custom__');
     expect(el(form, 'modelCustom').hidden).toBe(false);
     el(form, 'modelCustom').value = 'typed';
@@ -539,8 +541,31 @@ describe('model picker', () => {
     await vi.waitFor(() => expect(document.getElementById('model-status').textContent).toBe("Couldn't load models from Anthropic."));
     expect(optionTexts(form)).toEqual(['Default (claude-opus-5-5)', 'Type a model name…']);
     document.getElementById('refresh-models').click();
-    await new Promise((r) => setTimeout(r, 20));
+    await vi.waitFor(() => expect(listModels).toHaveBeenCalledTimes(2));
+    await new Promise((r) => setTimeout(r, 0));
     process.off('unhandledRejection', unhandled);
     expect(unhandled).not.toHaveBeenCalled();
+  });
+
+  it('keeps "Type a model name…" selected with an empty input after the save resolves', async () => {
+    const form = await setup(base({ provider: 'openai' }));
+    choose(el(form, 'model'), '__custom__');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    expect(el(form, 'model').value).toBe('__custom__');
+    expect(el(form, 'modelCustom').hidden).toBe(false);
+  });
+
+  it('stays on custom when another field changes while the custom input is empty', async () => {
+    const form = await setup(base({ provider: 'openai' }));
+    choose(el(form, 'model'), '__custom__');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+    await new Promise((r) => setTimeout(r, 0));
+    el(form, 'resultsCount').value = '5';
+    fire(el(form, 'resultsCount'), 'change');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(el(form, 'model').value).toBe('__custom__');
+    expect(el(form, 'modelCustom').hidden).toBe(false);
   });
 });

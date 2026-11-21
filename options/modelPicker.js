@@ -33,12 +33,7 @@ function setStatus(form, text) {
   if (el) el.textContent = text;
 }
 
-export function renderModelControl(form, settings, providerId, { keepCurrent = false } = {}) {
-  const select = field(form, 'model');
-  const custom = field(form, 'modelCustom');
-  if (!select) return;
-  const entry = getProvider(providerId);
-  const wanted = keepCurrent ? readModel(form) : (providerId && settings.models?.[providerId]) || '';
+function rebuild(form, select, entry, providerId, settings) {
   const ids = (entry && cacheFor(form).get(providerId)) || [];
   const usesKey = searchKeyConfigured(form, settings);
   const doc = form.ownerDocument;
@@ -53,6 +48,25 @@ export function renderModelControl(form, settings, providerId, { keepCurrent = f
     ...(entry ? ids.map((id) => option(id, labelFor(entry, id, usesKey))) : []),
     option(CUSTOM, 'Type a model name…'),
   );
+  return ids;
+}
+
+export function renderModelControl(form, settings, providerId, { keepCurrent = false } = {}) {
+  const select = field(form, 'model');
+  const custom = field(form, 'modelCustom');
+  if (!select) return;
+  const entry = getProvider(providerId);
+  const typedNow = (custom?.value || '').trim();
+  if (keepCurrent && select.value === CUSTOM && !(typedNow && cacheFor(form).get(providerId)?.includes(typedNow))) {
+    // Stay on custom with the input's current text, even when it is empty.
+    const typed = custom?.value || '';
+    rebuild(form, select, entry, providerId, settings);
+    select.value = CUSTOM;
+    if (custom) { custom.value = typed; custom.hidden = false; }
+    return;
+  }
+  const wanted = keepCurrent ? readModel(form) : (providerId && settings.models?.[providerId]) || '';
+  const ids = rebuild(form, select, entry, providerId, settings);
   if (!wanted) select.value = '';
   else if (ids.includes(wanted)) select.value = wanted;
   else {
