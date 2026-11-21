@@ -12,7 +12,7 @@
   <meta property="og:url" content="https://aryamanw.github.io/researcher-ai-extn/">
   <link rel="canonical" href="https://aryamanw.github.io/researcher-ai-extn/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20aria-hidden%3D%22true%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2228%22%20fill%3D%22oklch%2825%25%20.045%20230%29%22%2F%3E%3Cpath%20d%3D%22M44%2086%2084%2044%22%20stroke%3D%22oklch%2878%25%20.09%20231%29%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2244%22%20cy%3D%2286%22%20r%3D%2214%22%20fill%3D%22oklch%2896%25%20.009%20230%29%22%2F%3E%3Ccircle%20cx%3D%2284%22%20cy%3D%2244%22%20r%3D%2219%22%20fill%3D%22oklch%2878%25%20.09%20231%29%22%2F%3E%3C%2Fsvg%3E">
-  <link rel="stylesheet" href="./assets/landing.css?v=scroll-3">
+  <link rel="stylesheet" href="./assets/landing.css?v=kinetic-4">
   <noscript><style>[data-demo-controls], [data-example-picker], [data-demo-navigation], [data-provider-picker], [data-scroll-progress] { display: none !important; }</style></noscript>
 </head>
 <body>
@@ -32,14 +32,63 @@
 <section class="hero wrap" aria-labelledby="hero-title">
   <div class="hero-copy">
     <p class="eyebrow">Related research, inside Chrome</p>
-    <h1 id="hero-title" data-reading-text>Find your next source. <span class="headline-secondary">Keep your place.</span></h1>
+    <h1 id="hero-title" data-reading-text><span class="headline-line"><span>Go deeper.</span></span><span class="headline-line headline-secondary"><span>Stay here.</span></span></h1>
     <p class="lead" data-reading-text>Research Companion uses the page you’re reading to find related articles, papers, and reports in Chrome’s side panel.</p>
     <div class="actions">
-      <a class="button button-primary" href="#demo">Explore the example</a>
+      <a class="button button-primary" href="#demo">See it in motion <span aria-hidden="true">↗</span></a>
       <a class="button" href="#install">Download for Chrome</a>
     </div>
     <p class="small">Open source. Bring your own AI provider.</p>
   </div>
+  <div class="connection-field" aria-hidden="true">
+    <div class="field-viewport">
+    <div class="field-space" data-field-space>
+      <div class="field-orbit orbit-one" data-orbit><i></i><i></i></div>
+      <div class="field-orbit orbit-two" data-orbit><i></i></div>
+      <div class="field-axis axis-one"></div><div class="field-axis axis-two"></div>
+      <svg class="field-links" viewBox="0 0 620 620" fill="none"><path d="M220 310 C350 310 310 145 460 145"/><path d="M220 310 C350 310 325 475 460 475"/><circle cx="310" cy="310" r="5"/></svg>
+      <div class="signal-lane lane-one"><i data-field-signal></i></div>
+      <div class="signal-lane lane-two"><i data-field-signal></i></div>
+      <div class="field-document field-origin" data-field-document>
+        <div class="paper-top"><span class="paper-symbol">↗</span><span>THE STARTING POINT</span></div>
+        <div class="paper-title">One good<br>idea.</div>
+        <div class="paper-lines"><i></i><i></i><i></i><i></i></div>
+        <div class="paper-foot"><span class="paper-dot"></span> The page you’re reading</div>
+      </div>
+      <div class="field-document field-result result-one" data-field-document>
+        <div class="paper-top"><span class="paper-symbol">↗</span><span>CONNECTED SOURCE</span></div>
+        <div class="paper-title">A fresh<br>perspective.</div>
+        <div class="paper-lines"><i></i><i></i><i></i></div>
+        <div class="paper-foot">Follow the connection <span>↗</span></div>
+      </div>
+      <div class="field-document field-result result-two" data-field-document>
+        <div class="paper-top"><span class="paper-symbol">↗</span><span>RELATED READING</span></div>
+        <div class="paper-title">The next<br>discovery.</div>
+        <div class="paper-lines"><i></i><i></i><i></i></div>
+        <div class="paper-foot">Go a little deeper <span>↗</span></div>
+      </div>
+      <span class="field-coordinate coordinate-one">01 / READ</span>
+      <span class="field-coordinate coordinate-two">02 / CONNECT</span>
+      <span class="field-cross cross-one">+</span><span class="field-cross cross-two">+</span>
+    </div>
+    </div>
+    <div class="field-caption"><span class="paper-dot"></span> A good source is just the beginning.</div>
+  </div>
+  <a class="hero-scroll" href="#how-it-works"><span class="scroll-arrow">↓</span><span>Follow the connection</span><span class="scroll-distance">SCROLL TO DISCOVER</span></a>
+</section>
+<section class="section experience" id="how-it-works" aria-labelledby="workflow-title">
+  <div class="wrap experience-heading">
+    <p class="eyebrow">A little curiosity. A lot more context.</p>
+    <h2 id="workflow-title">Watch one page<br>open up.</h2>
+    <span class="section-rule" data-section-rule aria-hidden="true"></span>
+  </div>
+  <div class="wrap experience-grid">
+    <ol class="workflow">
+      <li data-chapter="0"><div><span class="chapter-kicker">START WHERE YOU ARE</span><h3>Read something<br>that moves you.</h3><p>An article, a report, a paper. Open Research Companion from the page that already has your attention.</p></div></li>
+      <li data-chapter="1"><div><span class="chapter-kicker">FOLLOW THE THREAD</span><h3>Make the<br>connection.</h3><p>Your chosen AI provider finds related sources. Every result comes with a reason it belongs beside what you’re reading.</p></div></li>
+      <li data-chapter="2"><div><span class="chapter-kicker">TAKE THE NEXT STEP</span><h3>Keep the good<br>ideas going.</h3><p>Open a source and go deeper. Your last 50 research sessions stay in local history, ready when you return.</p></div></li>
+    </ol>
+    <div class="demo-sticky">
   <figure id="demo" class="demo-stage" data-phase="2" data-demo-progress="1" data-motion="off" tabindex="-1" aria-labelledby="demo-title">
     <div class="demo-lamp" data-demo-lamp aria-hidden="true"></div>
     <div class="demo-heading">
@@ -66,6 +115,10 @@
     </div>
     <div class="demo-address" aria-hidden="true"><span class="window-dots"><i></i><i></i><i></i></span><span>Chrome / Research Companion</span></div>
     <div class="demo-panes" id="demo-panes">
+      <div class="connection-sketch" aria-hidden="true">
+        <svg data-connection-sketch viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="86" stroke="currentColor" stroke-dasharray="2 7"/><circle cx="100" cy="100" r="58" stroke="currentColor" opacity=".35"/><path d="m67 133 66-66" stroke="currentColor" stroke-width="2"/><circle cx="67" cy="133" r="12" fill="var(--stage)" stroke="currentColor" stroke-width="2"/><circle cx="133" cy="67" r="20" fill="var(--stage)" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Ideas connect here.</span>
+      </div>
       <article class="demo-source">
         <p class="eyebrow">You’re reading</p><p class="source-domain" data-source-domain>nlp.seas.harvard.edu</p>
         <h3 data-reading-text><a data-source-link href="https://nlp.seas.harvard.edu/annotated-transformer/">The Annotated Transformer</a></h3>
@@ -92,16 +145,7 @@
     <figcaption data-example-label>Curated example with real sources. Live results depend on your provider.</figcaption>
     <p class="sr-only" data-demo-status role="status" aria-live="polite">Example ready.</p>
   </figure>
-</section>
-<section class="section" id="how-it-works" aria-labelledby="workflow-title">
-  <div class="wrap">
-    <h2 id="workflow-title">A useful next step, right beside the page.</h2>
-    <span class="section-rule" data-section-rule aria-hidden="true"></span>
-    <ol class="workflow">
-      <li><div><h3>Read the active page</h3><p>Click the extension while reading an article, report, or paper. Research Companion reads that page when you ask.</p></div></li>
-      <li><div><h3>Find related sources</h3><p>Your selected AI provider searches for related reading. Results appear beside the page with a short explanation of why each one matters.</p></div></li>
-      <li><div><h3>Keep the useful connections</h3><p>Open a source to continue reading. Your last 50 research sessions stay in local history, ready to revisit without repeating the search.</p></div></li>
-    </ol>
+    </div>
   </div>
 </section>
 <section class="section" id="privacy" aria-labelledby="trust-title">
@@ -158,6 +202,6 @@
   </footer>
   <script defer src="./assets/vendor/gsap.min.js"></script>
   <script defer src="./assets/vendor/ScrollTrigger.min.js"></script>
-  <script defer src="./assets/landing.js?v=scroll-3"></script>
+  <script defer src="./assets/landing.js?v=kinetic-4"></script>
 </body>
 </html>
