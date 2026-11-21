@@ -37,5 +37,5 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 
 ## Maintenance
 
-- [ ] Dev-only `npm audit` findings (vitest, esbuild, postcss, nanoid, tinypool): bump vitest and esbuild to current majors. None of this code ships in the extension. Dependabot will open PRs.
+- [ ] Review Dependabot's GitHub Actions PRs (checkout, setup-node, action-gh-release major bumps).
 - [ ] Release checklist for every version: bump `package.json` + `manifest.json`, update `CHANGELOG.md`, tag `vX.Y.Z` (the release workflow builds the zip), upload the zip under Package in the dashboard.
