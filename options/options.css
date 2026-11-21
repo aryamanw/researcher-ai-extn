@@ -224,3 +224,14 @@ legend {
 #search-key-slot:empty {
   display: none;
 }
+
+.model-extra {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.model-extra input[name="modelCustom"] {
+  flex: 1;
+}

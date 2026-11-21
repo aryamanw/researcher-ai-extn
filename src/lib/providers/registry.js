@@ -1,12 +1,13 @@
 // Provider registry. Values come from docs/provider-verification.md (checked 2026-11-20).
 // modelsEndpoint is relative to baseUrl unless it is an absolute URL.
+// modelsFilter (optional) is a predicate over a raw models-list item; it keeps chat-capable models.
 
 const deepFreeze = (o) => {
   for (const v of Object.values(o)) if (v && typeof v === 'object') deepFreeze(v);
   return Object.freeze(o);
 };
 
-const mode2 = (id, label, baseUrl, keyUrl, defaultModel, modelsEndpoint = '/models') => ({
+const mode2 = (id, label, baseUrl, keyUrl, defaultModel, modelsEndpoint = '/models', modelsFilter) => ({
   id,
   label,
   format: 'openai-chat',
@@ -16,6 +17,7 @@ const mode2 = (id, label, baseUrl, keyUrl, defaultModel, modelsEndpoint = '/mode
   keyHint: { prefix: null, url: keyUrl },
   defaultModel,
   modelsEndpoint,
+  ...(modelsFilter && { modelsFilter }),
   search: null,
 });
 
@@ -47,6 +49,7 @@ export const PROVIDERS = deepFreeze({
     keyHint: { prefix: null, url: 'https://platform.openai.com/settings/organization/api-keys' },
     defaultModel: 'gpt-6-luna',
     modelsEndpoint: '/models',
+    modelsFilter: (m) => /^(gpt-|o\d|chatgpt-)/.test(m.id) && !/image|realtime|audio|transcribe|tts|embedding|moderation|whisper|live/.test(m.id),
     search: {
       models: /^gpt-(?!.*(image|realtime|live|transcribe|cyber|search))[56]/,
       tool: { type: 'web_search' },
@@ -143,7 +146,9 @@ export const PROVIDERS = deepFreeze({
   together: mode2('together', 'Together AI', 'https://api.together.ai/v1', 'https://api.together.ai/settings/projects/~current/api-keys', 'openai/gpt-oss-120b'),
   huggingface: mode2('huggingface', 'Hugging Face', 'https://router.huggingface.co/v1', 'https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained', 'deepseek-ai/DeepSeek-V4.1-Flash'),
   cerebras: mode2('cerebras', 'Cerebras', 'https://api.cerebras.ai/v1', 'https://cloud.cerebras.ai', 'gpt-oss-120b'),
-  'opencode-zen': mode2('opencode-zen', 'OpenCode Zen', 'https://opencode.ai/inference/openai/v1', 'https://opencode.ai/console', 'deepseek-v4.1-flash', 'https://opencode.ai/inference/v1/models'),
+  'opencode-zen': mode2('opencode-zen', 'OpenCode Zen', 'https://opencode.ai/inference/openai/v1', 'https://opencode.ai/console', 'deepseek-v4.1-flash', 'https://opencode.ai/inference/v1/models',
+    // Zen lists models served over other APIs and free models; keep paid chat-completions ones only.
+    (m) => !!m.api?.['chat-completions'] && m.cost?.text?.input?.price > 0),
 });
 
 export const SEARCH_SERVICES = deepFreeze({

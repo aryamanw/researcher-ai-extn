@@ -1,6 +1,7 @@
 import { getSettings, saveSettings, removeSavedKeys } from '../src/lib/storage.js';
 import { PROVIDERS, SEARCH_SERVICES, getProvider, canSearchNatively, resolveModel } from '../src/lib/providers/registry.js';
 import { requestHostPermission } from '../src/lib/providers/permissions.js';
+import { readModel, renderModelControl, toggleCustomInput, loadModels } from './modelPicker.js';
 
 export function getApiKeyFormatWarning(label, prefix, value) {
   if (!value || !prefix || value.startsWith(prefix)) return null;
@@ -172,14 +173,14 @@ function updateRequiredBadge(form) {
     badge.hidden = true;
     return;
   }
-  const model = resolveModel(entry, { models: { [entry.id]: field(form, 'model').value } });
+  const model = resolveModel(entry, { models: { [entry.id]: readModel(form) } });
   badge.hidden = canSearchNatively(entry, model);
 }
 
 function renderProviderSection(form, settings, getSettingsNow) {
   const providerId = field(form, 'provider').value;
   const entry = getProvider(providerId);
-  field(form, 'model').value = (providerId && settings.models?.[providerId]) || '';
+  renderModelControl(form, settings, providerId);
   form.querySelector('#openrouter-block')?.classList.toggle('is-hidden', providerId !== 'openrouter');
   const slot = form.querySelector('#provider-key-slot');
   slot.replaceChildren();
@@ -259,6 +260,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
 
   renderSettingsToForm(form, settings, getNow);
   statusEl.textContent = settings.openrouterToken ? 'Connected to OpenRouter' : 'Not connected to OpenRouter';
+  loadModels(form, getNow, state.provider, { auto: true });
   wireRemoveKeys(form, statusEl, (updated) => {
     state.settings = updated;
     renderSettingsToForm(form, updated, getNow);
@@ -304,19 +306,22 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     });
   }
 
-  wirePermissionSelect(providerSelect, 'provider', getProvider, () => {
+  wirePermissionSelect(providerSelect, 'provider', getProvider, (next) => {
     // Re-render the model input for the new provider BEFORE any save so the
     // previous provider's model text can never be stored under the new one.
     renderProviderSection(form, state.settings, getNow);
+    loadModels(form, getNow, next, { auto: true });
   });
   wirePermissionSelect(searchSelect, 'search', (id) => SEARCH_SERVICES[id], () => {
     renderSearchSection(form, state.settings, getNow);
+    renderModelControl(form, state.settings, state.provider, { keepCurrent: true });
   });
 
   form.addEventListener('change', async (event) => {
     if (event.target === providerSelect || event.target === searchSelect) return;
     refreshKeyWarnings(form);
     refreshResultsCountHint(form, resultsCountHintEl);
+    toggleCustomInput(form);
     updateRequiredBadge(form);
 
     // Snapshot everything synchronously: after the await below the user may
@@ -324,7 +329,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     const provider = state.provider || null;
     const search = state.search || null;
     const snap = {
-      model: field(form, 'model').value || '',
+      model: readModel(form),
       providerKey: field(form, 'providerKey')?.value || '',
       searchKey: field(form, 'searchKey')?.value || '',
       resultsCount: clampResultsCount(resultsInput.value, resultsInput),
@@ -340,6 +345,14 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
       }
       return patch;
     });
+    renderModelControl(form, state.settings, state.provider, { keepCurrent: true });
+    if (snap.providerKey && provider && provider === state.provider) {
+      loadModels(form, getNow, provider, { force: true });
+    }
+  });
+
+  form.querySelector('#refresh-models')?.addEventListener('click', () => {
+    if (state.provider) loadModels(form, getNow, state.provider, { force: true });
   });
 
   connectButton.addEventListener('click', () => {

@@ -37,10 +37,15 @@
       </label>
       <p class="field-hint" id="permission-status" role="status" aria-live="polite"></p>
       <label class="field-secondary">
-        Model (optional, uses provider default if blank)
-        <input type="text" name="model" />
+        Model
+        <select name="model"><option value="">Default (claude-opus-5-5)</option><option value="__custom__">Type a model name…</option></select>
       </label>
       <p class="field-hint">Examples: claude-opus-5-5 (Anthropic), gpt-6-luna (OpenAI), gemini-3.8-flash (Gemini), openai/gpt-6-luna (OpenRouter).</p>
+      <div class="model-extra">
+        <input type="text" name="modelCustom" placeholder="Model name" aria-label="Model name" hidden />
+        <button type="button" id="refresh-models" class="button-secondary">Refresh models</button>
+      </div>
+      <p class="field-hint" id="model-status" role="status" aria-live="polite"></p>
       <fieldset>
         <legend>Provider credentials</legend>
         <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>

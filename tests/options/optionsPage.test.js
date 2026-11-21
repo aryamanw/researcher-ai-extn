@@ -9,6 +9,8 @@ vi.mock('../../src/lib/providers/permissions.js', () => ({
   hasHostPermission: vi.fn(),
 }));
 
+vi.mock('../../src/lib/providers/models.js', () => ({ listModels: vi.fn() }));
+
 vi.mock('../../src/lib/storage.js', () => ({
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
@@ -16,6 +18,7 @@ vi.mock('../../src/lib/storage.js', () => ({
 }));
 
 import { getSettings, saveSettings, removeSavedKeys } from '../../src/lib/storage.js';
+import { listModels } from '../../src/lib/providers/models.js';
 import { requestHostPermission } from '../../src/lib/providers/permissions.js';
 import { PROVIDERS } from '../../src/lib/providers/registry.js';
 import {
@@ -36,7 +39,7 @@ function loadOptionsHtml() {
 describe('options.html structure', () => {
   it('gives the Model field a secondary (lower-weight) class, distinct from required fields', () => {
     const doc = loadOptionsHtml();
-    const modelInput = doc.querySelector('input[name="model"]');
+    const modelInput = doc.querySelector('select[name="model"]');
     const modelLabel = modelInput.closest('label');
     expect(modelLabel.classList.contains('field-secondary')).toBe(true);
 
@@ -46,7 +49,7 @@ describe('options.html structure', () => {
 
   it('shows model format examples under the Model field', () => {
     const doc = loadOptionsHtml();
-    const modelInput = doc.querySelector('input[name="model"]');
+    const modelInput = doc.querySelector('select[name="model"]');
     const modelHint = modelInput.closest('label').nextElementSibling;
     expect(modelHint).not.toBeNull();
     expect(modelHint.className).toBe('field-hint');
@@ -101,6 +104,8 @@ beforeEach(() => {
   };
   requestHostPermission.mockResolvedValue(true);
   saveSettings.mockResolvedValue(undefined);
+  listModels.mockReset();
+  listModels.mockResolvedValue([]);
 });
 
 describe('renderProviderOptions', () => {
@@ -123,7 +128,8 @@ describe('renderSettingsToForm', () => {
     const form = buildForm();
     renderSettingsToForm(form, base({ provider: 'anthropic', models: { anthropic: 'm1' }, apiKeys: { anthropic: 'sk-ant-abc123' }, resultsCount: 5 }));
     expect(el(form, 'provider').value).toBe('anthropic');
-    expect(el(form, 'model').value).toBe('m1');
+    expect(el(form, 'model').value).toBe('__custom__');
+    expect(el(form, 'modelCustom').value).toBe('m1');
     expect(el(form, 'resultsCount').value).toBe('5');
     expect(el(form, 'providerKey').value).toBe('');
     expect(el(form, 'providerKey').placeholder).toBe('Saved, ending in ****c123');
@@ -209,9 +215,10 @@ describe('initOptionsPage', () => {
 
   it('saves the model under the current provider and clamps results count', async () => {
     const form = await setup(base({ provider: 'openai', models: { anthropic: 'keep' } }));
-    el(form, 'model').value = 'gpt-x';
+    el(form, 'model').value = '__custom__';
+    el(form, 'modelCustom').value = 'gpt-x';
     el(form, 'resultsCount').value = '999';
-    fire(el(form, 'model'), 'change');
+    fire(el(form, 'modelCustom'), 'change');
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
     const saved = saveSettings.mock.calls.at(-1)[0];
     expect(saved.models).toEqual({ anthropic: 'keep', openai: 'gpt-x' });
@@ -221,10 +228,12 @@ describe('initOptionsPage', () => {
 
   it('re-renders the model input to the new provider saved model before saving, never carrying the old text', async () => {
     const form = await setup(base({ provider: 'openai', models: { openai: 'gpt-x', deepseek: 'ds-saved' } }));
-    el(form, 'model').value = 'typed-for-openai';
+    el(form, 'model').value = '__custom__';
+    el(form, 'modelCustom').value = 'typed-for-openai';
     choose(el(form, 'provider'), 'deepseek');
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
-    expect(el(form, 'model').value).toBe('ds-saved');
+    expect(el(form, 'model').value).toBe('__custom__');
+    expect(el(form, 'modelCustom').value).toBe('ds-saved');
     const saved = saveSettings.mock.calls.at(-1)[0];
     expect(saved.provider).toBe('deepseek');
     expect(saved.models).toEqual({ openai: 'gpt-x', deepseek: 'ds-saved' });
@@ -252,7 +261,7 @@ describe('initOptionsPage', () => {
     choose(el(form, 'provider'), 'deepseek');
     await vi.waitFor(() => expect(el(form, 'provider').value).toBe('anthropic'));
     expect(document.getElementById('permission-status').textContent).toBe('Research Companion needs permission to contact DeepSeek.');
-    expect(el(form, 'model').value).toBe('m-a');
+    expect(el(form, 'modelCustom').value).toBe('m-a');
     expect(saveSettings).not.toHaveBeenCalled();
   });
 
@@ -325,8 +334,9 @@ describe('initOptionsPage', () => {
 
   it('shows the badge when a Mode 1 provider model cannot search natively', async () => {
     const form = await setup(base({ provider: 'deepseek' }));
-    el(form, 'model').value = 'deepseek-pro';
-    fire(el(form, 'model'), 'change');
+    el(form, 'model').value = '__custom__';
+    el(form, 'modelCustom').value = 'deepseek-pro';
+    fire(el(form, 'modelCustom'), 'change');
     await vi.waitFor(() => expect(document.getElementById('search-required-badge').hidden).toBe(false));
   });
 
@@ -441,5 +451,96 @@ describe('toFriendlyOpenRouterError', () => {
   it('passes through an unrecognized message unchanged', () => {
     expect(toFriendlyOpenRouterError('something truly unexpected'))
       .toBe('something truly unexpected');
+  });
+});
+
+
+describe('model picker', () => {
+  const optionTexts = (form) => [...el(form, 'model').options].map((o) => o.textContent);
+
+  it('always offers Default and Type a model name, with Default selected for no saved model', async () => {
+    const form = await setup(base({ provider: 'anthropic' }));
+    const texts = optionTexts(form);
+    expect(texts[0]).toBe('Default (claude-opus-5-5)');
+    expect(texts.at(-1)).toBe('Type a model name…');
+    expect(el(form, 'model').value).toBe('');
+    expect(el(form, 'modelCustom').hidden).toBe(true);
+    expect(listModels).not.toHaveBeenCalled(); // no saved key
+  });
+
+  it('fetches on load with a saved key, lists models, and selects the saved one', async () => {
+    listModels.mockResolvedValue(['claude-haiku-5-5', 'claude-opus-5-5']);
+    const form = await setup(base({ provider: 'anthropic', apiKeys: { anthropic: 'k' }, models: { anthropic: 'claude-haiku-5-5' } }));
+    await vi.waitFor(() => expect(optionTexts(form)).toContain('claude-haiku-5-5 · searches the web'));
+    expect(listModels).toHaveBeenCalledWith(PROVIDERS.anthropic, 'k');
+    expect(el(form, 'model').value).toBe('claude-haiku-5-5');
+  });
+
+  it('marks non-searching models "uses search key" only when a search key is configured', async () => {
+    listModels.mockResolvedValue(['deepseek-flash', 'deepseek-pro']);
+    const form = await setup(base({ provider: 'deepseek', apiKeys: { deepseek: 'k' } }));
+    await vi.waitFor(() => expect(optionTexts(form)).toContain('deepseek-flash · searches the web'));
+    expect(optionTexts(form)).toContain('deepseek-pro');
+    document.body.innerHTML = '';
+    const form2 = await setup(base({ provider: 'deepseek', apiKeys: { deepseek: 'k' }, searchService: 'exa', searchKeys: { exa: 'e' } }));
+    await vi.waitFor(() => expect(optionTexts(form2)).toContain('deepseek-pro · uses search key'));
+  });
+
+  it('shows a saved model missing from the list as typed text', async () => {
+    listModels.mockResolvedValue(['a', 'b']);
+    const form = await setup(base({ provider: 'openai', apiKeys: { openai: 'k' }, models: { openai: 'zzz' } }));
+    await vi.waitFor(() => expect(optionTexts(form)).toContain('a'));
+    expect(el(form, 'model').value).toBe('__custom__');
+    expect(el(form, 'modelCustom').value).toBe('zzz');
+    expect(el(form, 'modelCustom').hidden).toBe(false);
+  });
+
+  it('saves a selected list model and a typed model under models[providerId]', async () => {
+    listModels.mockResolvedValue(['a', 'b']);
+    const form = await setup(base({ provider: 'openai', apiKeys: { openai: 'k' }, models: { anthropic: 'keep' } }));
+    await vi.waitFor(() => expect(optionTexts(form)).toContain('a'));
+    choose(el(form, 'model'), 'b');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(saveSettings.mock.calls.at(-1)[0].models).toEqual({ anthropic: 'keep', openai: 'b' });
+    choose(el(form, 'model'), '__custom__');
+    expect(el(form, 'modelCustom').hidden).toBe(false);
+    el(form, 'modelCustom').value = 'typed';
+    fire(el(form, 'modelCustom'), 'change');
+    await vi.waitFor(() => expect(saveSettings.mock.calls.at(-1)[0].models.openai).toBe('typed'));
+  });
+
+  it('refetches on the refresh button and after a key is saved', async () => {
+    const form = await setup(base({ provider: 'openai' }));
+    document.getElementById('refresh-models').click();
+    await vi.waitFor(() => expect(listModels).toHaveBeenCalledTimes(1));
+    listModels.mockResolvedValue(['fresh']);
+    el(form, 'providerKey').value = 'new-key';
+    fire(el(form, 'providerKey'), 'change');
+    await vi.waitFor(() => expect(optionTexts(form)).toContain('fresh'));
+  });
+
+  it('caches per provider for the page session', async () => {
+    listModels.mockResolvedValue(['m']);
+    const form = await setup(base({ provider: 'openai', apiKeys: { openai: 'k', anthropic: 'k2' } }));
+    await vi.waitFor(() => expect(listModels).toHaveBeenCalledTimes(1));
+    choose(el(form, 'provider'), 'anthropic');
+    await vi.waitFor(() => expect(listModels).toHaveBeenCalledTimes(2));
+    choose(el(form, 'provider'), 'openai');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+    expect(listModels).toHaveBeenCalledTimes(2);
+    expect(optionTexts(form)).toContain('m');
+  });
+
+  it('Review Focus 5: a failing list keeps Default and Type-a-name, shows a hint, no unhandled rejection', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    listModels.mockRejectedValue(new Error('401'));
+    const form = await setup(base({ provider: 'anthropic', apiKeys: { anthropic: 'bad' } }));
+    await vi.waitFor(() => expect(document.getElementById('model-status').textContent).toBe("Couldn't load models from Anthropic."));
+    expect(optionTexts(form)).toEqual(['Default (claude-opus-5-5)', 'Type a model name…']);
+    document.getElementById('refresh-models').click();
+    await new Promise((r) => setTimeout(r, 20));
+    process.off('unhandledRejection', unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
   });
 });

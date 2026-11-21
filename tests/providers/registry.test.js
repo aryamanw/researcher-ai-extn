@@ -44,3 +44,12 @@ it('registry entries are frozen', () => {
   expect(Object.isFrozen(PROVIDERS)).toBe(true);
   expect(Object.isFrozen(PROVIDERS.anthropic)).toBe(true);
 });
+
+it('modelsFilter, when present, is a predicate; OpenAI and OpenCode Zen define one', () => {
+  for (const e of Object.values(PROVIDERS)) {
+    if ('modelsFilter' in e) expect(typeof e.modelsFilter, e.id).toBe('function');
+  }
+  expect(PROVIDERS.openai.modelsFilter({ id: 'gpt-6-luna' })).toBe(true);
+  expect(PROVIDERS.openai.modelsFilter({ id: 'gpt-realtime-2' })).toBe(false);
+  expect(PROVIDERS['opencode-zen'].modelsFilter).toBeTypeOf('function');
+});
