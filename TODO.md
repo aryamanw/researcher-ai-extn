@@ -2,15 +2,14 @@
 
 Open items for the Chrome Web Store launch and after. Copy-paste text for every dashboard field is in [docs/chrome-web-store-listing.md](docs/chrome-web-store-listing.md).
 
-## In progress
-
-- [ ] **Model structure.** Decide how default models, model choice, and web-search tool versions are organized per provider, so retired models don't silently break the extension again.
-
 ## Chrome Web Store submission
 
 - [ ] Developer Dashboard → Account: set and verify a contact email (required to publish; doesn't have to be the one shown publicly).
 - [ ] Turn on 2-step verification for the Google account that owns the developer account.
-- [ ] New item → upload `research-companion-v0.1.4.zip` (from the v0.1.4 GitHub release, or `npm run package`).
+- [ ] **Release gate.** Before uploading v0.2.0: test every shipped provider with a real key (Mode 1 search returns cited results; Mode 2 with Exa and Tavily). Least-verified: OpenRouter chat-completions search, Gemini grounding host-matching, Anthropic `allowed_callers`.
+- [ ] Confirm Exa/Tavily quota-exhausted status codes (402/432/433) map to the free-limit message.
+- [ ] Verify Exa/Tavily free-tier claims in README and store listing.
+- [ ] New item → upload `research-companion-v0.2.0.zip` (from the v0.2.0 GitHub release, or `npm run package`).
 - [ ] Store listing tab: paste the description, category Productivity, language English; upload `store-assets/screenshot-sidepanel.png`, `store-assets/screenshot-options.png`, `store-assets/promo-small-440x280.png`.
 - [ ] Privacy practices tab: single purpose, per-permission justifications, remote code = No, data usage = Website content + Authentication information only, tick all three certifications, privacy policy URL.
 - [ ] Create a spend-limited Anthropic API key (e.g. $5 cap) for reviewers. Paste it **only** into the dashboard "Test instructions" field. Never commit it.
@@ -29,6 +28,9 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 
 - [ ] Real store screenshots: the side panel open next to an actual article, full-bleed with no padding (Chrome's recommendation). Current ones show the UI centered on grey.
 - [ ] Keyboard-shortcut race: `background.js` sends `RUN_SEARCH` right after `sidePanel.open()`. If the panel hasn't loaded its listener yet, the message is dropped (the panel still runs on load, so it's minor).
+- [ ] Groq re-check (dropped: no source URLs). `browser_search` docs show no URLs in the response; re-add if a live test shows URLs in `message.annotations` or `executed_tools[].search_results`. See `docs/provider-verification.md`.
+- [ ] Gemini Interactions API migration (`generateContent` is labelled legacy by Google).
+- [ ] Chrome built-in AI (Gemini Nano) for on-device query generation.
 - [ ] Anthropic web search can return `stop_reason: "pause_turn"` on long searches; the client doesn't resume the turn yet.
 - [ ] Optional privacy features: a "don't save history" toggle; skip extraction on obviously sensitive hosts (webmail, banking) or show a one-time notice that page text goes to the selected provider.
 - [ ] Refresh `docs/PRD.md`, `docs/TRD.md`, `docs/APP-FLOW.md`, `DESIGN.md` (they still describe the old two-call pipeline and Brave Search) before un-ignoring and publishing them.

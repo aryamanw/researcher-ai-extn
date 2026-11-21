@@ -1,6 +1,9 @@
 import { getSettings, addHistoryEntry } from '../src/lib/storage.js';
 import { runPipeline } from '../src/lib/pipeline.js';
-import { getSearchResults } from '../src/lib/llm/index.js';
+import { searchAndRank, planSearch } from '../src/lib/providers/index.js';
+import { PROVIDERS, SEARCH_SERVICES, getProvider } from '../src/lib/providers/registry.js';
+import { ProviderError } from '../src/lib/providers/errors.js';
+import { hasHostPermission, requestHostPermission } from '../src/lib/providers/permissions.js';
 
 export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
@@ -58,7 +61,42 @@ export function renderCancelled(container) {
   container.innerHTML = '<p class="empty-state">Search cancelled.</p>';
 }
 
+function friendlyProviderError(error) {
+  const service = SEARCH_SERVICES[error.provider];
+  const label = service?.label ?? getProvider(error.provider)?.label ?? error.provider;
+  if (service) {
+    if (error.kind === 'auth') return `Your ${label} key was rejected. Check it in Settings.`;
+    if (error.kind === 'rate-limit') {
+      const other = Object.values(SEARCH_SERVICES).find((s) => s.id !== service.id);
+      return `${label}'s free limit is used up for now. Try again later${other ? ` or switch to ${other.label}` : ''}.`;
+    }
+  }
+  switch (error.kind) {
+    case 'model-unavailable':
+      return `${error.model} isn't available from ${label}. Pick another model in Settings.`;
+    case 'needs-search-key':
+      return `${error.model} can't search the web on its own. Add an Exa or Tavily key in Settings, or pick a model that can search.`;
+    case 'permission':
+      return `Research Companion needs permission to contact ${label}.`;
+    case 'http':
+      if (!error.status) return null;
+      return service
+        ? `${label} rejected the search request (error ${error.status}). Try again.`
+        : `${label} rejected the request (error ${error.status}). Try another model, or try again.`;
+    case 'auth': return 'Your API key was rejected. Check it in Settings.';
+    case 'rate-limit': return 'Rate limited by the provider. Try again in a moment.';
+    case 'server': return 'The provider is having trouble right now. Try again shortly.';
+    case 'network': return "Couldn't reach the provider. Check your connection and try again.";
+    case 'not-configured': return 'Finish setting up your provider and API key in Settings.';
+    default: return null;
+  }
+}
+
 export function toFriendlyErrorMessage(error) {
+  if (error instanceof ProviderError) {
+    const friendly = friendlyProviderError(error);
+    if (friendly) return friendly;
+  }
   const message = error?.message || String(error);
 
   if (/no (provider|api key\/token) configured/i.test(message)) {
@@ -77,13 +115,13 @@ export function toFriendlyErrorMessage(error) {
   if (/failed to fetch|networkerror|load failed/i.test(message)) {
     return "Couldn't reach the provider. Check your connection and try again.";
   }
-  if (/could not parse json from search response|search response json was not an array|did not return a ranked results array/i.test(message)) {
+  if (/could not parse json from (search|ranking) response|search response json was not an array|did not return a ranked results array/i.test(message)) {
     return 'The provider returned an unexpected response. Try again.';
   }
   return message;
 }
 
-export function renderError(container, message, onRetry) {
+export function renderError(container, message, onRetry, grant) {
   container.removeAttribute('aria-busy');
   container.innerHTML = '';
 
@@ -100,14 +138,23 @@ export function renderError(container, message, onRetry) {
     onRetry();
   });
   container.appendChild(button);
-}
 
-const PROVIDER_LABELS = {
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-  openrouter: 'OpenRouter',
-};
+  if (grant?.host) {
+    const grantButton = document.createElement('button');
+    grantButton.id = 'grant-button';
+    grantButton.type = 'button';
+    grantButton.textContent = 'Grant access';
+    grantButton.addEventListener('click', () => {
+      // The permission request must be made synchronously inside the click (user gesture).
+      grantButton.disabled = true;
+      Promise.resolve(requestHostPermission(grant.host)).catch(() => false).then((ok) => {
+        if (ok) onRetry();
+        else grantButton.disabled = false;
+      });
+    });
+    container.appendChild(grantButton);
+  }
+}
 
 export function renderResults(container, results, { provider, showProvider } = {}) {
   container.removeAttribute('aria-busy');
@@ -116,7 +163,7 @@ export function renderResults(container, results, { provider, showProvider } = {
   if (showProvider && provider) {
     const label = document.createElement('p');
     label.className = 'active-provider status';
-    label.textContent = `Using ${PROVIDER_LABELS[provider] || provider}`;
+    label.textContent = `Using ${getProvider(provider)?.label ?? provider}`;
     container.appendChild(label);
   }
 
@@ -230,12 +277,21 @@ export function requestExtraction(tabId, { timeoutMs = EXTRACTION_TIMEOUT_MS, si
 }
 
 export function countConfiguredProviders(settings) {
-  let count = 0;
-  if (settings.apiKeys?.anthropic) count += 1;
-  if (settings.apiKeys?.openai) count += 1;
-  if (settings.apiKeys?.gemini) count += 1;
-  if (settings.openrouterToken) count += 1;
+  let count = Object.keys(PROVIDERS).filter((id) => settings.apiKeys?.[id]).length;
+  if (settings.openrouterToken && !settings.apiKeys?.openrouter) count += 1;
   return count;
+}
+
+async function ensureHostPermissions(plan) {
+  const required = chrome.runtime.getManifest().host_permissions ?? [];
+  const hosts = [{ id: plan.entry.id, host: plan.entry.host }];
+  if (plan.mode === 2) hosts.push({ id: plan.searchService.id, host: SEARCH_SERVICES[plan.searchService.id].host });
+  for (const { id, host } of hosts) {
+    if (required.includes(host)) continue;
+    if (!(await hasHostPermission(host))) {
+      throw new ProviderError(`Missing permission for ${host}`, { kind: 'permission', provider: id, host });
+    }
+  }
 }
 
 function throwIfAborted(signal) {
@@ -255,6 +311,9 @@ export async function analyzeActiveTab({
     return { status: 'not-configured' };
   }
 
+  const plan = planSearch(settings);
+  await ensureHostPermissions(plan);
+
   renderStatus('Reading page...');
   const extraction = await requestExtraction(tabId, { signal });
   if (extraction.confidence === 'low') {
@@ -262,13 +321,11 @@ export async function analyzeActiveTab({
     return { status: 'no-content' };
   }
 
-  renderStatus('Searching...');
   const llmClient = {
     searchAndRank: ({ pageTitle, pageText, resultsCount }) =>
-      getSearchResults(settings, { pageTitle, pageText, resultsCount }, signal),
+      searchAndRank(settings, { pageTitle, pageText, resultsCount }, { signal, onStatus: renderStatus }),
   };
 
-  renderStatus('Ranking results...');
   const results = await runPipeline({
     pageTitle: extraction.title,
     pageUrl: extraction.url,
@@ -292,6 +349,7 @@ export async function analyzeActiveTab({
     sourcePage: { title: extraction.title, url: extraction.url },
     results,
     provider: settings.provider,
+    searchService: plan.mode === 2 ? plan.searchService.id : null,
   });
 
   return { status: 'success', results };

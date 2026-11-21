@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Research Companion",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "minimum_chrome_version": "116",
   "description": "Suggests similar webpages, reports, and articles to what you're currently reading.",
   "homepage_url": "https://aryamanw.github.io/researcher-ai-extn/",
@@ -11,7 +11,7 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://openrouter.ai"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.moonshot.ai https://api.x.ai https://ollama.com https://api.together.ai https://router.huggingface.co https://api.cerebras.ai https://opencode.ai https://api.exa.ai https://api.tavily.com"
   },
   "permissions": ["sidePanel", "scripting", "storage", "activeTab", "identity"],
   "host_permissions": [
@@ -19,6 +19,18 @@
     "https://api.openai.com/*",
     "https://generativelanguage.googleapis.com/*",
     "https://openrouter.ai/*"
+  ],
+  "optional_host_permissions": [
+    "https://api.deepseek.com/*",
+    "https://api.moonshot.ai/*",
+    "https://api.x.ai/*",
+    "https://ollama.com/*",
+    "https://api.together.ai/*",
+    "https://router.huggingface.co/*",
+    "https://api.cerebras.ai/*",
+    "https://opencode.ai/*",
+    "https://api.exa.ai/*",
+    "https://api.tavily.com/*"
   ],
   "background": {
     "service_worker": "background.js",

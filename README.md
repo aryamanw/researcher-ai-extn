@@ -37,8 +37,12 @@ It connects directly to the AI provider and search service you choose, using you
 ### Connect a provider
 
 1. Right-click the toolbar icon → **Options** (or `chrome://extensions` → Research Companion → **Details** → **Extension options**).
-2. Connect an AI provider: click **Connect to OpenRouter** to sign in without pasting a key, or paste an Anthropic, OpenAI, or Gemini API key directly.
-3. Pick the provider you just connected from the **LLM provider** dropdown — that provider's own web search finds the related pages, no separate search key needed. Result quality depends on which provider's web search you use, so you may notice differences if you switch providers.
+2. Pick a provider in the **LLM provider** dropdown and paste its API key (or click **Connect to OpenRouter** to sign in without a key). Providers work in one of two modes:
+   - **Built-in search (no extra key):** Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Kimi, xAI. The provider's own web search finds the related pages.
+   - **Search key mode:** Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen. These have no built-in web search, so you also add a search key under **Search service**. Only the AI-written search queries go to the search service, never the page text or URL.
+3. For search key mode, get a key from [Exa](https://dashboard.exa.ai/api-keys) (free monthly credits) or [Tavily](https://app.tavily.com) (1,000 free searches a month, no card).
+
+Chrome asks for permission the first time you pick a provider or search service that needs it. Result quality depends on the provider's web search, so you may notice differences if you switch.
 
 Settings save automatically as you fill them in.
 
@@ -55,7 +59,7 @@ If a page has no readable content (a PDF, a paywall stub, an app shell), the pan
 
 Research Companion runs entirely in your browser. There's no backend, no account, and no telemetry.
 
-When you click the icon, a one-shot script reads the readable text of the active tab only. It never reads tabs you haven't clicked on, and never runs in the background. That text is sent to your chosen AI provider (Anthropic, OpenAI, Gemini, or OpenRouter) along with an instruction to use its own web search to find related pages and write a short relevance note for each — using your own key or OpenRouter connection, with no separate search API key.
+When you click the icon, a one-shot script reads the readable text of the active tab only. It never reads tabs you haven't clicked on, and never runs in the background. That text is sent to your chosen AI provider (Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Kimi, xAI, Ollama Cloud, Together AI, Hugging Face, Cerebras, or OpenCode Zen) along with an instruction to find related pages and write a short relevance note for each. Providers with built-in web search do the searching themselves. For the others, the provider writes search queries and your Exa or Tavily key runs them. Everything uses your own keys.
 
 Your provider settings, API keys, and the last 50 research sessions live only in your browser's local extension storage (`chrome.storage.local`). Nothing syncs, and nothing gets sent anywhere except the provider you configured.
 

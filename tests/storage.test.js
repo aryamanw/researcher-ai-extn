@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getSettings, saveSettings, getHistory, addHistoryEntry, deleteHistoryEntry, clearHistory } from '../src/lib/storage.js';
+import { PROVIDERS } from '../src/lib/providers/registry.js';
+import { getSettings, saveSettings, removeSavedKeys, getHistory, addHistoryEntry, deleteHistoryEntry, clearHistory } from '../src/lib/storage.js';
 
 function mockChromeStorage(initial = {}) {
   const store = { ...initial };
@@ -24,10 +25,13 @@ describe('getSettings', () => {
     const settings = await getSettings();
     expect(settings).toEqual({
       provider: null,
-      model: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      models: {},
+      apiKeys: Object.fromEntries(Object.keys(PROVIDERS).map((id) => [id, ''])),
       openrouterToken: '',
+      searchService: null,
+      searchKeys: { exa: '', tavily: '' },
       resultsCount: 8,
+      schemaVersion: 2,
     });
   });
 
@@ -93,5 +97,50 @@ describe('history', () => {
 
     expect(updated).toEqual([]);
     expect(await getHistory()).toEqual([]);
+  });
+});
+
+describe('settings v1 -> v2 migration', () => {
+  const v1 = { provider: 'anthropic', model: 'claude-x', apiKeys: { anthropic: 'k', openai: '', gemini: '' }, openrouterToken: 't', resultsCount: 5 };
+
+  it('migrates v1 and persists once', async () => {
+    mockChromeStorage({ settings: v1 });
+    const s = await getSettings();
+    expect(s.models.anthropic).toBe('claude-x');
+    expect(s.apiKeys.anthropic).toBe('k');
+    expect(s.apiKeys.deepseek).toBe('');
+    expect(s.openrouterToken).toBe('t');
+    expect(s.resultsCount).toBe(5);
+    expect(s.schemaVersion).toBe(2);
+    expect('model' in s).toBe(false);
+    expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives empty models when v1 has a model but no provider', async () => {
+    mockChromeStorage({ settings: { ...v1, provider: null } });
+    expect((await getSettings()).models).toEqual({});
+  });
+
+  it('does not write on v2 reads', async () => {
+    mockChromeStorage({ settings: v1 });
+    await getSettings();
+    chrome.storage.local.set.mockClear();
+    await getSettings();
+    await getSettings();
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
+});
+
+describe('removeSavedKeys', () => {
+  it('clears keys, token and search keys but keeps the rest', async () => {
+    mockChromeStorage({ settings: { schemaVersion: 2, provider: 'openai', models: { openai: 'm' }, apiKeys: { openai: 'k', exa: 'x' }, openrouterToken: 't', searchService: 'exa', searchKeys: { exa: 'e', tavily: 'v' } } });
+    const s = await removeSavedKeys();
+    expect(Object.values(s.apiKeys).every((v) => v === '')).toBe(true);
+    expect(s.openrouterToken).toBe('');
+    expect(s.searchKeys).toEqual({ exa: '', tavily: '' });
+    expect(s.provider).toBe('openai');
+    expect(s.models).toEqual({ openai: 'm' });
+    expect(s.searchService).toBe('exa');
+    expect((await getSettings()).apiKeys.openai).toBe('');
   });
 });

@@ -5,7 +5,7 @@ export function computeFetchCount(resultsCount) {
   return resultsCount + Math.ceil(resultsCount * OVERFETCH_RATIO);
 }
 
-const stripDelimiters = (s) => String(s ?? '').replace(/<\/?(page_title|page_content)>/gi, '');
+export const stripDelimiters = (s) => String(s ?? '').replace(/<\/?(page_title|page_content)>/gi, '');
 
 export function buildSearchPrompt({ pageTitle, pageText, resultsCount }) {
   const trimmedText = stripDelimiters(pageText).slice(0, MAX_ARTICLE_CHARS);
