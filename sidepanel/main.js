@@ -64,7 +64,12 @@ async function run() {
       if (error.name === 'AbortError') {
         renderCancelled(resultsContainer);
       } else {
-        renderError(resultsContainer, toFriendlyErrorMessage(error), run);
+        renderError(
+          resultsContainer,
+          toFriendlyErrorMessage(error),
+          run,
+          error.kind === 'permission' && error.host ? { host: error.host } : undefined,
+        );
       }
     }
 

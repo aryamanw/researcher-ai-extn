@@ -48,3 +48,28 @@ describe('searchWeb', () => {
     expect(err.provider).toBe('exa');
   });
 });
+
+describe('searchWeb result caps and error labels', () => {
+  const stub = () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok({ results: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  };
+  it('clamps Tavily max_results to 20', async () => {
+    const f = stub();
+    await searchWeb({ serviceId: 'tavily', apiKey: 'k', query: 'q', maxResults: 40 });
+    expect(JSON.parse(f.mock.calls[0][1].body).max_results).toBe(20);
+  });
+  it('clamps Exa numResults to 100 and both to at least 1', async () => {
+    const f = stub();
+    await searchWeb({ serviceId: 'exa', apiKey: 'k', query: 'q', maxResults: 500 });
+    expect(JSON.parse(f.mock.calls[0][1].body).numResults).toBe(100);
+    await searchWeb({ serviceId: 'tavily', apiKey: 'k', query: 'q', maxResults: 0 });
+    expect(JSON.parse(f.mock.calls[1][1].body).max_results).toBe(1);
+  });
+  it('labels HTTP errors with the service label', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(bad(400)));
+    await expect(searchWeb({ serviceId: 'tavily', apiKey: 'k', query: 'q', maxResults: 5 }))
+      .rejects.toMatchObject({ message: 'Tavily API error: 400', kind: 'http' });
+  });
+});

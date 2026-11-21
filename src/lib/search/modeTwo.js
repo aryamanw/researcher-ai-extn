@@ -13,7 +13,7 @@ export async function runModeTwo({ complete, searchService, pageTitle, pageText,
   checkAborted(signal);
   onStatus?.('Writing search queries…');
   const queryRaw = await complete(buildQueryPrompt({ pageTitle, pageText }));
-  const queries = parseQueries(queryRaw, pageTitle);
+  const queries = parseQueries(queryRaw, pageTitle, pageText);
   checkAborted(signal);
 
   onStatus?.(`Searching with ${SEARCH_SERVICES[searchService.id].label}…`);

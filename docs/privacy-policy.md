@@ -12,7 +12,7 @@ When you click the toolbar icon (or use the extension's keyboard shortcut), the 
 
 - **Website content (page title and text).** The title and the first 12,000 characters of the extracted text are sent in a request to the AI provider you selected. The page URL is not included in that request. The provider uses its own web-search tool to find related pages and write short relevance notes, which are returned to the side panel. The data is used only for this purpose.
 - **Authentication information (API keys / OAuth token).** Keys you paste into Settings, or the key issued to the extension when you use "Connect to OpenRouter", are stored on your device and are sent only to the provider they belong to, as the credential on that provider's API requests.
-- **Settings and history.** Your chosen provider, model, number of results, and a history of your most recent analyses (up to 50 sessions: source page title and URL, the results returned, the provider used, and a timestamp) are stored on your device.
+- **Settings and history.** Your chosen provider, per-provider model choices, chosen search service and its key, number of results, and a history of your most recent analyses (up to 50 sessions: source page title and URL, the results returned, the provider used, which search service was used if any, and a timestamp) are stored on your device.
 
 The extension does not collect your name, email address, location, browsing history beyond the pages you explicitly analyze, financial or health information, or any analytics or telemetry.
 
@@ -54,7 +54,7 @@ Once your page content reaches a provider, that provider's own terms and privacy
 
 - Anthropic: [anthropic.com/legal/privacy](https://www.anthropic.com/legal/privacy).
 - OpenAI: [openai.com/policies/privacy-policy](https://openai.com/policies/privacy-policy).
-- Google Gemini API: [policies.google.com/privacy](https://policies.google.com/privacy).
+- Google Gemini API: [policies.google.com/privacy](https://policies.google.com/privacy) and [ai.google.dev/gemini-api/terms](https://ai.google.dev/gemini-api/terms).
 - OpenRouter: [openrouter.ai/privacy](https://openrouter.ai/privacy). OpenRouter forwards requests to underlying model providers, whose policies may also apply. Its host also serves the sign-in page and key-exchange endpoint when you choose "Connect to OpenRouter".
 - DeepSeek: [deepseek.com privacy policy](https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html). DeepSeek states that it stores data on servers in China.
 - Kimi (Moonshot AI): [platform.kimi.ai/docs/agreement/userprivacy](https://platform.kimi.ai/docs/agreement/userprivacy). Kimi's operator, Moonshot AI Pte. Ltd., is based in Singapore.
@@ -67,7 +67,7 @@ Once your page content reaches a provider, that provider's own terms and privacy
 - Exa (search service): [exa.ai/privacy-policy](https://exa.ai/privacy-policy).
 - Tavily (search service): [tavily.com/privacy](https://www.tavily.com/privacy).
 
-**Search key mode.** Some providers (Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen) have no built-in web search. For these, you add your own Exa or Tavily key in Settings. The page title and text go to the AI provider you selected, which writes a few search queries. Only those AI-written search queries are sent to Exa or Tavily, never the page text or the page URL. Exa or Tavily returns result links and snippets, which are sent back to your AI provider to rank. Your Exa or Tavily key is stored on your device and sent only to that search service.
+**Search key mode.** Some providers (Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen) have no built-in web search, and the same applies when a provider that does have built-in search is used with a model that can't search. For these, you add your own Exa or Tavily key in Settings. The page title and text go to the AI provider you selected, which writes a few search queries. Only those AI-written search queries are sent to Exa or Tavily, never the page text or the page URL. Exa or Tavily returns result links and snippets, which are sent back to your AI provider to rank. Your Exa or Tavily key is stored on your device and sent only to that search service.
 
 Please do not analyze pages containing sensitive personal information (for example, private email, medical records, or internal documents) unless you are comfortable with it being sent to your chosen provider.
 

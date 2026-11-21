@@ -40,7 +40,7 @@ It connects directly to the AI provider and search service you choose, using you
 2. Pick a provider in the **LLM provider** dropdown and paste its API key (or click **Connect to OpenRouter** to sign in without a key). Providers work in one of two modes:
    - **Built-in search (no extra key):** Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Kimi, xAI. The provider's own web search finds the related pages.
    - **Search key mode:** Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen. These have no built-in web search, so you also add a search key under **Search service**. Only the AI-written search queries go to the search service, never the page text or URL.
-3. For search key mode, get a key from [Exa](https://dashboard.exa.ai/api-keys) (free monthly credits, no card) or [Tavily](https://app.tavily.com) (1,000 free searches a month, no card).
+3. For search key mode, get a key from [Exa](https://dashboard.exa.ai/api-keys) (free monthly credits) or [Tavily](https://app.tavily.com) (1,000 free searches a month, no card).
 
 Chrome asks for permission the first time you pick a provider or search service that needs it. Result quality depends on the provider's web search, so you may notice differences if you switch.
 

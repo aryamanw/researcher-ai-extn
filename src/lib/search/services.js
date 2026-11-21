@@ -1,7 +1,11 @@
 import { SEARCH_SERVICES } from '../providers/registry.js';
 import { authHeaders, errorFromResponse } from '../providers/http.js';
 
-function buildBody(serviceId, query, maxResults) {
+// Documented per-request maximums (docs/provider-verification.md).
+const MAX_RESULTS = { exa: 100, tavily: 20 };
+
+function buildBody(serviceId, query, requested) {
+  const maxResults = Math.max(1, Math.min(MAX_RESULTS[serviceId], requested));
   if (serviceId === 'exa') {
     return { query, numResults: maxResults, type: 'auto', contents: { highlights: true } };
   }

@@ -13,6 +13,13 @@ const annotated = (content) => ({
 const args = { apiKey: 'key123', model: 'm1', pageTitle: 'Tidal Energy', pageText: 'article', resultsCount: 5 };
 
 describe('openaiChat.searchAndRank', () => {
+  it('openrouter clamps max_results to 25', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(annotated(RESULTS)));
+    vi.stubGlobal('fetch', fetchMock);
+    await searchAndRank({ entry: entry('openrouter'), ...args, resultsCount: 20 });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).tools[0].parameters.max_results).toBe(25);
+  });
+
   it('posts to deepseek chat/completions with its tool and returns only cited results', async () => {
     const fetchMock = vi.fn().mockResolvedValue(json(annotated(RESULTS)));
     vi.stubGlobal('fetch', fetchMock);

@@ -23,7 +23,7 @@ export async function searchAndRank({ entry, apiKey, model, pageTitle, pageText,
   const m = model || entry.defaultModel;
   const tool = structuredClone(entry.search.tool);
   if (tool.type === 'openrouter:web_search') {
-    tool.parameters = { ...tool.parameters, max_results: computeFetchCount(resultsCount) };
+    tool.parameters = { ...tool.parameters, max_results: Math.min(25, computeFetchCount(resultsCount)) };
   }
   const prompt = buildSearchPrompt({ pageTitle, pageText, resultsCount });
   const data = await post({

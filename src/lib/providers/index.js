@@ -42,7 +42,7 @@ export async function searchAndRank(settings, { pageTitle, pageText, resultsCoun
       pageTitle, pageText, resultsCount, signal, onStatus,
     });
   } catch (err) {
-    if (err instanceof TypeError) {
+    if (err instanceof TypeError && /fetch|network|load failed/i.test(err.message)) {
       throw new ProviderError(`Network error: ${err.message}`, { kind: 'network', provider: entry.id, model });
     }
     throw err;

@@ -53,3 +53,8 @@ it('modelsFilter, when present, is a predicate; OpenAI and OpenCode Zen define o
   expect(PROVIDERS.openai.modelsFilter({ id: 'gpt-realtime-2' })).toBe(false);
   expect(PROVIDERS['opencode-zen'].modelsFilter).toBeTypeOf('function');
 });
+
+it('anthropic search models exclude claude-3 (so the legacy claude-3 tool branch is unreachable)', async () => {
+  const { PROVIDERS } = await import('../../src/lib/providers/registry.js');
+  expect(PROVIDERS.anthropic.search.models.test('claude-3-5-haiku-latest')).toBe(false);
+});

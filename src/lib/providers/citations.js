@@ -69,10 +69,10 @@ export function filterToCited(results, { citedUrls = [], citedHosts = [] } = {})
   return results.filter((r) => {
     let host;
     try {
-      host = normalizeHost(new URL(r.url).hostname);
+      host = normalizeHost(new URL(r?.url).hostname);
     } catch {
       return false;
     }
-    return urls.has(r.url) || hosts.has(host);
+    return urls.has(r.url) || [...hosts].some((h) => host === h || host.endsWith('.' + h));
   });
 }

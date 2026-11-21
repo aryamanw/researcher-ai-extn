@@ -1,12 +1,16 @@
 import { ProviderError } from './errors.js';
-import { getProvider } from './registry.js';
+import { getProvider, SEARCH_SERVICES } from './registry.js';
 
 const MODEL_MISSING = /model[^"]*(does not exist|not found|not supported|unavailable|invalid)|(unknown|invalid|unsupported) model/i;
 
-function kindFor(status, body) {
+// Exa/Tavily quota-exhausted codes are unverified (see TODO.md release gate).
+const SEARCH_QUOTA_STATUSES = new Set([402, 429, 432, 433]);
+
+function kindFor(status, body, { isSearchService, model }) {
   if (status === 401 || status === 403) return 'auth';
-  if (status === 429) return 'rate-limit';
+  if (status === 429 || (isSearchService && SEARCH_QUOTA_STATUSES.has(status))) return 'rate-limit';
   if (status >= 500) return 'server';
+  if (!model) return 'http';
   if (status === 404) return 'model-unavailable';
   if (status === 400 && MODEL_MISSING.test(body)) return 'model-unavailable';
   return 'http';
@@ -19,9 +23,10 @@ export async function errorFromResponse(response, { provider, model } = {}) {
   } catch {
     body = '';
   }
-  const label = getProvider(provider)?.label || provider;
+  const service = Object.hasOwn(SEARCH_SERVICES, provider) ? SEARCH_SERVICES[provider] : undefined;
+  const label = service?.label || getProvider(provider)?.label || provider;
   return new ProviderError(`${label} API error: ${response.status}`, {
-    kind: kindFor(response.status, body),
+    kind: kindFor(response.status, body, { isSearchService: !!service, model }),
     provider,
     model,
     status: response.status,

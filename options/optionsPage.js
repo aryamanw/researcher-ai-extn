@@ -1,6 +1,6 @@
 import { getSettings, saveSettings, removeSavedKeys } from '../src/lib/storage.js';
 import { PROVIDERS, SEARCH_SERVICES, getProvider, canSearchNatively, resolveModel } from '../src/lib/providers/registry.js';
-import { requestHostPermission } from '../src/lib/providers/permissions.js';
+import { requestHostPermission, hasHostPermission } from '../src/lib/providers/permissions.js';
 import { readModel, renderModelControl, toggleCustomInput, loadModels } from './modelPicker.js';
 
 export function getApiKeyFormatWarning(label, prefix, value) {
@@ -306,6 +306,33 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     });
   }
 
+  // Shown on load when a saved selection's optional host is not (or no longer) granted.
+  // The button calls requestHostPermission synchronously in its click (user gesture).
+  async function refreshPermissionNotice() {
+    if (!permissionEl) return;
+    const entries = [getProvider(state.provider), SEARCH_SERVICES[state.search]].filter(Boolean);
+    let missing;
+    for (const entry of entries) {
+      if (requiredHosts.has(entry.host)) continue;
+      if (!(await hasHostPermission(entry.host))) { missing = entry; break; }
+    }
+    permissionEl.textContent = '';
+    if (!missing) return;
+    permissionEl.append(`Research Companion needs permission to contact ${missing.label}. `);
+    const button = form.ownerDocument.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Allow access';
+    button.addEventListener('click', () => {
+      button.disabled = true;
+      Promise.resolve(requestHostPermission(missing.host)).catch(() => false).then((ok) => {
+        if (ok) refreshPermissionNotice();
+        else button.disabled = false;
+      });
+    });
+    permissionEl.append(button);
+  }
+  refreshPermissionNotice();
+
   wirePermissionSelect(providerSelect, 'provider', getProvider, (next) => {
     // Re-render the model input for the new provider BEFORE any save so the
     // previous provider's model text can never be stored under the new one.
@@ -357,11 +384,14 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
 
   connectButton.addEventListener('click', () => {
     connectButton.disabled = true;
-    chrome.runtime.sendMessage({ type: 'CONNECT_OPENROUTER' }, (response) => {
+    chrome.runtime.sendMessage({ type: 'CONNECT_OPENROUTER' }, async (response) => {
       statusEl.textContent = response?.ok
         ? 'Connected to OpenRouter'
         : toFriendlyOpenRouterError(response?.error);
       connectButton.disabled = false;
+      if (!response?.ok) return;
+      state.settings = await getSettings();
+      if (state.provider === 'openrouter') loadModels(form, getNow, 'openrouter', { force: true });
     });
   });
 }

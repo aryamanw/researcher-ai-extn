@@ -58,3 +58,27 @@ describe('authHeaders', () => {
     });
   });
 });
+
+describe('errorFromResponse for search services', () => {
+  it('uses the search service label', async () => {
+    const err = await errorFromResponse(resp(400), { provider: 'tavily' });
+    expect(err.message).toBe('Tavily API error: 400');
+  });
+  it.each([402, 429, 432, 433])('maps %i to rate-limit for search services', async (status) => {
+    expect((await errorFromResponse(resp(status), { provider: 'exa' })).kind).toBe('rate-limit');
+  });
+  it('does not map 402 to rate-limit for model providers', async () => {
+    expect((await errorFromResponse(resp(402), { provider: 'openai', model: 'm' })).kind).toBe('http');
+  });
+  it('maps a search-service 404 to http, not model-unavailable', async () => {
+    expect((await errorFromResponse(resp(404), { provider: 'exa' })).kind).toBe('http');
+  });
+  it('maps a provider 404 without a model to http', async () => {
+    expect((await errorFromResponse(resp(404), { provider: 'openai' })).kind).toBe('http');
+  });
+});
+
+it('ProviderError carries an optional host', async () => {
+  const { ProviderError: PE } = await import('../../src/lib/providers/errors.js');
+  expect(new PE('x', { kind: 'permission', host: 'https://a/*' }).host).toBe('https://a/*');
+});

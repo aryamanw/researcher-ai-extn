@@ -102,6 +102,12 @@ describe('searchAndRank', () => {
     await expect(searchAndRank(s1, page, {})).rejects.toMatchObject({ name: 'ProviderError', kind: 'network', provider: 'openai' });
   });
 
+  it('does not wrap non-fetch TypeErrors', async () => {
+    const err = new TypeError("Cannot read properties of undefined (reading 'x')");
+    FORMATS['openai-responses'].searchAndRank.mockRejectedValue(err);
+    await expect(searchAndRank(s1, page, {})).rejects.toBe(err);
+  });
+
   it('does not wrap other errors', async () => {
     const err = new ProviderError('x', { kind: 'auth' });
     FORMATS['openai-responses'].searchAndRank.mockRejectedValue(err);

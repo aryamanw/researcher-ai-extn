@@ -19,7 +19,7 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Fixed
 - Gemini results were never kept: citations previously never matched because Google grounding returns redirect URLs. Results now match by domain.
-- Anthropic web search sets `allowed_callers` so models without programmatic tool calling no longer return a 400.
+- Anthropic web search requests now set `allowed_callers: ["direct"]` per the docs, intended to avoid a 400 on models without programmatic tool calling (pending live verification).
 
 ## [0.1.4] - 2026-11-20
 

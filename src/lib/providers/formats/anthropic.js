@@ -2,7 +2,7 @@ import { authHeaders, errorFromResponse } from '../http.js';
 import { CITATION_EXTRACTORS, filterToCited } from '../citations.js';
 import { buildSearchPrompt, computeFetchCount, parseSearchResults } from '../../llm/searchResponse.js';
 
-const LEGACY_MODEL = /^claude-(3|opus-4-[0-5]|sonnet-4-[0-5]|haiku-4)/;
+const LEGACY_MODEL = /^claude-(opus-4-[0-5]|sonnet-4-[0-5]|haiku-4)/;
 
 async function post({ entry, apiKey, model, body, signal }) {
   const response = await fetch(`${entry.baseUrl}/v1/messages`, {

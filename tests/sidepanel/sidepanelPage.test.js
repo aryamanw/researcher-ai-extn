@@ -35,12 +35,12 @@ vi.mock('../../src/lib/storage.js', () => ({
 }));
 vi.mock('../../src/lib/pipeline.js', () => ({ runPipeline: vi.fn() }));
 vi.mock('../../src/lib/providers/index.js', () => ({ searchAndRank: vi.fn(), planSearch: vi.fn() }));
-vi.mock('../../src/lib/providers/permissions.js', () => ({ hasHostPermission: vi.fn() }));
+vi.mock('../../src/lib/providers/permissions.js', () => ({ hasHostPermission: vi.fn(), requestHostPermission: vi.fn() }));
 
 import { getSettings, addHistoryEntry } from '../../src/lib/storage.js';
 import { runPipeline } from '../../src/lib/pipeline.js';
 import { searchAndRank, planSearch } from '../../src/lib/providers/index.js';
-import { hasHostPermission } from '../../src/lib/providers/permissions.js';
+import { hasHostPermission, requestHostPermission } from '../../src/lib/providers/permissions.js';
 import { ProviderError } from '../../src/lib/providers/errors.js';
 import {
   renderLoading,
@@ -124,7 +124,13 @@ describe('toFriendlyErrorMessage with ProviderError', () => {
   });
   it('maps permission errors', () => {
     expect(toFriendlyErrorMessage(pe('permission', { provider: 'deepseek' })))
-      .toBe('Research Companion needs permission to contact DeepSeek. Open Settings to allow it.');
+      .toBe('Research Companion needs permission to contact DeepSeek.');
+  });
+  it('maps http errors for providers and search services', () => {
+    expect(toFriendlyErrorMessage(pe('http', { provider: 'openai', status: 400 })))
+      .toBe('OpenAI rejected the request (error 400). Try another model, or try again.');
+    expect(toFriendlyErrorMessage(pe('http', { provider: 'tavily', status: 400 })))
+      .toBe('Tavily rejected the search request (error 400). Try again.');
   });
   it('maps AI provider auth/rate-limit/server/network/not-configured', () => {
     expect(toFriendlyErrorMessage(pe('auth', { provider: 'openai' }))).toBe('Your API key was rejected. Check it in Settings.');
@@ -222,6 +228,34 @@ describe('render functions', () => {
     button.click();
     expect(button.disabled).toBe(true);
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  describe('renderError grant access button', () => {
+    it('has no grant button without a grant option', () => {
+      renderError(container, 'x', vi.fn());
+      expect(container.querySelector('#grant-button')).toBeNull();
+    });
+
+    it('requests the host permission in the click handler and re-runs on grant', async () => {
+      requestHostPermission.mockResolvedValue(true);
+      const onRetry = vi.fn();
+      renderError(container, 'needs permission', onRetry, { host: 'https://api.exa.ai/*' });
+      const button = container.querySelector('#grant-button');
+      expect(button.textContent).toBe('Grant access');
+      button.click();
+      expect(requestHostPermission).toHaveBeenCalledWith('https://api.exa.ai/*');
+      await vi.waitFor(() => expect(onRetry).toHaveBeenCalledTimes(1));
+    });
+
+    it('keeps the message and does not re-run when denied', async () => {
+      requestHostPermission.mockResolvedValue(false);
+      const onRetry = vi.fn();
+      renderError(container, 'needs permission', onRetry, { host: 'https://api.exa.ai/*' });
+      container.querySelector('#grant-button').click();
+      await vi.waitFor(() => expect(container.querySelector('#grant-button').disabled).toBe(false));
+      expect(onRetry).not.toHaveBeenCalled();
+      expect(container.querySelector('.error').textContent).toBe('needs permission');
+    });
   });
 
   it('renderError does not execute scripts from malicious error messages', () => {
@@ -539,9 +573,17 @@ describe('analyzeActiveTab', () => {
     planSearch.mockReturnValue({ mode: 2, entry: { id: 'deepseek', host: 'https://api.deepseek.com/*' }, model: 'm', apiKey: 'k', searchService: { id: 'exa', apiKey: 'e' } });
     hasHostPermission.mockImplementation(async (h) => h !== 'https://api.exa.ai/*' || false);
     hasHostPermission.mockImplementation(async (h) => h === 'https://api.deepseek.com/*');
-    await expect(analyzeActiveTab(args())).rejects.toMatchObject({ kind: 'permission', provider: 'exa' });
+    await expect(analyzeActiveTab(args())).rejects.toMatchObject({ kind: 'permission', provider: 'exa', host: 'https://api.exa.ai/*' });
     expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
     expect(searchAndRank).not.toHaveBeenCalled();
+  });
+
+  it('throws a permission error carrying the provider host when the provider host is not granted', async () => {
+    getSettings.mockResolvedValue({ provider: 'deepseek', resultsCount: 8 });
+    planSearch.mockReturnValue({ mode: 1, entry: { id: 'deepseek', host: 'https://api.deepseek.com/*' }, model: 'm', apiKey: 'k' });
+    hasHostPermission.mockResolvedValue(false);
+    await expect(analyzeActiveTab(args())).rejects.toMatchObject({ kind: 'permission', provider: 'deepseek', host: 'https://api.deepseek.com/*' });
+    expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
   });
 
   it('skips the permission check for required hosts', async () => {

@@ -19,7 +19,7 @@ vi.mock('../../src/lib/storage.js', () => ({
 
 import { getSettings, saveSettings, removeSavedKeys } from '../../src/lib/storage.js';
 import { listModels } from '../../src/lib/providers/models.js';
-import { requestHostPermission } from '../../src/lib/providers/permissions.js';
+import { requestHostPermission, hasHostPermission } from '../../src/lib/providers/permissions.js';
 import { PROVIDERS } from '../../src/lib/providers/registry.js';
 import {
   renderProviderOptions,
@@ -103,6 +103,7 @@ beforeEach(() => {
     runtime: { sendMessage: vi.fn(), getManifest: () => ({ host_permissions: ['https://api.anthropic.com/*', 'https://openrouter.ai/*'] }) },
   };
   requestHostPermission.mockResolvedValue(true);
+  hasHostPermission.mockResolvedValue(true);
   saveSettings.mockResolvedValue(undefined);
   listModels.mockReset();
   listModels.mockResolvedValue([]);
@@ -240,6 +241,37 @@ describe('initOptionsPage', () => {
     expect(form.querySelector('#provider-key-slot label').textContent).toMatch(/DeepSeek API key/);
   });
 
+  it('on load shows an Allow access button when the selected provider host is not granted', async () => {
+    hasHostPermission.mockResolvedValue(false);
+    await setup(base({ provider: 'deepseek', apiKeys: { deepseek: 'k' } }));
+    const status = document.getElementById('permission-status');
+    await vi.waitFor(() => expect(status.textContent).toContain('Research Companion needs permission to contact DeepSeek.'));
+    const button = status.querySelector('button');
+    expect(button.textContent).toBe('Allow access');
+    hasHostPermission.mockResolvedValue(true);
+    button.click();
+    expect(requestHostPermission).toHaveBeenCalledWith('https://api.deepseek.com/*');
+    await vi.waitFor(() => expect(status.textContent).toBe(''));
+  });
+
+  it('on load shows the notice for an ungranted search service and keeps it when denied', async () => {
+    hasHostPermission.mockImplementation(async (h) => h !== 'https://api.exa.ai/*');
+    await setup(base({ searchService: 'exa' }));
+    const status = document.getElementById('permission-status');
+    await vi.waitFor(() => expect(status.textContent).toContain('contact Exa.'));
+    requestHostPermission.mockResolvedValue(false);
+    status.querySelector('button').click();
+    await vi.waitFor(() => expect(requestHostPermission).toHaveBeenCalledWith('https://api.exa.ai/*'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(status.textContent).toContain('contact Exa.');
+  });
+
+  it('shows no notice on load when hosts are granted or required', async () => {
+    await setup(base({ provider: 'anthropic' }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.getElementById('permission-status').textContent).toBe('');
+  });
+
   it('does not request permission for hosts already required by the manifest', async () => {
     const form = await setup(base({ provider: 'openai' }));
     choose(el(form, 'provider'), 'anthropic');
@@ -357,6 +389,17 @@ describe('initOptionsPage', () => {
     el(form, 'providerKey').value = 'freshly-typed';
     form.querySelector('.key-toggle[data-target="providerKey"]').click();
     expect(el(form, 'providerKey').value).toBe('freshly-typed');
+  });
+
+  it('refreshes settings and reloads the model list after a successful OpenRouter connect', async () => {
+    const form = await setup(base({ provider: 'openrouter' }));
+    listModels.mockClear();
+    getSettings.mockResolvedValue(base({ provider: 'openrouter', openrouterToken: 'fresh-token' }));
+    chrome.runtime.sendMessage.mockImplementation((message, callback) => callback({ ok: true }));
+    document.getElementById('connect-openrouter').click();
+    await vi.waitFor(() => expect(listModels).toHaveBeenCalled());
+    expect(listModels).toHaveBeenCalledWith(PROVIDERS.openrouter, 'fresh-token');
+    expect(form).toBeTruthy();
   });
 
   it('shows the friendly OpenRouter error on connect failure', async () => {

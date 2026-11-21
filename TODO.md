@@ -7,6 +7,8 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 - [ ] Developer Dashboard → Account: set and verify a contact email (required to publish; doesn't have to be the one shown publicly).
 - [ ] Turn on 2-step verification for the Google account that owns the developer account.
 - [ ] **Release gate.** Before uploading v0.2.0: test every shipped provider with a real key (Mode 1 search returns cited results; Mode 2 with Exa and Tavily). Least-verified: OpenRouter chat-completions search, Gemini grounding host-matching, Anthropic `allowed_callers`.
+- [ ] Confirm Exa/Tavily quota-exhausted status codes (402/432/433) map to the free-limit message.
+- [ ] Verify Exa/Tavily free-tier claims in README and store listing.
 - [ ] New item → upload `research-companion-v0.2.0.zip` (from the v0.2.0 GitHub release, or `npm run package`).
 - [ ] Store listing tab: paste the description, category Productivity, language English; upload `store-assets/screenshot-sidepanel.png`, `store-assets/screenshot-options.png`, `store-assets/promo-small-440x280.png`.
 - [ ] Privacy practices tab: single purpose, per-permission justifications, remote code = No, data usage = Website content + Authentication information only, tick all three certifications, privacy policy URL.

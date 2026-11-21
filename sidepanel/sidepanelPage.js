@@ -3,7 +3,7 @@ import { runPipeline } from '../src/lib/pipeline.js';
 import { searchAndRank, planSearch } from '../src/lib/providers/index.js';
 import { PROVIDERS, SEARCH_SERVICES, getProvider } from '../src/lib/providers/registry.js';
 import { ProviderError } from '../src/lib/providers/errors.js';
-import { hasHostPermission } from '../src/lib/providers/permissions.js';
+import { hasHostPermission, requestHostPermission } from '../src/lib/providers/permissions.js';
 
 export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
@@ -77,7 +77,12 @@ function friendlyProviderError(error) {
     case 'needs-search-key':
       return `${error.model} can't search the web on its own. Add an Exa or Tavily key in Settings, or pick a model that can search.`;
     case 'permission':
-      return `Research Companion needs permission to contact ${label}. Open Settings to allow it.`;
+      return `Research Companion needs permission to contact ${label}.`;
+    case 'http':
+      if (!error.status) return null;
+      return service
+        ? `${label} rejected the search request (error ${error.status}). Try again.`
+        : `${label} rejected the request (error ${error.status}). Try another model, or try again.`;
     case 'auth': return 'Your API key was rejected. Check it in Settings.';
     case 'rate-limit': return 'Rate limited by the provider. Try again in a moment.';
     case 'server': return 'The provider is having trouble right now. Try again shortly.';
@@ -116,7 +121,7 @@ export function toFriendlyErrorMessage(error) {
   return message;
 }
 
-export function renderError(container, message, onRetry) {
+export function renderError(container, message, onRetry, grant) {
   container.removeAttribute('aria-busy');
   container.innerHTML = '';
 
@@ -133,6 +138,22 @@ export function renderError(container, message, onRetry) {
     onRetry();
   });
   container.appendChild(button);
+
+  if (grant?.host) {
+    const grantButton = document.createElement('button');
+    grantButton.id = 'grant-button';
+    grantButton.type = 'button';
+    grantButton.textContent = 'Grant access';
+    grantButton.addEventListener('click', () => {
+      // The permission request must be made synchronously inside the click (user gesture).
+      grantButton.disabled = true;
+      Promise.resolve(requestHostPermission(grant.host)).catch(() => false).then((ok) => {
+        if (ok) onRetry();
+        else grantButton.disabled = false;
+      });
+    });
+    container.appendChild(grantButton);
+  }
 }
 
 export function renderResults(container, results, { provider, showProvider } = {}) {
@@ -268,7 +289,7 @@ async function ensureHostPermissions(plan) {
   for (const { id, host } of hosts) {
     if (required.includes(host)) continue;
     if (!(await hasHostPermission(host))) {
-      throw new ProviderError(`Missing permission for ${host}`, { kind: 'permission', provider: id });
+      throw new ProviderError(`Missing permission for ${host}`, { kind: 'permission', provider: id, host });
     }
   }
 }

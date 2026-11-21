@@ -92,3 +92,14 @@ it('filterToCited keeps exact url matches and host matches, drops others and inv
     .toEqual(['https://a.com/1', 'https://www.example.com/a']);
   expect(filterToCited(results, {})).toEqual([]);
 });
+
+it('filterToCited drops null entries instead of throwing', () => {
+  expect(filterToCited([null, { url: 'https://a.com/1' }], { citedUrls: ['https://a.com/1'] }).map((r) => r.url))
+    .toEqual(['https://a.com/1']);
+});
+
+it('filterToCited matches hosts by suffix, not substring', () => {
+  const results = [{ url: 'https://en.wikipedia.org/x' }, { url: 'https://evilwikipedia.org/x' }];
+  expect(filterToCited(results, { citedHosts: ['wikipedia.org'] }).map((r) => r.url))
+    .toEqual(['https://en.wikipedia.org/x']);
+});
