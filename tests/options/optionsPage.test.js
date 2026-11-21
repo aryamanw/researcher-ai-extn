@@ -256,6 +256,32 @@ describe('initOptionsPage', () => {
     expect(saveSettings).not.toHaveBeenCalled();
   });
 
+  it('treats a rejected permission request like a denial', async () => {
+    requestHostPermission.mockRejectedValue(new Error('boom'));
+    const form = await setup(base({ provider: 'anthropic' }));
+    choose(el(form, 'provider'), 'deepseek');
+    await vi.waitFor(() => expect(el(form, 'provider').value).toBe('anthropic'));
+    expect(document.getElementById('permission-status').textContent).toBe('Research Companion needs permission to contact DeepSeek.');
+    expect(saveSettings).not.toHaveBeenCalled();
+  });
+
+  it('saves a pending key under the provider it was typed for even if the provider changes before storage returns', async () => {
+    const stored = base({ provider: 'anthropic' });
+    const form = await setup(stored);
+    let release;
+    getSettings.mockReturnValueOnce(new Promise((r) => { release = r; }));
+    el(form, 'providerKey').value = 'sk-ant-api-typed';
+    fire(el(form, 'providerKey'), 'change');
+    choose(el(form, 'provider'), 'deepseek');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    release(stored);
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+    const keySave = saveSettings.mock.calls.map((c) => c[0]).find((x) => x.apiKeys?.anthropic);
+    expect(keySave.apiKeys.anthropic).toBe('sk-ant-api-typed');
+    expect(keySave.apiKeys.deepseek).toBeUndefined();
+    expect(keySave.provider).toBe('anthropic');
+  });
+
   it('applies the same permission flow to the search service select', async () => {
     requestHostPermission.mockResolvedValue(false);
     const form = await setup(base({ provider: 'anthropic' }));

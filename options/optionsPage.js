@@ -290,7 +290,7 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
       const granted = entry && !requiredHosts.has(entry.host)
         ? requestHostPermission(entry.host)
         : Promise.resolve(true);
-      Promise.resolve(granted).then(async (ok) => {
+      Promise.resolve(granted).catch(() => false).then(async (ok) => {
         if (!ok) {
           select.value = state[key];
           if (permissionEl) permissionEl.textContent = `Research Companion needs permission to contact ${entry.label}.`;
@@ -319,21 +319,24 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     refreshResultsCountHint(form, resultsCountHintEl);
     updateRequiredBadge(form);
 
-    const providerKey = field(form, 'providerKey');
-    const searchKey = field(form, 'searchKey');
+    // Snapshot everything synchronously: after the await below the user may
+    // have switched provider, and the patch must describe what they edited.
+    const provider = state.provider || null;
+    const search = state.search || null;
+    const snap = {
+      model: field(form, 'model').value || '',
+      providerKey: field(form, 'providerKey')?.value || '',
+      searchKey: field(form, 'searchKey')?.value || '',
+      resultsCount: clampResultsCount(resultsInput.value, resultsInput),
+    };
     await persist((current) => {
-      const provider = state.provider || null;
-      const patch = {
-        provider,
-        searchService: state.search || null,
-        resultsCount: clampResultsCount(resultsInput.value, resultsInput),
-      };
+      const patch = { provider, searchService: search, resultsCount: snap.resultsCount };
       if (provider) {
-        patch.models = { ...current.models, [provider]: field(form, 'model').value || '' };
-        patch.apiKeys = { ...current.apiKeys, [provider]: providerKey?.value || current.apiKeys?.[provider] || '' };
+        patch.models = { ...current.models, [provider]: snap.model };
+        patch.apiKeys = { ...current.apiKeys, [provider]: snap.providerKey || current.apiKeys?.[provider] || '' };
       }
-      if (state.search) {
-        patch.searchKeys = { ...current.searchKeys, [state.search]: searchKey?.value || current.searchKeys?.[state.search] || '' };
+      if (search) {
+        patch.searchKeys = { ...current.searchKeys, [search]: snap.searchKey || current.searchKeys?.[search] || '' };
       }
       return patch;
     });
