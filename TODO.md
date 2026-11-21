@@ -29,6 +29,8 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 
 - [ ] Real store screenshots: the side panel open next to an actual article, full-bleed with no padding (Chrome's recommendation). Current ones show the UI centered on grey.
 - [ ] Keyboard-shortcut race: `background.js` sends `RUN_SEARCH` right after `sidePanel.open()`. If the panel hasn't loaded its listener yet, the message is dropped (the panel still runs on load, so it's minor).
+- [ ] Groq dropped from v0.2.0 (provider registry): `browser_search` docs show no source URLs in the response (only inline `【2†L6-L10】` markers), so Mode 1 can't work. Re-add if a live test shows URLs in `message.annotations` or `executed_tools[].search_results`. See `docs/provider-verification.md`.
+- [ ] Gemini Mode 1: `groundingChunks[].web.uri` are Google redirect URLs (title is the domain), so exact-URL citation filtering won't match; needs a hostname match or redirect resolution. `generateContent` is also marked legacy by Google (Interactions API recommended).
 - [ ] Anthropic web search can return `stop_reason: "pause_turn"` on long searches; the client doesn't resume the turn yet.
 - [ ] Optional privacy features: a "don't save history" toggle; skip extraction on obviously sensitive hosts (webmail, banking) or show a one-time notice that page text goes to the selected provider.
 - [ ] Refresh `docs/PRD.md`, `docs/TRD.md`, `docs/APP-FLOW.md`, `DESIGN.md` (they still describe the old two-call pipeline and Brave Search) before un-ignoring and publishing them.
