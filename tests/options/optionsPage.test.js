@@ -7,9 +7,10 @@ import { dirname, resolve } from 'node:path';
 vi.mock('../../src/lib/storage.js', () => ({
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
+  removeSavedKeys: vi.fn(),
 }));
 
-import { getSettings, saveSettings } from '../../src/lib/storage.js';
+import { getSettings, saveSettings, removeSavedKeys } from '../../src/lib/storage.js';
 import {
   gatherSettingsFromForm,
   renderSettingsToForm,
@@ -107,7 +108,7 @@ describe('gatherSettingsFromForm', () => {
 
     expect(settings).toEqual({
       provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
+      models: { anthropic: 'claude-3-5-sonnet-20241022' },
       apiKeys: { anthropic: 'a-key', openai: '', gemini: '' },
       resultsCount: 10,
     });
@@ -134,7 +135,7 @@ describe('renderSettingsToForm', () => {
     const form = buildForm();
     renderSettingsToForm(form, {
       provider: 'anthropic',
-      model: 'm1',
+      models: { anthropic: 'm1' },
       apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
       resultsCount: 5,
     });
@@ -148,7 +149,7 @@ describe('renderSettingsToForm', () => {
     const form = buildForm();
     renderSettingsToForm(form, {
       provider: 'anthropic',
-      model: 'm1',
+      models: { anthropic: 'm1' },
       apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
       resultsCount: 5,
     });
@@ -223,7 +224,8 @@ describe('initOptionsPage', () => {
       resultsCount: 8,
     };
     getSettings.mockResolvedValue(stored);
-    saveSettings.mockResolvedValue();
+    const clearedSettings = { ...stored, apiKeys: { anthropic: '', openai: '', gemini: '' }, openrouterToken: '' };
+    removeSavedKeys.mockResolvedValue(clearedSettings);
     const form = buildForm();
     const connectButton = document.getElementById('connect-openrouter');
     const statusEl = document.getElementById('openrouter-status');
@@ -231,15 +233,11 @@ describe('initOptionsPage', () => {
 
     const removeButton = document.getElementById('remove-keys');
     removeButton.click();
-    expect(saveSettings).not.toHaveBeenCalled();
+    expect(removeSavedKeys).not.toHaveBeenCalled();
     expect(removeButton.textContent).toMatch(/confirm/i);
 
     removeButton.click();
-    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
-    const saved = saveSettings.mock.calls.at(-1)[0];
-    expect(saved.apiKeys).toEqual({ anthropic: '', openai: '', gemini: '' });
-    expect(saved.openrouterToken).toBe('');
-    expect(saved.provider).toBe('anthropic');
+    await vi.waitFor(() => expect(removeSavedKeys).toHaveBeenCalled());
     await vi.waitFor(() => expect(form.anthropicKey.placeholder).toBe(''));
     expect(statusEl.textContent).toBe('Not connected to OpenRouter');
 
@@ -267,7 +265,8 @@ describe('initOptionsPage', () => {
   it('saves settings on form change', async () => {
     getSettings.mockResolvedValue({
       provider: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
+      models: { openai: 'keep-me' },
+      apiKeys: { anthropic: '', openai: '', gemini: '', deepseek: 'dk' },
       openrouterToken: '',
       resultsCount: 8,
     });
@@ -276,11 +275,15 @@ describe('initOptionsPage', () => {
     const statusEl = document.getElementById('openrouter-status');
     await initOptionsPage(form, connectButton, statusEl);
 
+    form.provider.value = 'anthropic';
     form.model.value = 'new-model';
     form.dispatchEvent(new Event('change'));
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
 
-    expect(saveSettings.mock.calls.at(-1)[0].model).toBe('new-model');
+    const saved = saveSettings.mock.calls.at(-1)[0];
+    expect(saved.models).toEqual({ openai: 'keep-me', anthropic: 'new-model' });
+    expect(saved.apiKeys.deepseek).toBe('dk');
+    expect('model' in saved).toBe(false);
   });
 
   it('shows only the API key field matching the selected provider', async () => {

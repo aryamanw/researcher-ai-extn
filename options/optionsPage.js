@@ -1,4 +1,4 @@
-import { getSettings, saveSettings } from '../src/lib/storage.js';
+import { getSettings, saveSettings, removeSavedKeys } from '../src/lib/storage.js';
 
 const KEY_FORMAT_HINTS = {
   anthropicKey: { pattern: /^sk-ant-/, message: "Anthropic keys start with \"sk-ant-\" — this doesn't look right." },
@@ -80,9 +80,10 @@ function keyValueOrStored(input, storedValue) {
 }
 
 export function gatherSettingsFromForm(form, storedApiKeys = {}) {
+  const provider = form.provider.value || null;
   return {
-    provider: form.provider.value || null,
-    model: form.model.value || null,
+    provider,
+    models: provider ? { [provider]: form.model.value || '' } : {},
     apiKeys: {
       anthropic: keyValueOrStored(form.anthropicKey, storedApiKeys.anthropic),
       openai: keyValueOrStored(form.openaiKey, storedApiKeys.openai),
@@ -100,7 +101,7 @@ function maskedKeyPlaceholder(value) {
 
 export function renderSettingsToForm(form, settings) {
   form.provider.value = settings.provider || '';
-  form.model.value = settings.model || '';
+  form.model.value = settings.models?.[settings.provider] || '';
   form.anthropicKey.value = '';
   form.anthropicKey.placeholder = maskedKeyPlaceholder(settings.apiKeys.anthropic);
   form.openaiKey.value = '';
@@ -150,11 +151,8 @@ function wireRemoveKeys(form, statusEl, onRemoved) {
     }
     confirming = false;
     button.textContent = idleLabel;
-    const current = await getSettings();
-    const cleared = { anthropic: '', openai: '', gemini: '' };
-    const updated = { ...current, apiKeys: cleared, openrouterToken: '' };
-    await saveSettings(updated);
-    onRemoved(cleared);
+    const updated = await removeSavedKeys();
+    onRemoved(updated.apiKeys);
     renderSettingsToForm(form, updated);
     statusEl.textContent = 'Not connected to OpenRouter';
   });
@@ -184,7 +182,13 @@ export async function initOptionsPage(form, connectButton, statusEl, autosaveSta
     refreshResultsCountHint(form, resultsCountHintEl);
 
     const current = await getSettings();
-    await saveSettings({ ...current, ...gatherSettingsFromForm(form, current.apiKeys) });
+    const gathered = gatherSettingsFromForm(form, current.apiKeys);
+    await saveSettings({
+      ...current,
+      ...gathered,
+      apiKeys: { ...current.apiKeys, ...gathered.apiKeys },
+      models: { ...current.models, ...gathered.models },
+    });
 
     if (autosaveStatusEl) {
       autosaveStatusEl.textContent = 'Saved';
