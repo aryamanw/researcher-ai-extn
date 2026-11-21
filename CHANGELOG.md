@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-20
+
+### Added
+- Provider registry: 12 providers in two modes. Built-in search: Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Kimi, xAI. Search key mode (bring an Exa or Tavily key): Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen.
+- Exa and Tavily search services, with per-step progress in the side panel.
+- Live per-provider model lists in Settings, with a custom model option.
+- Optional host permissions requested at runtime only when a provider or search service is selected.
+- "Remove saved keys" now also clears search keys.
+
+### Changed
+- Settings page and side panel are driven by the provider registry; existing settings migrate automatically.
+- Privacy policy, terms, and store listing name all providers and search services.
+
+### Fixed
+- Gemini results were never kept: citations previously never matched because Google grounding returns redirect URLs. Results now match by domain.
+- Anthropic web search sets `allowed_callers` so models without programmatic tool calling no longer return a 400.
+
 ## [0.1.4] - 2026-11-20
 
 First Chrome Web Store release.
@@ -81,7 +98,8 @@ First Chrome Web Store release.
 - Message-sender validation, OAuth state check, prompt hardening, and Content Security Policy with `connect-src` allowlist.
 - Gemini API key sent via header instead of URL query string; Gemini model name validated.
 
-[Unreleased]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.1.4...v0.2.0
 [0.1.3]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/aryamanw/researcher-ai-extn/compare/v0.1.0...v0.1.1

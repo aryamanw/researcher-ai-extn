@@ -19,18 +19,18 @@ Click the toolbar icon and it reads the page you're on, then uses your chosen AI
 
 HOW IT WORKS
 - Click the toolbar icon (or press Alt+Shift+R to re-run). Nothing happens until you do.
-- The readable text of the current tab is extracted in your browser and sent directly to the provider you picked: Anthropic, OpenAI, Google Gemini, or OpenRouter.
+- The readable text of the current tab is extracted in your browser and sent directly to the provider you picked: Anthropic, OpenAI, Google Gemini, OpenRouter, DeepSeek, Kimi, xAI, Ollama Cloud, Together AI, Hugging Face, Cerebras, or OpenCode Zen. Providers without built-in web search (Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen) use your own Exa or Tavily search key; only the AI-written search queries go to Exa or Tavily, never the page text or URL.
 - Related pages appear in the side panel, ranked by relevance.
 
 BRING YOUR OWN KEY
-You use your own API key (Anthropic, OpenAI, Gemini) or sign in with OpenRouter. There is no developer-run backend, no account, no analytics, and no ads. Your page content and credentials never pass through any server operated by the developer. You pay your provider directly for usage.
+You use your own API key for any supported provider, or sign in with OpenRouter. There is no developer-run backend, no account, no analytics, and no ads. Your page content and credentials never pass through any server operated by the developer. You pay your provider directly for usage.
 
 PRIVATE BY DESIGN
 - Runs only when you click. No background reading of tabs, no auto-triggering.
 - API keys and history stay in local browser storage on your device.
 - No tracking, no data sale. Page text goes only to the provider you select.
 
-Requires an API key from Anthropic, OpenAI, or Google Gemini, or an OpenRouter account.
+Requires an API key from a supported provider (plus a free Exa or Tavily key for providers without built-in search), or an OpenRouter account.
 
 Privacy policy: https://aryamanw.github.io/researcher-ai-extn/privacy-policy.html
 Terms: https://aryamanw.github.io/researcher-ai-extn/terms.html
@@ -63,7 +63,8 @@ Regenerate all with `node scripts/capture-screenshots.mjs` (needs `npx playwrigh
 | `activeTab` | Grants temporary access to only the tab the user is viewing, only after they click the icon or use the shortcut, so `scripting` can run without any broad host permission for web pages. |
 | `storage` | Saves the user's provider, model, API keys, result count, and past research history in `chrome.storage.local` on the device. Nothing is synced or sent to the developer. |
 | `identity` | Used only for `chrome.identity.launchWebAuthFlow` and `getRedirectURL` in the OpenRouter "Connect" sign-in (OAuth PKCE), so users can authorize OpenRouter without pasting a key. |
-| Host permissions: `https://api.anthropic.com/*`, `https://api.openai.com/*`, `https://generativelanguage.googleapis.com/*`, `https://openrouter.ai/*` | The extension calls these LLM provider APIs directly from the browser, with the user's own credentials, to run web search and write relevance notes. The user selects one provider; no other domains are contacted. There is no developer server and no Brave Search or other search host. |
+| Host permissions: `https://api.anthropic.com/*`, `https://api.openai.com/*`, `https://generativelanguage.googleapis.com/*`, `https://openrouter.ai/*` | The extension calls these LLM provider APIs directly from the browser, with the user's own credentials, to run web search and write relevance notes. The user selects one provider; no other domains are contacted. There is no developer server. |
+| `optional_host_permissions` (DeepSeek, Kimi, xAI, Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen, Exa, Tavily API hosts) | Requested at runtime only when the user selects that provider or search service in Settings; lets the extension call that service's API with the user's own key. |
 
 **Remote code:** No, I am not using remote code. All JavaScript ships in the package (CSP: `script-src 'self'; object-src 'self'`); the extension only sends data to and reads JSON from the provider APIs above.
 

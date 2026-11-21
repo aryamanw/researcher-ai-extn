@@ -15,13 +15,15 @@
       align-items: flex-start;
       justify-content: center;
       box-sizing: border-box;
-      padding: 40px;
+      padding: 16px;
     }
+    .model-extra, #permission-status:empty, #model-status:empty { display: none; }
     #frame {
       width: 640px;
       background: var(--bg, #fff);
       box-shadow: 0 0 0 1px oklch(85% 0.006 250);
       padding: 24px;
+      zoom: 0.72;
     }
   </style>
 </head>
@@ -38,9 +40,8 @@
       <p class="field-hint" id="permission-status" role="status" aria-live="polite"></p>
       <label class="field-secondary">
         Model
-        <select name="model"><option value="">Default (claude-opus-5-5)</option><option value="__custom__">Type a model name…</option></select>
+        <select name="model"><option value="">Default (claude-opus-5-5)</option><option value="claude-sonnet-4-6" selected>claude-sonnet-4-6</option><option value="__custom__">Type a model name…</option></select>
       </label>
-      <p class="field-hint">Examples: claude-opus-5-5 (Anthropic), gpt-6-luna (OpenAI), gemini-3.8-flash (Gemini), openai/gpt-6-luna (OpenRouter).</p>
       <div class="model-extra">
         <input type="text" name="modelCustom" placeholder="Model name" aria-label="Model name" hidden />
         <button type="button" id="refresh-models" class="button-secondary">Refresh models</button>
@@ -83,7 +84,7 @@
 
     const sampleSettings = {
       provider: 'anthropic',
-      models: { anthropic: 'claude-sonnet-4-6' },
+      models: {},
       apiKeys: { anthropic: 'sk-ant-sample0000000000000000000' },
       searchService: 'exa',
       searchKeys: { exa: 'exa-sample-00000000' },
