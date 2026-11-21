@@ -120,5 +120,58 @@ footer { padding-block: 2rem; }
 .foot-grid { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
 .foot-copy { flex-basis: 100%; }
 .button { transition: transform 180ms var(--ease); }
-.button:hover:not(:disabled) { transform: translateY(-2px); }
+@media (hover: hover) and (pointer: fine) { .button:hover:where(:not(:disabled):not([aria-disabled="true"])) { transform: translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) { .button { transition: none; } .button:hover:not(:disabled) { transform: none; } }
+
+/* Motion has its own visible track; every reading surface remains opaque. */
+.scroll-progress { position: fixed; inset: 0 0 auto; z-index: 50; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left center; pointer-events: none; }
+.hero { padding-block: clamp(2.5rem, 5vw, 5rem); }
+.demo-heading { align-items: center; gap: .625rem; margin-bottom: 1rem; }
+.demo-heading h2 { flex-basis: 12rem; }
+.demo-controls { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 100%; }
+.replay { gap: .4rem; padding-inline: .75rem; }
+.replay > span { font-size: 1.25rem; }
+.motion-toggle { min-height: 44px; padding: .5rem .625rem; border: 0; border-radius: .375rem; font-size: .75rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); cursor: pointer; }
+.motion-toggle::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: .4rem; border-radius: 50%; background: var(--stage-ink); }
+.motion-toggle[aria-pressed="true"]::before { background: var(--light); box-shadow: 0 0 0 3px oklch(78% .09 231 / .15); }
+.motion-toggle:disabled { cursor: default; }
+.example-picker, .provider-picker { display: flex; flex-wrap: wrap; gap: .5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.example-picker legend, .provider-picker legend { width: 100%; margin-bottom: .5rem; padding: 0; font-size: .75rem; letter-spacing: .02em; }
+.example-picker button, .provider-picker button { min-height: 44px; padding: .5rem .875rem; border: 1px solid var(--light); border-radius: 999px; font: inherit; font-size: .8125rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); cursor: pointer; }
+.example-picker button[aria-pressed="true"] { background: var(--light); color: var(--stage); }
+#demo button:focus-visible { outline-color: var(--light); }
+.demo-flow { position: relative; z-index: 2; margin-top: .875rem; }
+.flow-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flow-steps button { display: flex; align-items: center; justify-content: center; gap: .375rem; min-width: 0; min-height: 44px; padding: .5rem .25rem; border: 0; border-radius: .25rem; font-size: .8125rem; font-weight: 600; color: var(--stage-ink); background: var(--stage); cursor: pointer; }
+.flow-steps button span { font-size: .6875rem; color: var(--light); }
+.flow-steps button[aria-pressed="true"] { color: var(--light); }
+.flow-track { position: relative; height: 2px; margin: .375rem 7px .875rem; background: oklch(78% .09 231 / .3); }
+.flow-fill { position: absolute; inset: 0; background: var(--light); transform: scaleX(1); transform-origin: left center; }
+.flow-signal { position: absolute; top: -6px; left: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--stage-ink); box-shadow: 0 0 0 5px oklch(78% .09 231 / .22); opacity: 0; pointer-events: none; }
+.phase-description { min-height: 2.6rem; font-size: .8125rem; line-height: 1.6; color: var(--stage-ink); }
+.demo-address { padding-block: .25rem .75rem; }
+.demo-source, .demo-results { min-height: 16rem; }
+.demo-source.is-active, .demo-results.is-active { border-color: var(--light); outline: 1px solid var(--light); outline-offset: -1px; }
+.demo-source h3, .demo-results h4 { overflow-wrap: anywhere; }
+.provider-picker { margin-top: 2rem; }
+.provider-picker button { color: var(--accent); background: var(--paper); border-color: var(--accent); }
+.provider-picker button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); }
+.provider-picker + .providers { min-height: 3.5rem; margin-top: 1rem; }
+.example-picker button, .provider-picker button, .motion-toggle, .flow-steps button { transition: transform 180ms var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .example-picker button:hover, .provider-picker button:hover, .flow-steps button:hover { transform: translateY(-2px); }
+}
+html[data-motion="off"] { scroll-behavior: auto; }
+html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button) { transition: none; }
+html[data-motion="off"] :is(.button, .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button):hover { transform: none; }
+[data-motion="off"] .flow-signal { opacity: 0 !important; }
+@media (max-width: 639px) {
+  .demo-heading h2 { flex-basis: 100%; }
+  .demo-controls { min-height: 44px; }
+  .example-picker button { padding-inline: .75rem; }
+  .flow-steps button { gap: .25rem; font-size: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .example-picker button, .provider-picker button, .motion-toggle, .flow-steps button { transition: none; }
+  .example-picker button:hover, .provider-picker button:hover, .flow-steps button:hover { transform: none; }
+}
