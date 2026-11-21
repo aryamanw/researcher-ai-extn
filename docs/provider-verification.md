@@ -39,6 +39,23 @@ Columns: `id`, `label`, `format`, `baseUrl`, auth header, key prefix, key URL, `
 
 Concern: from a browser context the API accepts cross-origin requests only with `anthropic-dangerous-direct-browser-access: true`, and orgs with ZDR or the Compliance API cannot call from a browser at all (401 "CORS requests are not allowed for this Organization") for any request carrying an `Origin` header. Today's code sends neither header; it works only if the extension's host permissions bypass CORS and Chrome sends no `Origin` for the fetch. Not tested (no key).
 
+**Tool config by model (use exactly these):**
+
+Docs lines: "To call web search directly, without dynamic filtering, set `allowed_callers: ["direct"]`. Models that don't support programmatic tool calling require this setting. Without it, the API returns a 400 error that tells you to set it." and "All web search tool versions accept `allowed_callers`" (so the field is valid on `web_search_20260209`). The docs do not say whether `claude-opus-5-5` supports programmatic tool calling, so `direct` is the safe choice and also skips code-execution overhead.
+
+- Default model `claude-opus-5-5` and any other current model (Claude 4.6+ / Mythos Preview, i.e. the `supportedModels` entries other than the three older ones below):
+  `{ "type": "web_search_20260209", "name": "web_search", "max_uses": N, "allowed_callers": ["direct"] }`
+  (Today's code omits `allowed_callers`; per the docs that relies on the default `["code_execution_20260120"]`, which works only if the model supports programmatic tool calling.)
+- Legacy models (`claude-haiku-4-5-20251001`, `claude-opus-4-5-20251101`, `claude-sonnet-4-5-20250929`; they are on the supported list but are not Claude 4.6+, so dynamic filtering is unavailable):
+  `{ "type": "web_search_20250305", "name": "web_search", "max_uses": N }`
+- Browser-origin calls: add header `anthropic-dangerous-direct-browser-access: true` (docs: the API accepts cross-origin requests only with this header). ZDR and Compliance-API orgs are rejected from browsers regardless (401 "CORS requests are not allowed for this Organization").
+
+Model pattern (search-capable, plain regex):
+
+```
+^claude-(opus|sonnet|haiku|fable|mythos)-
+```
+
 ### openai
 
 | Column | Value |
@@ -58,6 +75,12 @@ Concern: from a browser context the API accepts cross-origin requests only with 
 | docs | https://developers.openai.com/api/docs/guides/tools-web-search ; https://developers.openai.com/api/docs/models ; https://developers.openai.com/api/docs/models/gpt-6-luna ; https://developers.openai.com/api/reference/overview |
 | privacy policy | https://openai.com/policies/privacy-policy |
 | date checked | 2026-11-20 |
+
+Model pattern (search-capable, plain regex; inference from the docs list):
+
+```
+^gpt-(?!.*(image|realtime|live|transcribe|cyber|search))[56]
+```
 
 ### gemini
 
@@ -83,6 +106,17 @@ Concerns:
 1. `generateContent` is labelled **legacy** in Google's docs ("Gemini Generate Content API (Legacy)"); the Interactions API (`POST /v1beta/interactions`, `tools:[{type:'google_search'}]`, `annotations` with `type:'url_citation'`/`url`) is recommended for new work. generateContent is still documented and works for `gemini-3.8-flash`. Sticking with `generateContent` is acceptable but may be retired later.
 2. Existing logic `filterUncitedResults` compares the model's real result URLs against `groundingChunks[].web.uri`. Those are redirect URLs, so an exact match will normally never succeed and every result would be filtered out. Before relying on this, the Gemini adapter needs a different check (for example match the result URL's hostname against `web.title`, or resolve each redirect with a fetch and compare `response.url`). Not tested with a live key.
 
+**Adapter blockers (Gemini):**
+
+- (a) Cited URLs are redirect URLs. `groundingChunks[].web.uri` is a `vertexaisearch.cloud.google.com` redirect and `web.title` is the source domain. The adapter must not compare result URLs to `uri`. Instead, match the result's hostname (lowercased, minus a leading `www.`) against `groundingChunks[].web.title` (also lowercased, minus `www.`); keep a result only if some chunk title equals its hostname.
+- (b) The `GET /v1beta/models` response shape is not confirmed with a live key. What the docs DO show (aistudio.google.com/api-reference/models/list-models.md): top-level `models[]` and `nextPageToken` (query `pageSize` default 50, max 1000, `pageToken`); each model has `name` (form `models/{model}`, strip the prefix), `baseModelId`, `version`, `displayName`, `description`, `inputTokenLimit`, `outputTokenLimit`, `supportedGenerationMethods` (string array, e.g. `generateContent`), `thinking`. The docs' own Python/Go examples use `supported_actions`, so field naming is not fully certain. Status: documented but unconfirmed live. Fallback: if the call fails or the shape is unexpected, use a typed-entry model field and the default `gemini-3.8-flash`.
+
+Model pattern (search-capable, plain regex; inference from the docs list):
+
+```
+^gemini-(?!.*(tts|live|embedding|image|transcribe|robotics|omni))(2\.0|2\.5|3|4)
+```
+
 ### openrouter
 
 | Column | Value |
@@ -104,6 +138,14 @@ Concerns:
 | date checked | 2026-11-20 |
 
 Concern: citation presence may depend on which engine ran (native vs Exa). If `annotations` comes back empty for native-search models, consider setting `parameters.engine: "exa"` in a follow-up. Not verified without a key.
+
+**Least-verified Mode 1 entry: chat-completions server-tool shape is not shown in docs; must be live-tested before release.** (OpenRouter's docs show `openrouter:web_search` only on `/api/v1/responses`; today's chat-completions request and the `annotations[].url_citation.url` response are carried over from the shipped code and the plugin docs page.)
+
+Model pattern (search-capable, plain regex):
+
+```
+.*
+```
 
 ### groq: DROPPED
 
@@ -138,6 +180,12 @@ Concern: citation presence may depend on which engine ran (native vs Exa). If `a
 
 Note: from 2026-11-18 12:00 Beijing time, server-side search/fetch is billed as model tokens, not per tool call.
 
+Model pattern (search-capable, plain regex):
+
+```
+^deepseek-flash$
+```
+
 ### kimi
 
 | Column | Value |
@@ -156,6 +204,12 @@ Note: from 2026-11-18 12:00 Beijing time, server-side search/fetch is billed as 
 | docs | https://platform.kimi.ai/docs/api/responses ; https://platform.kimi.ai/docs/api/list-models ; https://platform.kimi.ai/docs/guide/start-using-kimi-api |
 | privacy policy | https://platform.kimi.ai/docs/agreement/userprivacy (Kimi OpenPlatform Privacy Policy, Moonshot AI Pte. Ltd., Singapore; found via search, the page itself was not fetched) |
 | date checked | 2026-11-20 |
+
+Model pattern (search-capable, plain regex):
+
+```
+^kimi-k3
+```
 
 ### xai
 
@@ -176,17 +230,23 @@ Note: from 2026-11-18 12:00 Beijing time, server-side search/fetch is billed as 
 | privacy policy | https://x.ai/legal/privacy-policy (consumer policy; does not cover API data). API data terms: https://x.ai/legal/terms-of-service-enterprise . Link both. The URLs returned HTTP 403 to curl but are listed in search results. |
 | date checked | 2026-11-20 |
 
+Model pattern (search-capable, plain regex; assumption, docs list no models):
+
+```
+^grok-4
+```
+
 ## Mode 2 providers (openai-chat, bearer auth)
 
 All: `POST {baseUrl}/chat/completions`, `Authorization: Bearer <key>`. `defaultModel` chosen as a current general-purpose open chat model the provider lists.
 
-| id | label | baseUrl | key prefix | key URL | defaultModel | models endpoint | docs | privacy policy |
-|---|---|---|---|---|---|---|---|---|
-| `ollama-cloud` | Ollama Cloud | `https://ollama.com/v1` | none | https://ollama.com/settings/keys | `gemma4:31b` (docs' cloud example; present in the live list) | `GET /models` (probed 200, public; `data[].id`; `https://ollama.com/api/tags` also works, shape `models[].name`). The docs do not explicitly say `/v1/models` is served on cloud, but the probe confirms it. | https://docs.ollama.com/openai ; https://docs.ollama.com/cloud/api | https://ollama.com/privacy |
-| `together` | Together AI | `https://api.together.ai/v1` | none | https://api.together.ai/settings/projects/~current/api-keys | `openai/gpt-oss-120b` (in Together's serverless chat models table) | `GET /models` (docs; probed 401 without key). Shape not verified: Together's native API has returned a bare array here, so the fetch code should accept both an array and `{data:[...]}`. | https://docs.together.ai/docs/openai-api-compatibility ; https://docs.together.ai/docs/serverless-models | https://www.together.ai/privacy |
-| `huggingface` | Hugging Face | `https://router.huggingface.co/v1` | none stated (tokens are fine-grained, create with "Make calls to Inference Providers" permission) | https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained | `deepseek-ai/DeepSeek-V4.1-Flash` (docs' quickstart model; present in the live list) | `GET /models` (docs and probed 200, public; `data[].id`, with per-provider info). 159 models at probe time. | https://huggingface.co/docs/inference-providers/index | https://huggingface.co/privacy |
-| `cerebras` | Cerebras | `https://api.cerebras.ai/v1` | none | https://cloud.cerebras.ai | `gpt-oss-120b` (the docs' available-models list has only `gpt-oss-120b` and `qwen-3.8-27b`) | `GET /models` (documented in API reference; probed 403 without key; `data[].id`) | https://inference-docs.cerebras.ai/introduction ; https://inference-docs.cerebras.ai/models/overview ; https://inference-docs.cerebras.ai/api-reference/models | https://www.cerebras.ai/privacy-policy |
-| `opencode-zen` | OpenCode Zen | `https://opencode.ai/inference/openai/v1` (**CHANGED**: the docs' per-model `chat-completions` base URL; `https://opencode.ai/inference/v1/chat/completions` also routes, probed 400 for an empty body) | none | https://opencode.ai/console (sign in, add billing and credits, copy key) | `deepseek-v4.1-flash` (paid, listed under the `/chat/completions` models; live cost 0.3 per MTok input) | `GET https://opencode.ai/inference/v1/models` (probed 200, public; `data[].id`). The list includes models served over other APIs (`claude-*` use `messages`, `gpt-*` use `responses`) and free models. Filter to entries whose `api` object has a `chat-completions` key and whose `cost.text.input.price` is above 0. | https://opencode.ai/docs/zen/ | https://opencode.ai/legal/privacy-policy (covers hosted offerings and the Console; says prompts are passed to the upstream provider and not stored) |
+| id | label | format | auth header | baseUrl | key prefix | key URL | defaultModel | models endpoint | docs | privacy policy | date checked |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `ollama-cloud` | Ollama Cloud | `openai-chat` | `Authorization: Bearer <key>` | `https://ollama.com/v1` | none | https://ollama.com/settings/keys | `gemma4:31b` (docs' cloud example; present in the live list) | `GET /models` (probed 200, public; `data[].id`; `https://ollama.com/api/tags` also works, shape `models[].name`). The docs do not explicitly say `/v1/models` is served on cloud, but the probe confirms it. | https://docs.ollama.com/openai ; https://docs.ollama.com/cloud/api | https://ollama.com/privacy | 2026-11-20 |
+| `together` | Together AI | `openai-chat` | `Authorization: Bearer <key>` | `https://api.together.ai/v1` | none | https://api.together.ai/settings/projects/~current/api-keys | `openai/gpt-oss-120b` (in Together's serverless chat models table) | `GET /models` (docs; probed 401 without key). Shape not verified: Together's native API has returned a bare array here, so the fetch code should accept both an array and `{data:[...]}`. | https://docs.together.ai/docs/openai-api-compatibility ; https://docs.together.ai/docs/serverless-models | https://www.together.ai/privacy | 2026-11-20 |
+| `huggingface` | Hugging Face | `openai-chat` | `Authorization: Bearer <key>` | `https://router.huggingface.co/v1` | none stated (tokens are fine-grained, create with "Make calls to Inference Providers" permission) | https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained | `deepseek-ai/DeepSeek-V4.1-Flash` (docs' quickstart model; present in the live list) | `GET /models` (docs and probed 200, public; `data[].id`, with per-provider info). 159 models at probe time. | https://huggingface.co/docs/inference-providers/index | https://huggingface.co/privacy | 2026-11-20 |
+| `cerebras` | Cerebras | `openai-chat` | `Authorization: Bearer <key>` | `https://api.cerebras.ai/v1` | none | https://cloud.cerebras.ai | `gpt-oss-120b` (the docs' available-models list has only `gpt-oss-120b` and `qwen-3.8-27b`) | `GET /models` (documented in API reference; probed 403 without key; `data[].id`) | https://inference-docs.cerebras.ai/introduction ; https://inference-docs.cerebras.ai/models/overview ; https://inference-docs.cerebras.ai/api-reference/models | https://www.cerebras.ai/privacy-policy | 2026-11-20 |
+| `opencode-zen` | OpenCode Zen | `openai-chat` | `Authorization: Bearer <key>` | `https://opencode.ai/inference/openai/v1` (**CHANGED**: the docs' per-model `chat-completions` base URL; `https://opencode.ai/inference/v1/chat/completions` also routes, probed 400 for an empty body) | none | https://opencode.ai/console (sign in, add billing and credits, copy key) | `deepseek-v4.1-flash` (paid, listed under the `/chat/completions` models; live cost 0.3 per MTok input) | `GET https://opencode.ai/inference/v1/models` (probed 200, public; `data[].id`). The list includes models served over other APIs (`claude-*` use `messages`, `gpt-*` use `responses`) and free models. Filter to entries whose `api` object has a `chat-completions` key and whose `cost.text.input.price` is above 0. | https://opencode.ai/docs/zen/ | https://opencode.ai/legal/privacy-policy (covers hosted offerings and the Console; says prompts are passed to the upstream provider and not stored) | 2026-11-20 |
 
 Notes:
 - OpenCode Zen: "Free-tier chat models require OpenCode; use paid models or Go from other clients." Paid models only, as the spec says.
