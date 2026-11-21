@@ -34,10 +34,14 @@ vi.mock('../../src/lib/storage.js', () => ({
   addHistoryEntry: vi.fn(),
 }));
 vi.mock('../../src/lib/pipeline.js', () => ({ runPipeline: vi.fn() }));
-vi.mock('../../src/lib/providers/index.js', () => ({ searchAndRank: vi.fn() }));
+vi.mock('../../src/lib/providers/index.js', () => ({ searchAndRank: vi.fn(), planSearch: vi.fn() }));
+vi.mock('../../src/lib/providers/permissions.js', () => ({ hasHostPermission: vi.fn() }));
 
 import { getSettings, addHistoryEntry } from '../../src/lib/storage.js';
 import { runPipeline } from '../../src/lib/pipeline.js';
+import { searchAndRank, planSearch } from '../../src/lib/providers/index.js';
+import { hasHostPermission } from '../../src/lib/providers/permissions.js';
+import { ProviderError } from '../../src/lib/providers/errors.js';
 import {
   renderLoading,
   renderSetupPrompt,
@@ -100,7 +104,49 @@ describe('toFriendlyErrorMessage', () => {
   });
 });
 
+describe('toFriendlyErrorMessage with ProviderError', () => {
+  const pe = (kind, extra = {}) => new ProviderError('x', { kind, ...extra });
+
+  it('names model and provider for model-unavailable', () => {
+    expect(toFriendlyErrorMessage(pe('model-unavailable', { provider: 'anthropic', model: 'claude-x' })))
+      .toBe("claude-x isn't available from Anthropic. Pick another model in Settings.");
+  });
+  it('explains needs-search-key', () => {
+    expect(toFriendlyErrorMessage(pe('needs-search-key', { provider: 'openrouter', model: 'llama-3.3-70b-versatile' })))
+      .toBe("llama-3.3-70b-versatile can't search the web on its own. Add an Exa or Tavily key in Settings, or pick a model that can search.");
+  });
+  it('maps search service auth and rate-limit', () => {
+    expect(toFriendlyErrorMessage(pe('auth', { provider: 'exa' }))).toBe('Your Exa key was rejected. Check it in Settings.');
+    expect(toFriendlyErrorMessage(pe('rate-limit', { provider: 'exa' })))
+      .toBe("Exa's free limit is used up for now. Try again later or switch to Tavily.");
+    expect(toFriendlyErrorMessage(pe('rate-limit', { provider: 'tavily' })))
+      .toBe("Tavily's free limit is used up for now. Try again later or switch to Exa.");
+  });
+  it('maps permission errors', () => {
+    expect(toFriendlyErrorMessage(pe('permission', { provider: 'deepseek' })))
+      .toBe('Research Companion needs permission to contact DeepSeek. Open Settings to allow it.');
+  });
+  it('maps AI provider auth/rate-limit/server/network/not-configured', () => {
+    expect(toFriendlyErrorMessage(pe('auth', { provider: 'openai' }))).toBe('Your API key was rejected. Check it in Settings.');
+    expect(toFriendlyErrorMessage(pe('rate-limit', { provider: 'openai' }))).toBe('Rate limited by the provider. Try again in a moment.');
+    expect(toFriendlyErrorMessage(pe('server', { provider: 'openai' }))).toBe('The provider is having trouble right now. Try again shortly.');
+    expect(toFriendlyErrorMessage(pe('network', { provider: 'openai' }))).toBe("Couldn't reach the provider. Check your connection and try again.");
+    expect(toFriendlyErrorMessage(pe('not-configured'))).toBe('Finish setting up your provider and API key in Settings.');
+  });
+  it('maps the Mode 2 rank parse failure', () => {
+    expect(toFriendlyErrorMessage(new Error('Could not parse JSON from ranking response')))
+      .toBe('The provider returned an unexpected response. Try again.');
+  });
+});
+
 describe('countConfiguredProviders', () => {
+  it('counts registry keys and openrouter token without double counting', () => {
+    expect(countConfiguredProviders({ apiKeys: { deepseek: 'k', openrouter: 'o' }, openrouterToken: 'tok' })).toBe(2);
+    expect(countConfiguredProviders({ apiKeys: { deepseek: 'k' }, openrouterToken: 'tok' })).toBe(2);
+  });
+});
+
+describe('countConfiguredProviders (legacy)', () => {
   it('counts zero when no provider has credentials', () => {
     expect(countConfiguredProviders({ apiKeys: {}, openrouterToken: '' })).toBe(0);
   });
@@ -441,12 +487,76 @@ describe('requestExtraction', () => {
 });
 
 describe('analyzeActiveTab', () => {
+  const mode1Plan = { mode: 1, entry: { id: 'anthropic', host: 'https://api.anthropic.com/*' }, model: 'm', apiKey: 'k' };
   beforeEach(() => {
     vi.clearAllMocks();
+    planSearch.mockReturnValue(mode1Plan);
+    hasHostPermission.mockResolvedValue(true);
     global.chrome = {
-      runtime: { onMessage: { addListener: vi.fn(), removeListener: vi.fn() } },
+      runtime: {
+        onMessage: { addListener: vi.fn(), removeListener: vi.fn() },
+        getManifest: () => ({ host_permissions: ['https://api.anthropic.com/*'] }),
+      },
       scripting: { executeScript: vi.fn() },
     };
+  });
+
+  function stubExtraction() {
+    chrome.scripting.executeScript.mockImplementation(async () => []);
+    chrome.runtime.onMessage.addListener.mockImplementation((fn) => {
+      fn({ type: 'EXTRACTION_RESULT', payload: { title: 'T', url: 'U', text: 'long enough text', confidence: 'high' } }, { tab: { id: 1 } });
+    });
+  }
+  const args = (o = {}) => ({
+    tabId: 1, renderStatus: vi.fn(), renderResultsFn: vi.fn(), renderNoContentFn: vi.fn(), renderNoResultsFn: vi.fn(), ...o,
+  });
+
+  it('passes renderStatus as onStatus to searchAndRank', async () => {
+    getSettings.mockResolvedValue({ provider: 'anthropic', resultsCount: 8 });
+    stubExtraction();
+    runPipeline.mockImplementation(async ({ llmClient }) => { await llmClient.searchAndRank({}); return []; });
+    const a = args();
+    await analyzeActiveTab(a);
+    expect(searchAndRank.mock.calls[0][2].onStatus).toBe(a.renderStatus);
+    expect(a.renderStatus).toHaveBeenCalledWith('Reading page...');
+    expect(a.renderStatus).not.toHaveBeenCalledWith('Ranking results...');
+  });
+
+  it('stores the search service in history for Mode 2, null otherwise', async () => {
+    getSettings.mockResolvedValue({ provider: 'deepseek', resultsCount: 8 });
+    stubExtraction();
+    runPipeline.mockResolvedValue([{ title: 'R', url: 'https://r.com', snippet: 's', relevance: 'rel' }]);
+    planSearch.mockReturnValue({ mode: 2, entry: { id: 'deepseek', host: 'https://api.x/*' }, model: 'm', apiKey: 'k', searchService: { id: 'exa', apiKey: 'e' } });
+    await analyzeActiveTab(args());
+    expect(addHistoryEntry.mock.calls[0][0].searchService).toBe('exa');
+    planSearch.mockReturnValue(mode1Plan);
+    await analyzeActiveTab(args());
+    expect(addHistoryEntry.mock.calls[1][0].searchService).toBeNull();
+  });
+
+  it('throws a permission error before extraction when an optional host is not granted', async () => {
+    getSettings.mockResolvedValue({ provider: 'deepseek', resultsCount: 8 });
+    planSearch.mockReturnValue({ mode: 2, entry: { id: 'deepseek', host: 'https://api.deepseek.com/*' }, model: 'm', apiKey: 'k', searchService: { id: 'exa', apiKey: 'e' } });
+    hasHostPermission.mockImplementation(async (h) => h !== 'https://api.exa.ai/*' || false);
+    hasHostPermission.mockImplementation(async (h) => h === 'https://api.deepseek.com/*');
+    await expect(analyzeActiveTab(args())).rejects.toMatchObject({ kind: 'permission', provider: 'exa' });
+    expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
+    expect(searchAndRank).not.toHaveBeenCalled();
+  });
+
+  it('skips the permission check for required hosts', async () => {
+    getSettings.mockResolvedValue({ provider: 'anthropic', resultsCount: 8 });
+    stubExtraction();
+    runPipeline.mockResolvedValue([]);
+    await analyzeActiveTab(args());
+    expect(hasHostPermission).not.toHaveBeenCalled();
+  });
+
+  it('propagates planSearch errors (needs-search-key) before extraction', async () => {
+    getSettings.mockResolvedValue({ provider: 'openrouter' });
+    planSearch.mockImplementation(() => { throw new ProviderError('x', { kind: 'needs-search-key' }); });
+    await expect(analyzeActiveTab(args())).rejects.toMatchObject({ kind: 'needs-search-key' });
+    expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
   });
 
   it('returns not-configured when no provider is set', async () => {
