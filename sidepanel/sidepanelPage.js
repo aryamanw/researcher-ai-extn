@@ -1,6 +1,6 @@
 import { getSettings, addHistoryEntry } from '../src/lib/storage.js';
 import { runPipeline } from '../src/lib/pipeline.js';
-import { getSearchResults } from '../src/lib/llm/index.js';
+import { searchAndRank } from '../src/lib/providers/index.js';
 
 export function renderLoading(container, statusText, onCancel) {
   container.textContent = '';
@@ -265,7 +265,7 @@ export async function analyzeActiveTab({
   renderStatus('Searching...');
   const llmClient = {
     searchAndRank: ({ pageTitle, pageText, resultsCount }) =>
-      getSearchResults(settings, { pageTitle, pageText, resultsCount }, signal),
+      searchAndRank(settings, { pageTitle, pageText, resultsCount }, { signal }),
   };
 
   renderStatus('Ranking results...');

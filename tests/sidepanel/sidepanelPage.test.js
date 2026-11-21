@@ -34,7 +34,7 @@ vi.mock('../../src/lib/storage.js', () => ({
   addHistoryEntry: vi.fn(),
 }));
 vi.mock('../../src/lib/pipeline.js', () => ({ runPipeline: vi.fn() }));
-vi.mock('../../src/lib/llm/index.js', () => ({ getCompletion: vi.fn(), getSearchResults: vi.fn() }));
+vi.mock('../../src/lib/providers/index.js', () => ({ searchAndRank: vi.fn() }));
 
 import { getSettings, addHistoryEntry } from '../../src/lib/storage.js';
 import { runPipeline } from '../../src/lib/pipeline.js';
