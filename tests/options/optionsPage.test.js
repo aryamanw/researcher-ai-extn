@@ -4,6 +4,11 @@ import { JSDOM } from 'jsdom';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
+vi.mock('../../src/lib/providers/permissions.js', () => ({
+  requestHostPermission: vi.fn(),
+  hasHostPermission: vi.fn(),
+}));
+
 vi.mock('../../src/lib/storage.js', () => ({
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
@@ -11,11 +16,12 @@ vi.mock('../../src/lib/storage.js', () => ({
 }));
 
 import { getSettings, saveSettings, removeSavedKeys } from '../../src/lib/storage.js';
+import { requestHostPermission } from '../../src/lib/providers/permissions.js';
+import { PROVIDERS } from '../../src/lib/providers/registry.js';
 import {
-  gatherSettingsFromForm,
+  renderProviderOptions,
   renderSettingsToForm,
   initOptionsPage,
-  syncKeyFieldVisibility,
   getApiKeyFormatWarning,
   toFriendlyOpenRouterError,
 } from '../../options/optionsPage.js';
@@ -56,506 +62,319 @@ describe('options.html structure', () => {
   });
 });
 
+
 function buildForm() {
-  document.body.innerHTML = `
-    <form id="settings-form">
-      <select name="provider">
-        <option value="">-- choose --</option>
-        <option value="anthropic">Anthropic</option>
-        <option value="openai">OpenAI</option>
-        <option value="gemini">Gemini</option>
-        <option value="openrouter">OpenRouter</option>
-      </select>
-      <input type="text" name="model" />
-      <label class="key-field" data-provider="anthropic">
-        <input type="password" name="anthropicKey" />
-        <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
-      </label>
-      <label class="key-field" data-provider="openai">
-        <input type="password" name="openaiKey" />
-        <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key" aria-label="Show OpenAI API key">Show</button>
-      </label>
-      <label class="key-field" data-provider="gemini">
-        <input type="password" name="geminiKey" />
-        <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key" aria-label="Show Gemini API key">Show</button>
-      </label>
-      <input type="number" name="resultsCount" min="1" max="20" />
-      <button type="button" id="remove-keys">Remove saved keys</button>
-    </form>
-    <button type="button" id="connect-openrouter">Connect</button>
-    <span id="openrouter-status"></span>
-  `;
-  const form = document.getElementById('settings-form');
-  // Attach form elements as properties for easy access in tests
-  form.provider = form.elements.namedItem('provider');
-  form.model = form.elements.namedItem('model');
-  form.anthropicKey = form.elements.namedItem('anthropicKey');
-  form.openaiKey = form.elements.namedItem('openaiKey');
-  form.geminiKey = form.elements.namedItem('geminiKey');
-  form.resultsCount = form.elements.namedItem('resultsCount');
+  const html = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../options/options.html'), 'utf8');
+  const body = new JSDOM(html).window.document.body.innerHTML.replace(/<script[\s\S]*?<\/script>/g, '');
+  document.body.innerHTML = body;
+  return document.getElementById('settings-form');
+}
+
+const base = (over = {}) => ({
+  provider: null,
+  models: {},
+  apiKeys: {},
+  openrouterToken: '',
+  searchService: null,
+  searchKeys: {},
+  resultsCount: 8,
+  schemaVersion: 2,
+  ...over,
+});
+
+async function setup(settings) {
+  getSettings.mockResolvedValue(settings);
+  const form = buildForm();
+  const autosave = document.getElementById('autosave-status');
+  await initOptionsPage(form, document.getElementById('connect-openrouter'), document.getElementById('openrouter-status'), autosave, document.getElementById('results-count-hint'));
   return form;
 }
 
-describe('gatherSettingsFromForm', () => {
-  it('reads form fields into a settings object', () => {
-    const form = buildForm();
-    form.provider.value = 'anthropic';
-    form.model.value = 'claude-3-5-sonnet-20241022';
-    form.anthropicKey.value = 'a-key';
-    form.resultsCount.value = '10';
+const el = (form, name) => form.elements.namedItem(name);
+const fire = (node, type) => node.dispatchEvent(new Event(type, { bubbles: true }));
+const choose = (select, value) => { select.value = value; fire(select, 'change'); };
 
-    const settings = gatherSettingsFromForm(form);
+beforeEach(() => {
+  vi.clearAllMocks();
+  global.chrome = {
+    runtime: { sendMessage: vi.fn(), getManifest: () => ({ host_permissions: ['https://api.anthropic.com/*', 'https://openrouter.ai/*'] }) },
+  };
+  requestHostPermission.mockResolvedValue(true);
+  saveSettings.mockResolvedValue(undefined);
+});
 
-    expect(settings).toEqual({
-      provider: 'anthropic',
-      models: { anthropic: 'claude-3-5-sonnet-20241022' },
-      apiKeys: { anthropic: 'a-key', openai: '', gemini: '' },
-      resultsCount: 10,
-    });
-  });
-
-  it('defaults resultsCount to 8 when blank or invalid', () => {
-    const form = buildForm();
-    form.resultsCount.value = '';
-    expect(gatherSettingsFromForm(form).resultsCount).toBe(8);
-  });
-
-  it('clamps resultsCount to the input\'s declared min/max instead of saving it raw', () => {
-    const form = buildForm();
-    form.resultsCount.value = '999';
-    expect(gatherSettingsFromForm(form).resultsCount).toBe(20);
-
-    form.resultsCount.value = '-5';
-    expect(gatherSettingsFromForm(form).resultsCount).toBe(1);
+describe('renderProviderOptions', () => {
+  it('builds the two optgroups with one option per registry entry in registry order', () => {
+    const select = buildForm().elements.namedItem('provider');
+    renderProviderOptions(select);
+    const groups = [...select.querySelectorAll('optgroup')];
+    expect(groups.map((g) => g.label)).toEqual(['Built-in web search', 'Needs a search key']);
+    const values = [...select.querySelectorAll('option')].map((o) => o.value).filter(Boolean);
+    expect(values).toEqual(Object.keys(PROVIDERS));
+    const mode1 = [...groups[0].querySelectorAll('option')].map((o) => o.value);
+    expect(mode1).toContain('deepseek');
+    expect(mode1).not.toContain('together');
+    expect([...groups[1].querySelectorAll('option')].map((o) => o.value)).toContain('together');
   });
 });
 
 describe('renderSettingsToForm', () => {
-  it('populates non-secret fields from a settings object', () => {
+  it('populates fields and masks the saved key', async () => {
     const form = buildForm();
-    renderSettingsToForm(form, {
-      provider: 'anthropic',
-      models: { anthropic: 'm1' },
-      apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
-      resultsCount: 5,
-    });
-
-    expect(form.provider.value).toBe('anthropic');
-    expect(form.model.value).toBe('m1');
-    expect(form.resultsCount.value).toBe('5');
+    renderSettingsToForm(form, base({ provider: 'anthropic', models: { anthropic: 'm1' }, apiKeys: { anthropic: 'sk-ant-abc123' }, resultsCount: 5 }));
+    expect(el(form, 'provider').value).toBe('anthropic');
+    expect(el(form, 'model').value).toBe('m1');
+    expect(el(form, 'resultsCount').value).toBe('5');
+    expect(el(form, 'providerKey').value).toBe('');
+    expect(el(form, 'providerKey').placeholder).toBe('Saved, ending in ****c123');
   });
 
-  it('never re-displays a saved key in full - the field stays blank with a masked placeholder hint', () => {
+  it('generates the key field label, Get a key link and OpenRouter paste label from the registry', () => {
     const form = buildForm();
-    renderSettingsToForm(form, {
-      provider: 'anthropic',
-      models: { anthropic: 'm1' },
-      apiKeys: { anthropic: 'sk-ant-abc123', openai: '', gemini: '' },
-      resultsCount: 5,
-    });
+    renderSettingsToForm(form, base({ provider: 'deepseek' }));
+    expect(form.querySelector('#provider-key-slot label').textContent).toMatch(/DeepSeek API key/);
+    const link = form.querySelector('#provider-key-slot a');
+    expect(link.href).toBe(PROVIDERS.deepseek.keyHint.url);
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
+    expect(el(form, 'providerKey').placeholder).toBe('');
 
-    expect(form.anthropicKey.value).toBe('');
-    expect(form.anthropicKey.placeholder).toBe('Saved, ending in ****c123');
+    renderSettingsToForm(form, base({ provider: 'openrouter' }));
+    expect(form.querySelector('#provider-key-slot label').textContent).toMatch(/or paste an API key/);
+    expect(form.querySelector('#openrouter-block').classList.contains('is-hidden')).toBe(false);
   });
 
-  it('leaves the placeholder blank when no key is saved for a field', () => {
+  it('hides the OpenRouter connect block and key slot when no provider is selected', () => {
     const form = buildForm();
-    renderSettingsToForm(form, {
-      provider: null,
-      model: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      resultsCount: 8,
-    });
-
-    expect(form.anthropicKey.placeholder).toBe('');
-  });
-});
-
-describe('gatherSettingsFromForm - stored key fallback', () => {
-  it('keeps the previously stored key when its field is left blank', () => {
-    const form = buildForm();
-    form.provider.value = 'anthropic';
-    form.resultsCount.value = '8';
-    // anthropicKey field left blank - simulates the masked, untouched state.
-
-    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' });
-
-    expect(settings.apiKeys.anthropic).toBe('sk-ant-old');
+    renderSettingsToForm(form, base());
+    expect(form.querySelector('#openrouter-block').classList.contains('is-hidden')).toBe(true);
+    expect(form.querySelector('#provider-key-slot').children.length).toBe(0);
   });
 
-  it('uses the freshly typed value when the field is edited, ignoring the stored one', () => {
+  it('shows the search key field only when a search service is selected', () => {
     const form = buildForm();
-    form.anthropicKey.value = 'sk-ant-new';
-
-    const settings = gatherSettingsFromForm(form, { anthropic: 'sk-ant-old', openai: '', gemini: '' });
-
-    expect(settings.apiKeys.anthropic).toBe('sk-ant-new');
+    renderSettingsToForm(form, base({ searchService: 'exa', searchKeys: { exa: 'abcd1234' } }));
+    expect(el(form, 'searchKey').placeholder).toBe('Saved, ending in ****1234');
+    renderSettingsToForm(form, base());
+    expect(el(form, 'searchKey')).toBeNull();
   });
 });
 
 describe('initOptionsPage', () => {
-  beforeEach(() => {
-    global.chrome = { runtime: { sendMessage: vi.fn() } };
+  it('reflects openrouter connection status', async () => {
+    await setup(base({ provider: 'openrouter', openrouterToken: 'tok' }));
+    expect(document.getElementById('openrouter-status').textContent).toBe('Connected to OpenRouter');
   });
 
-  it('loads settings into the form and reflects openrouter connection status', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'openrouter',
-      model: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: 'or-token',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-
-    await initOptionsPage(form, connectButton, statusEl);
-
-    expect(statusEl.textContent).toBe('Connected to OpenRouter');
+  it('shows not connected when there is no openrouter token', async () => {
+    await setup(base());
+    expect(document.getElementById('openrouter-status').textContent).toBe('Not connected to OpenRouter');
   });
 
-  it('removes saved keys and the OpenRouter token after a confirm click', async () => {
-    const stored = {
-      provider: 'anthropic',
-      model: null,
-      apiKeys: { anthropic: 'sk-ant-secret1234', openai: 'sk-o', gemini: 'AIzaX' },
-      openrouterToken: 'or-token',
-      resultsCount: 8,
-    };
-    getSettings.mockResolvedValue(stored);
-    const clearedSettings = { ...stored, apiKeys: { anthropic: '', openai: '', gemini: '' }, openrouterToken: '' };
-    removeSavedKeys.mockResolvedValue(clearedSettings);
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    await initOptionsPage(form, connectButton, statusEl);
+  it('removes saved keys after a confirm click and never reveals the removed key', async () => {
+    const stored = base({ provider: 'anthropic', apiKeys: { anthropic: 'sk-ant-secret1234' }, openrouterToken: 'tok' });
+    const form = await setup(stored);
+    removeSavedKeys.mockResolvedValue({ ...stored, apiKeys: {}, openrouterToken: '' });
 
     const removeButton = document.getElementById('remove-keys');
     removeButton.click();
     expect(removeSavedKeys).not.toHaveBeenCalled();
     expect(removeButton.textContent).toMatch(/confirm/i);
-
     removeButton.click();
     await vi.waitFor(() => expect(removeSavedKeys).toHaveBeenCalled());
-    await vi.waitFor(() => expect(form.anthropicKey.placeholder).toBe(''));
-    expect(statusEl.textContent).toBe('Not connected to OpenRouter');
+    await vi.waitFor(() => expect(el(form, 'providerKey').placeholder).toBe(''));
+    expect(document.getElementById('openrouter-status').textContent).toBe('Not connected to OpenRouter');
 
-    // "Show" must not reveal the removed key
-    form.querySelector('.key-toggle[data-target="anthropicKey"]').click();
-    expect(form.anthropicKey.value).toBe('');
+    form.querySelector('.key-toggle[data-target="providerKey"]').click();
+    expect(el(form, 'providerKey').value).toBe('');
   });
 
-  it('shows not connected when there is no openrouter token', async () => {
-    getSettings.mockResolvedValue({
-      provider: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-
-    await initOptionsPage(form, connectButton, statusEl);
-
-    expect(statusEl.textContent).toBe('Not connected to OpenRouter');
-  });
-
-  it('saves settings on form change', async () => {
-    getSettings.mockResolvedValue({
-      provider: null,
-      models: { openai: 'keep-me' },
-      apiKeys: { anthropic: '', openai: '', gemini: '', deepseek: 'dk' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    await initOptionsPage(form, connectButton, statusEl);
-
-    form.provider.value = 'anthropic';
-    form.model.value = 'new-model';
-    form.dispatchEvent(new Event('change'));
+  it('saves a key typed for DeepSeek under apiKeys.deepseek and shows Saved', async () => {
+    const form = await setup(base({ provider: 'deepseek', apiKeys: { openai: 'o' } }));
+    el(form, 'providerKey').value = 'ds-key';
+    fire(el(form, 'providerKey'), 'change');
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
-
     const saved = saveSettings.mock.calls.at(-1)[0];
-    expect(saved.models).toEqual({ openai: 'keep-me', anthropic: 'new-model' });
-    expect(saved.apiKeys.deepseek).toBe('dk');
+    expect(saved.apiKeys).toEqual({ openai: 'o', deepseek: 'ds-key' });
+    expect(saved.provider).toBe('deepseek');
+    expect(document.getElementById('autosave-status').textContent).toBe('Saved');
+  });
+
+  it('keeps the stored key when the field is left blank', async () => {
+    const form = await setup(base({ provider: 'deepseek', apiKeys: { deepseek: 'old' } }));
+    fire(el(form, 'resultsCount'), 'change');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(saveSettings.mock.calls.at(-1)[0].apiKeys.deepseek).toBe('old');
+  });
+
+  it('saves the model under the current provider and clamps results count', async () => {
+    const form = await setup(base({ provider: 'openai', models: { anthropic: 'keep' } }));
+    el(form, 'model').value = 'gpt-x';
+    el(form, 'resultsCount').value = '999';
+    fire(el(form, 'model'), 'change');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    const saved = saveSettings.mock.calls.at(-1)[0];
+    expect(saved.models).toEqual({ anthropic: 'keep', openai: 'gpt-x' });
+    expect(saved.resultsCount).toBe(20);
     expect('model' in saved).toBe(false);
   });
 
-  it('shows only the API key field matching the selected provider', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'anthropic',
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-
-    await initOptionsPage(form, connectButton, statusEl);
-
-    expect(form.querySelector('[data-provider="anthropic"]').classList.contains('is-hidden')).toBe(false);
-    expect(form.querySelector('[data-provider="openai"]').classList.contains('is-hidden')).toBe(true);
-    expect(form.querySelector('[data-provider="gemini"]').classList.contains('is-hidden')).toBe(true);
-
-    form.provider.value = 'gemini';
-    form.dispatchEvent(new Event('change'));
-
-    expect(form.querySelector('[data-provider="anthropic"]').classList.contains('is-hidden')).toBe(true);
-    expect(form.querySelector('[data-provider="gemini"]').classList.contains('is-hidden')).toBe(false);
+  it('re-renders the model input to the new provider saved model before saving, never carrying the old text', async () => {
+    const form = await setup(base({ provider: 'openai', models: { openai: 'gpt-x', deepseek: 'ds-saved' } }));
+    el(form, 'model').value = 'typed-for-openai';
+    choose(el(form, 'provider'), 'deepseek');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(el(form, 'model').value).toBe('ds-saved');
+    const saved = saveSettings.mock.calls.at(-1)[0];
+    expect(saved.provider).toBe('deepseek');
+    expect(saved.models).toEqual({ openai: 'gpt-x', deepseek: 'ds-saved' });
+    expect(form.querySelector('#provider-key-slot label').textContent).toMatch(/DeepSeek API key/);
   });
 
-  it('toggles a key field between password and text when its reveal button is clicked', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'anthropic',
-      apiKeys: { anthropic: 'secret-value', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
+  it('does not request permission for hosts already required by the manifest', async () => {
+    const form = await setup(base({ provider: 'openai' }));
+    choose(el(form, 'provider'), 'anthropic');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(requestHostPermission).not.toHaveBeenCalled();
+  });
 
-    await initOptionsPage(form, connectButton, statusEl);
+  it('requests host permission for an optional provider and saves on grant', async () => {
+    const form = await setup(base({ provider: 'anthropic' }));
+    choose(el(form, 'provider'), 'deepseek');
+    expect(requestHostPermission).toHaveBeenCalledWith(PROVIDERS.deepseek.host);
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(saveSettings.mock.calls.at(-1)[0].provider).toBe('deepseek');
+  });
 
-    const toggle = form.querySelector('.key-toggle[data-target="anthropicKey"]');
-    expect(form.anthropicKey.type).toBe('password');
+  it('reverts the provider, shows a message and does not save when permission is denied', async () => {
+    requestHostPermission.mockResolvedValue(false);
+    const form = await setup(base({ provider: 'anthropic', models: { anthropic: 'm-a' } }));
+    choose(el(form, 'provider'), 'deepseek');
+    await vi.waitFor(() => expect(el(form, 'provider').value).toBe('anthropic'));
+    expect(document.getElementById('permission-status').textContent).toBe('Research Companion needs permission to contact DeepSeek.');
+    expect(el(form, 'model').value).toBe('m-a');
+    expect(saveSettings).not.toHaveBeenCalled();
+  });
 
+  it('applies the same permission flow to the search service select', async () => {
+    requestHostPermission.mockResolvedValue(false);
+    const form = await setup(base({ provider: 'anthropic' }));
+    choose(el(form, 'searchService'), 'exa');
+    expect(requestHostPermission).toHaveBeenCalledWith('https://api.exa.ai/*');
+    await vi.waitFor(() => expect(el(form, 'searchService').value).toBe(''));
+    expect(document.getElementById('permission-status').textContent).toBe('Research Companion needs permission to contact Exa.');
+    expect(saveSettings).not.toHaveBeenCalled();
+    expect(el(form, 'searchKey')).toBeNull();
+
+    requestHostPermission.mockResolvedValue(true);
+    choose(el(form, 'searchService'), 'tavily');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(saveSettings.mock.calls.at(-1)[0].searchService).toBe('tavily');
+    expect(el(form, 'searchKey')).not.toBeNull();
+  });
+
+  it('saves a search key under searchKeys[service] and null for None without a permission request', async () => {
+    const form = await setup(base({ provider: 'anthropic', searchService: 'exa', searchKeys: { tavily: 't' } }));
+    el(form, 'searchKey').value = 'exa-key';
+    fire(el(form, 'searchKey'), 'change');
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(saveSettings.mock.calls.at(-1)[0].searchKeys).toEqual({ tavily: 't', exa: 'exa-key' });
+
+    requestHostPermission.mockClear();
+    choose(el(form, 'searchService'), '');
+    await vi.waitFor(() => expect(saveSettings.mock.calls.at(-1)[0].searchService).toBeNull());
+    expect(requestHostPermission).not.toHaveBeenCalled();
+    expect(el(form, 'searchKey')).toBeNull();
+  });
+
+  it('shows the Required badge for a Mode 2 provider and hides it for a Mode 1 provider on its default model', async () => {
+    const badge = () => document.getElementById('search-required-badge');
+    const form = await setup(base({ provider: 'anthropic' }));
+    expect(badge().hidden).toBe(true);
+    choose(el(form, 'provider'), 'together');
+    await vi.waitFor(() => expect(badge().hidden).toBe(false));
+    choose(el(form, 'provider'), 'deepseek');
+    await vi.waitFor(() => expect(badge().hidden).toBe(true));
+  });
+
+  it('shows the badge when a Mode 1 provider model cannot search natively', async () => {
+    const form = await setup(base({ provider: 'deepseek' }));
+    el(form, 'model').value = 'deepseek-pro';
+    fire(el(form, 'model'), 'change');
+    await vi.waitFor(() => expect(document.getElementById('search-required-badge').hidden).toBe(false));
+  });
+
+  it('toggles a key field between password and text, revealing only the stored value', async () => {
+    const form = await setup(base({ provider: 'anthropic', apiKeys: { anthropic: 'secret-value' } }));
+    const toggle = form.querySelector('.key-toggle[data-target="providerKey"]');
     toggle.click();
-    expect(form.anthropicKey.type).toBe('text');
+    expect(el(form, 'providerKey').type).toBe('text');
     expect(toggle.textContent).toBe('Hide');
-    expect(form.anthropicKey.value).toBe('secret-value');
-
+    expect(el(form, 'providerKey').value).toBe('secret-value');
     toggle.click();
-    expect(form.anthropicKey.type).toBe('password');
+    expect(el(form, 'providerKey').type).toBe('password');
     expect(toggle.textContent).toBe('Show');
   });
 
-  it('does not overwrite a freshly typed key value when Show is clicked', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'anthropic',
-      apiKeys: { anthropic: 'stored-value', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    await initOptionsPage(form, connectButton, statusEl);
-
-    form.anthropicKey.value = 'freshly-typed';
-    const toggle = form.querySelector('.key-toggle[data-target="anthropicKey"]');
-    toggle.click();
-
-    expect(form.anthropicKey.value).toBe('freshly-typed');
+  it('does not overwrite a freshly typed key when Show is clicked', async () => {
+    const form = await setup(base({ provider: 'anthropic', apiKeys: { anthropic: 'stored' } }));
+    el(form, 'providerKey').value = 'freshly-typed';
+    form.querySelector('.key-toggle[data-target="providerKey"]').click();
+    expect(el(form, 'providerKey').value).toBe('freshly-typed');
   });
 
-  it('shows the friendly OpenRouter error directly in the status text on connect failure, with no technical wrapper', async () => {
-    getSettings.mockResolvedValue({
-      provider: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    await initOptionsPage(form, connectButton, statusEl);
-
+  it('shows the friendly OpenRouter error on connect failure', async () => {
+    await setup(base());
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+      expect(message).toEqual({ type: 'CONNECT_OPENROUTER' });
       callback({ ok: false, error: 'OpenRouter key exchange failed: 401' });
     });
-    connectButton.click();
-
-    expect(statusEl.textContent).toBe('OpenRouter rejected the sign-in. Try connecting again.');
+    document.getElementById('connect-openrouter').click();
+    expect(document.getElementById('openrouter-status').textContent).toBe('OpenRouter rejected the sign-in. Try connecting again.');
   });
 
-  it('shows a capped hint when the entered results count is clamped, and clears it once the value is valid', async () => {
-    getSettings.mockResolvedValue({
-      provider: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    document.body.insertAdjacentHTML('beforeend', '<p class="field-hint" id="results-count-hint" hidden></p>');
-    const hintEl = document.getElementById('results-count-hint');
-
-    await initOptionsPage(form, connectButton, statusEl, null, hintEl);
-
-    form.resultsCount.value = '999';
-    form.dispatchEvent(new Event('change'));
-    await vi.waitFor(() => expect(hintEl.hidden).toBe(false));
-    expect(hintEl.textContent).toMatch(/Capped to 1.20/);
-
-    form.resultsCount.value = '10';
-    form.dispatchEvent(new Event('change'));
-    await vi.waitFor(() => expect(hintEl.hidden).toBe(true));
+  it('shows a capped hint when the results count is clamped, live and on change', async () => {
+    const form = await setup(base());
+    const hint = document.getElementById('results-count-hint');
+    el(form, 'resultsCount').value = '999';
+    fire(el(form, 'resultsCount'), 'input');
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toMatch(/Capped to 1.20/);
+    el(form, 'resultsCount').value = '10';
+    fire(el(form, 'resultsCount'), 'change');
+    await vi.waitFor(() => expect(hint.hidden).toBe(true));
   });
 
-  it('shows the capped hint live as the user types, before the field loses focus', async () => {
-    getSettings.mockResolvedValue({
-      provider: null,
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-    const form = buildForm();
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-    document.body.insertAdjacentHTML('beforeend', '<p class="field-hint" id="results-count-hint" hidden></p>');
-    const hintEl = document.getElementById('results-count-hint');
-
-    await initOptionsPage(form, connectButton, statusEl, null, hintEl);
-
-    form.resultsCount.value = '999';
-    form.resultsCount.dispatchEvent(new Event('input'));
-
-    expect(hintEl.hidden).toBe(false);
-    expect(hintEl.textContent).toMatch(/Capped to 1.20/);
+  it('warns about a wrong key prefix using the registry hint, and clears it once fixed', async () => {
+    const form = await setup(base({ provider: 'anthropic' }));
+    const warning = form.querySelector('.key-warning[data-for="providerKey"]');
+    el(form, 'providerKey').value = 'wrong-shape';
+    fire(el(form, 'providerKey'), 'focusout');
+    expect(warning.hidden).toBe(false);
+    expect(warning.textContent).toBe('Anthropic keys start with "sk-ant-api" — this doesn\'t look right.');
+    el(form, 'providerKey').value = 'sk-ant-api-abc';
+    fire(el(form, 'providerKey'), 'focusout');
+    expect(warning.hidden).toBe(true);
   });
-});
 
-describe('syncKeyFieldVisibility', () => {
-  it('hides all LLM provider-specific key fields when no provider is selected', () => {
-    const form = buildForm();
-    form.provider.value = '';
-
-    syncKeyFieldVisibility(form);
-
-    form.querySelectorAll('.key-field[data-provider]').forEach((field) => {
-      expect(field.classList.contains('is-hidden')).toBe(true);
-    });
+  it('also checks the key format on a bare change event so autosave cannot bypass it', async () => {
+    const form = await setup(base({ provider: 'anthropic' }));
+    el(form, 'providerKey').value = 'nope';
+    fire(el(form, 'providerKey'), 'change');
+    await vi.waitFor(() => expect(form.querySelector('.key-warning[data-for="providerKey"]').hidden).toBe(false));
   });
 });
 
 describe('getApiKeyFormatWarning', () => {
-  it('returns null for an empty value', () => {
-    expect(getApiKeyFormatWarning('anthropicKey', '')).toBeNull();
+  it('returns null for an empty value or a provider without a known prefix', () => {
+    expect(getApiKeyFormatWarning('X', 'sk-', '')).toBeNull();
+    expect(getApiKeyFormatWarning('X', '', 'anything')).toBeNull();
+    expect(getApiKeyFormatWarning('X', null, 'anything')).toBeNull();
   });
 
-  it('returns null for a field with no known format', () => {
-    expect(getApiKeyFormatWarning('someOtherField', 'anything')).toBeNull();
-  });
-
-  it('flags an Anthropic key that does not start with sk-ant-', () => {
-    expect(getApiKeyFormatWarning('anthropicKey', 'wrong-shape')).toMatch(/sk-ant-/);
-    expect(getApiKeyFormatWarning('anthropicKey', 'sk-ant-abc123')).toBeNull();
-  });
-
-  it('flags an OpenAI key that does not start with sk-', () => {
-    expect(getApiKeyFormatWarning('openaiKey', 'wrong-shape')).toMatch(/sk-/);
-    expect(getApiKeyFormatWarning('openaiKey', 'sk-abc123')).toBeNull();
-  });
-
-  it('flags a Gemini key that does not start with AIza', () => {
-    expect(getApiKeyFormatWarning('geminiKey', 'wrong-shape')).toMatch(/AIza/);
-    expect(getApiKeyFormatWarning('geminiKey', 'AIzaSyAbc123')).toBeNull();
-  });
-});
-
-describe('initOptionsPage key validation', () => {
-  beforeEach(() => {
-    global.chrome = { runtime: { sendMessage: vi.fn() } };
-  });
-
-  it('shows an inline warning on blur when a key has the wrong shape, and clears it once fixed', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'anthropic',
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-
-    document.body.innerHTML = `
-      <form id="settings-form">
-        <select name="provider"><option value="anthropic" selected>Anthropic</option></select>
-        <input type="text" name="model" />
-        <label class="key-field" data-provider="anthropic">
-          <div class="key-input-row">
-            <input type="password" name="anthropicKey" />
-            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
-          </div>
-          <p class="key-warning" data-for="anthropicKey" hidden></p>
-        </label>
-        <input type="number" name="resultsCount" min="1" max="20" />
-      </form>
-      <button type="button" id="connect-openrouter">Connect</button>
-      <span id="openrouter-status"></span>
-    `;
-    const form = document.getElementById('settings-form');
-    form.provider = form.elements.namedItem('provider');
-    form.model = form.elements.namedItem('model');
-    form.anthropicKey = form.elements.namedItem('anthropicKey');
-    form.openaiKey = { value: '' };
-    form.geminiKey = { value: '' };
-    form.resultsCount = form.elements.namedItem('resultsCount');
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-
-    await initOptionsPage(form, connectButton, statusEl);
-
-    const warningEl = form.querySelector('.key-warning[data-for="anthropicKey"]');
-    form.anthropicKey.value = 'not-a-real-key';
-    form.anthropicKey.dispatchEvent(new Event('blur'));
-    expect(warningEl.hidden).toBe(false);
-    expect(warningEl.textContent).toMatch(/sk-ant-/);
-
-    form.anthropicKey.value = 'sk-ant-abc123';
-    form.anthropicKey.dispatchEvent(new Event('blur'));
-    expect(warningEl.hidden).toBe(true);
-  });
-
-  it('also runs the key format check on a bare change event, not just blur, so autosave cannot bypass it', async () => {
-    getSettings.mockResolvedValue({
-      provider: 'anthropic',
-      apiKeys: { anthropic: '', openai: '', gemini: '' },
-      openrouterToken: '',
-      resultsCount: 8,
-    });
-
-    document.body.innerHTML = `
-      <form id="settings-form">
-        <select name="provider"><option value="anthropic" selected>Anthropic</option></select>
-        <input type="text" name="model" />
-        <label class="key-field" data-provider="anthropic">
-          <div class="key-input-row">
-            <input type="password" name="anthropicKey" />
-            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key" aria-label="Show Anthropic API key">Show</button>
-          </div>
-          <p class="key-warning" data-for="anthropicKey" hidden></p>
-        </label>
-        <input type="number" name="resultsCount" min="1" max="20" />
-      </form>
-      <button type="button" id="connect-openrouter">Connect</button>
-      <span id="openrouter-status"></span>
-    `;
-    const form = document.getElementById('settings-form');
-    form.provider = form.elements.namedItem('provider');
-    form.model = form.elements.namedItem('model');
-    form.anthropicKey = form.elements.namedItem('anthropicKey');
-    form.openaiKey = { value: '' };
-    form.geminiKey = { value: '' };
-    form.resultsCount = form.elements.namedItem('resultsCount');
-    const connectButton = document.getElementById('connect-openrouter');
-    const statusEl = document.getElementById('openrouter-status');
-
-    await initOptionsPage(form, connectButton, statusEl);
-
-    const warningEl = form.querySelector('.key-warning[data-for="anthropicKey"]');
-    // Simulate a mouse click moving focus elsewhere without a blur firing on
-    // anthropicKey first - the autosave 'change' listener still runs.
-    form.anthropicKey.value = 'not-a-real-key';
-    form.dispatchEvent(new Event('change'));
-    await vi.waitFor(() => expect(warningEl.hidden).toBe(false));
-    expect(warningEl.textContent).toMatch(/sk-ant-/);
+  it('flags a value without the prefix and accepts one with it', () => {
+    expect(getApiKeyFormatWarning('Tavily', 'tvly-', 'bad')).toBe('Tavily keys start with "tvly-" — this doesn\'t look right.');
+    expect(getApiKeyFormatWarning('Tavily', 'tvly-', 'tvly-abc')).toBeNull();
   });
 });
 

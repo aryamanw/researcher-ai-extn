@@ -33,14 +33,9 @@
     <form id="settings-form">
       <label>
         LLM provider
-        <select name="provider">
-          <option value="">-- choose --</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="openai">OpenAI</option>
-          <option value="gemini">Gemini</option>
-          <option value="openrouter">OpenRouter</option>
-        </select>
+        <select name="provider"></select>
       </label>
+      <p class="field-hint" id="permission-status" role="status" aria-live="polite"></p>
       <label class="field-secondary">
         Model (optional, uses provider default if blank)
         <input type="text" name="model" />
@@ -49,38 +44,27 @@
       <fieldset>
         <legend>Provider credentials</legend>
         <p class="field-hint">Stored only on this device. Never sent anywhere except the provider you select above.</p>
-        <label class="key-field" data-provider="anthropic">
-          Anthropic API key
-          <div class="key-input-row">
-            <input type="password" name="anthropicKey" />
-            <button type="button" class="key-toggle" data-target="anthropicKey" data-label="Anthropic API key">Show</button>
-          </div>
-        </label>
-        <label class="key-field" data-provider="openai">
-          OpenAI API key
-          <div class="key-input-row">
-            <input type="password" name="openaiKey" />
-            <button type="button" class="key-toggle" data-target="openaiKey" data-label="OpenAI API key">Show</button>
-          </div>
-        </label>
-        <label class="key-field" data-provider="gemini">
-          Gemini API key
-          <div class="key-input-row">
-            <input type="password" name="geminiKey" />
-            <button type="button" class="key-toggle" data-target="geminiKey" data-label="Gemini API key">Show</button>
-          </div>
-        </label>
-        <div class="key-field" data-provider="openrouter">
-          <p class="field-hint">OpenRouter uses sign-in, not a pasted key.</p>
+        <div class="key-field is-hidden" id="openrouter-block">
+          <p class="field-hint">Sign in with OpenRouter, or paste an API key below.</p>
           <div class="openrouter-row">
             <button type="button" id="connect-openrouter" class="button-primary">Connect to OpenRouter</button>
             <span id="openrouter-status"></span>
           </div>
         </div>
+        <div id="provider-key-slot"></div>
         <div class="remove-keys-row">
           <button type="button" id="remove-keys" class="button-secondary">Remove saved keys</button>
           <p class="field-hint">Deletes every saved API key and disconnects OpenRouter on this device.</p>
         </div>
+      </fieldset>
+      <fieldset>
+        <legend>Web search service <span class="badge" id="search-required-badge" hidden>Required for this provider</span></legend>
+        <p class="field-hint">Used when your model can't search the web on its own.</p>
+        <label>
+          Search service
+          <select name="searchService"></select>
+        </label>
+        <div id="search-key-slot"></div>
       </fieldset>
       <label>
         Number of results
@@ -90,22 +74,18 @@
   </div>
 
   <script type="module">
-    import { renderSettingsToForm, syncKeyFieldVisibility } from '../../options/optionsPage.js';
+    import { renderSettingsToForm } from '../../options/optionsPage.js';
 
     const sampleSettings = {
       provider: 'anthropic',
-      model: 'claude-sonnet-4-6',
-      apiKeys: {
-        anthropic: 'sk-ant-sample0000000000000000000',
-        openai: '',
-        gemini: '',
-      },
+      models: { anthropic: 'claude-sonnet-4-6' },
+      apiKeys: { anthropic: 'sk-ant-sample0000000000000000000' },
+      searchService: 'exa',
+      searchKeys: { exa: 'exa-sample-00000000' },
       resultsCount: 8,
     };
 
-    const form = document.getElementById('settings-form');
-    renderSettingsToForm(form, sampleSettings);
-    syncKeyFieldVisibility(form);
+    renderSettingsToForm(document.getElementById('settings-form'), sampleSettings);
   </script>
 </body>
 </html>
