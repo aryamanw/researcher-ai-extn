@@ -37,5 +37,4 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 
 ## Maintenance
 
-- [ ] Review Dependabot's GitHub Actions PRs (checkout, setup-node, action-gh-release major bumps).
-- [ ] Release checklist for every version: bump `package.json` + `manifest.json`, update `CHANGELOG.md`, tag `vX.Y.Z` (the release workflow builds the zip), upload the zip under Package in the dashboard.
+- [ ] Release checklist for every version: bump `package.json` + `manifest.json`, update `CHANGELOG.md`, tag `vX.Y.Z` (the release workflow builds the zip), upload the zip under Package in the dashboard. The next tag is the first release built with `softprops/action-gh-release@v3`: confirm the zip is attached.
