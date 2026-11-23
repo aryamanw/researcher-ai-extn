@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { PROVIDERS } from '../src/lib/providers/registry.js';
 
 const base = process.argv[2] || 'http://127.0.0.1:4173/docs/';
 const output = path.join(os.tmpdir(), 'research-companion-landing-review');
@@ -96,6 +97,16 @@ try {
     await page.waitForFunction(() => Number(window.gsap.getProperty(document.querySelector('#workflow-title'), 'y')) < 4);
     assert.ok(startY > 8, 'Section headings must visibly animate with scroll');
 
+    const privacyStart = () => page.evaluate(() => ScrollTrigger.getAll().find(trigger => trigger.animation?.targets?.().includes(document.querySelector('#trust-title'))).start);
+    const startBeforeDisclosure = await privacyStart();
+    await page.locator('.source-method summary').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelector('.source-method').open);
+    await page.waitForFunction(before => ScrollTrigger.getAll().find(trigger => trigger.animation?.targets?.().includes(document.querySelector('#trust-title'))).start > before + 20, startBeforeDisclosure);
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => !document.querySelector('.source-method').open);
+    await page.waitForFunction(before => Math.abs(ScrollTrigger.getAll().find(trigger => trigger.animation?.targets?.().includes(document.querySelector('#trust-title'))).start - before) < 2, startBeforeDisclosure);
+
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.waitForFunction(() => document.querySelector('#demo').dataset.motion === 'off');
     assert.equal(await page.locator('#demo').getAttribute('data-phase'), '2');
@@ -114,7 +125,7 @@ try {
     await page.locator('.hero-copy .button-primary').hover();
     assert.equal(await page.locator('.hero-copy .button-primary').evaluate(node => getComputedStyle(node).transform), 'none');
     assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior), 'auto');
-    assert.equal(await page.locator('.provider-logos li').count(), 4);
+    assert.deepEqual(await page.locator('.provider-logos li').evaluateAll(items => items.map(item => item.dataset.providerId).sort()), Object.keys(PROVIDERS).sort());
     assert.equal(await page.locator('.provider-logos img').evaluateAll(images => images.every(img => img.complete && img.naturalWidth > 0)), true);
     assert.equal(await page.locator('#privacy button').count(), 0);
     await scrollTo(page, 0);
@@ -148,7 +159,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base, { waitUntil: 'networkidle' });
     assert.equal(await page.locator('h1').isVisible(), true);
-    assert.equal(await page.locator('.provider-logos img').evaluateAll(images => images.length === 4 && images.every(img => img.complete && img.naturalWidth > 0)), true);
+    assert.equal(await page.locator('.provider-logos img').evaluateAll((images, expected) => images.length === expected && images.every(img => img.complete && img.naturalWidth > 0), Object.keys(PROVIDERS).length), true);
     assert.equal(await page.locator('[data-result] a').count(), 2);
     assert.equal(await page.getByRole('button', { name: /replay|play demo/i }).count(), 0);
     if (mode !== 'no-js') {
