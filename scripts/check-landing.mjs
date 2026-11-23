@@ -114,8 +114,9 @@ try {
     await page.locator('.hero-copy .button-primary').hover();
     assert.equal(await page.locator('.hero-copy .button-primary').evaluate(node => getComputedStyle(node).transform), 'none');
     assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior), 'auto');
-    await page.locator('[data-provider="openai"]').click();
-    assert.match(await page.locator('[data-provider-note]').textContent(), /OpenAI/);
+    assert.equal(await page.locator('.provider-logos li').count(), 4);
+    assert.equal(await page.locator('.provider-logos img').evaluateAll(images => images.every(img => img.complete && img.naturalWidth > 0)), true);
+    assert.equal(await page.locator('#privacy button').count(), 0);
     await scrollTo(page, 0);
     await page.screenshot({ path: path.join(output, `landing-${width}.png`), fullPage: true });
     assert.deepEqual(errors, []);
@@ -147,13 +148,13 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base, { waitUntil: 'networkidle' });
     assert.equal(await page.locator('h1').isVisible(), true);
+    assert.equal(await page.locator('.provider-logos img').evaluateAll(images => images.length === 4 && images.every(img => img.complete && img.naturalWidth > 0)), true);
     assert.equal(await page.locator('[data-result] a').count(), 2);
     assert.equal(await page.getByRole('button', { name: /replay|play demo/i }).count(), 0);
     if (mode !== 'no-js') {
       await page.locator('[data-example="space"]').click();
       assert.equal(await page.locator('[data-source-link]').getAttribute('href'), 'https://science.nasa.gov/exoplanets/');
-      await page.locator('[data-provider="gemini"]').click();
-      assert.match(await page.locator('[data-provider-note]').textContent(), /Gemini/);
+
     }
     assert.deepEqual(errors, []);
     await context.close();

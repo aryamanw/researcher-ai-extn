@@ -1,0 +1,4 @@
+Provider marks sourced from Lobe Icons, commit 05260484d9f4de68f90cc87a634ae68fa4043efd.
+https://github.com/lobehub/lobe-icons
+Original SVG files and MIT license retained.
+Brand marks belong to their respective owners and identify supported providers.

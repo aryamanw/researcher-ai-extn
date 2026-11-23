@@ -250,29 +250,6 @@ function initDemo(root, gsap, ScrollTrigger, updatePageMotion) {
   return () => { cancelAnimationFrame(refreshFrame); destroyStory(); listeners.forEach(remove => remove()); };
 }
 
-function initProviders() {
-  const info = {
-    openrouter: 'Connect your OpenRouter account in the extension’s settings, without pasting an API key. Your provider’s usage charges and data policies apply.',
-    anthropic: 'Add your Anthropic API key in the extension’s settings. Your chosen provider handles the search and any usage charges.',
-    openai: 'Add your OpenAI API key in the extension’s settings. Your chosen provider handles the search and any usage charges.',
-    gemini: 'Add your Gemini API key in the extension’s settings. Your chosen provider handles the search and any usage charges.',
-  };
-  const controls = [...document.querySelectorAll('[data-provider]')];
-  const note = document.querySelector('[data-provider-note]');
-  document.querySelector('[data-provider-picker]').hidden = false;
-  const handlers = controls.map(control => {
-    const handler = () => {
-      controls.forEach(button => button.setAttribute('aria-pressed', String(button === control)));
-      note.textContent = info[control.dataset.provider];
-    };
-    control.addEventListener('click', handler);
-    return () => control.removeEventListener('click', handler);
-  });
-  note.textContent = info.openrouter;
-  note.setAttribute('role', 'status');
-  return () => handlers.forEach(remove => remove());
-}
-
 function initScrollProgress() {
   const progress = document.querySelector('[data-scroll-progress]');
   let frame;
@@ -291,8 +268,7 @@ function initScrollProgress() {
 if (window.gsap && window.ScrollTrigger) window.gsap.registerPlugin(window.ScrollTrigger);
 const pageMotion = initPageMotion(window.gsap, window.ScrollTrigger);
 const cleanupDemo = initDemo(document.querySelector('#demo'), window.gsap, window.ScrollTrigger, pageMotion.setEnabled);
-const cleanupProviders = initProviders();
 const cleanupProgress = initScrollProgress();
 addEventListener('pagehide', event => {
-  if (!event.persisted) { cleanupDemo(); cleanupProviders(); cleanupProgress(); pageMotion.destroy(); }
+  if (!event.persisted) { cleanupDemo(); cleanupProgress(); pageMotion.destroy(); }
 });
