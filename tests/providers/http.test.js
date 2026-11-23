@@ -21,6 +21,15 @@ describe('errorFromResponse', () => {
     expect(err.kind).toBe('model-unavailable');
   });
 
+  // Gemini and xAI reject a bad key with 400, not 401 (bodies captured from the live APIs).
+  it.each([
+    ['gemini', '{"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","status":"INVALID_ARGUMENT","details":[{"reason":"API_KEY_INVALID"}]}}'],
+    ['xai', '{"code":"invalid-argument","error":"Incorrect API key provided. You can obtain an API key from https://console.x.ai."}'],
+  ])('maps a %s 400 bad-key body to auth', async (provider, body) => {
+    const err = await errorFromResponse(resp(400, body), { provider, model: 'm' });
+    expect(err.kind).toBe('auth');
+  });
+
   it('maps 400 with an unrelated body to http and never leaks the body', async () => {
     const body = '{"error":{"message":"secret-body-text bad param"}}';
     const err = await errorFromResponse(resp(400, body), { provider: 'openai', model: 'foo' });

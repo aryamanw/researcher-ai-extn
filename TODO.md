@@ -6,7 +6,7 @@ Open items for the Chrome Web Store launch and after. Copy-paste text for every 
 
 - [ ] Developer Dashboard → Account: set and verify a contact email (required to publish; doesn't have to be the one shown publicly).
 - [ ] Turn on 2-step verification for the Google account that owns the developer account.
-- [ ] **Release gate.** Before uploading v0.2.0: test every shipped provider with a real key (Mode 1 search returns cited results; Mode 2 with Exa and Tavily). Least-verified: OpenRouter chat-completions search, Gemini grounding host-matching, Anthropic `allowed_callers`.
+- [ ] **Release gate.** Before uploading v0.2.0: test every shipped provider with a real key: put keys in `.env` and run `node scripts/live-provider-check.mjs`, then smoke-test in Chrome (Mode 1 search returns cited results; Mode 2 with Exa and Tavily). Least-verified: OpenRouter chat-completions search, Gemini grounding host-matching, Anthropic `allowed_callers`.
 - [ ] Confirm Exa/Tavily quota-exhausted status codes (402/432/433) map to the free-limit message.
 - [ ] Verify Exa/Tavily free-tier claims in README and store listing.
 - [ ] New item → upload `research-companion-v0.2.0.zip` (from the v0.2.0 GitHub release, or `npm run package`).
