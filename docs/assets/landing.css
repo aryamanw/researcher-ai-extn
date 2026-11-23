@@ -250,7 +250,7 @@ h1 { font-size: clamp(4.5rem, 7.5vw, 7.25rem); line-height: .98; letter-spacing:
 #privacy .section-rule { display: none; }
 #privacy .trust-copy { display: block; }
 .trust-copy > div { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
-#privacy .provider-logos, #privacy .wrap > p { grid-column: 2; }
+#privacy .provider-support, #privacy .wrap > p { grid-column: 2; }
 .closing h2 { max-width: 18ch; font-size: clamp(3rem, 6vw, 6rem); line-height: 1.05; letter-spacing: -.05em; }
 @media (max-width: 1099px) {
   .hero { grid-template-columns: 1fr 1fr; min-height: auto; padding-block: 4rem 2rem; }
@@ -303,3 +303,18 @@ html[data-motion="off"] .field-space, html[data-motion="off"] .field-document, h
 .provider-logos img { display: block; width: 28px; height: 28px; object-fit: contain; }
 .provider-setup { margin-bottom: 1.25rem; color: var(--muted); font-size: .875rem; max-width: 55ch; }
 @media (prefers-color-scheme: dark) { .provider-logos img { filter: invert(1); } }
+
+.source-first { background: var(--paper); }
+.source-first-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 2rem 5rem; }
+.source-first h2 { max-width: 17ch; }
+.source-first-copy > p { margin-bottom: 1.25rem; max-width: 58ch; }
+.source-first-lead { font-size: 1.375rem; line-height: 1.4; font-weight: 600; }
+.source-method, .provider-compatibility { margin-top: 1.5rem; max-width: 65ch; }
+.source-method summary, .provider-compatibility summary { padding-block: .625rem; min-height: 44px; cursor: pointer; text-decoration: underline; text-underline-offset: .22em; }
+.source-method p, .provider-compatibility p { margin-top: 1rem; font-size: .9375rem; color: var(--muted); }
+.provider-support h3 { font-size: 1.0625rem; margin-bottom: 1.5rem; }
+.provider-support .provider-logos { gap: 1.5rem; margin-bottom: 1.5rem; }
+.provider-support .provider-logos li { font-size: .875rem; }
+.provider-support { margin-bottom: 1.5rem; min-width: 0; }
+@media (max-width: 1099px) { .source-first-grid { gap: 2rem; } }
+@media (max-width: 639px) { .source-first-grid { display: block; } .source-first h2 { max-width: none; } }

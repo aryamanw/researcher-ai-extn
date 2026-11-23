@@ -78,6 +78,12 @@ function initPageMotion(gsap, ScrollTrigger) {
       scrollTrigger: { trigger: rule.closest('.section').querySelector('.wrap'), start: 'top 90%', end: 'top 58%', scrub: .3, invalidateOnRefresh: true },
     })));
 
+    document.querySelectorAll('.source-method, .provider-compatibility').forEach(details => {
+      const refresh = () => ScrollTrigger.refresh();
+      details.addEventListener('toggle', refresh);
+      disposers.push(() => details.removeEventListener('toggle', refresh));
+    });
+
     const loops = [];
     const float = gsap.timeline({ paused: true, repeat: -1, yoyo: true });
     documents.forEach((document, i) => float.to(document, { y: [-16, 18, -12][i], rotation: [-4, 11, -8][i], duration: 3.8, ease: 'sine.inOut' }, 0));

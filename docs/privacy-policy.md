@@ -1,6 +1,6 @@
 # Privacy Policy — Research Companion
 
-**Effective and last updated: November 20, 2026**
+**Effective and last updated: November 23, 2026**
 
 Research Companion is a free, open-source (MIT) Chrome extension that finds webpages, reports, and articles related to the page you are currently reading. This policy explains what data the extension handles, where it goes, and the choices you have. In short: the developer runs no server and receives none of your data.
 
@@ -10,11 +10,11 @@ When you click the toolbar icon (or use the extension's keyboard shortcut), the 
 
 ## What data is collected, used, and shared
 
-- **Website content (page title and text).** The title and the first 12,000 characters of the extracted text are sent in a request to the AI provider you selected. The page URL is not included in that request. The provider uses its own web-search tool to find related pages and write short relevance notes, which are returned to the side panel. The data is used only for this purpose.
+- **Website content (page title and text).** The title and the first 12,000 characters of the extracted text are sent in a request to the AI provider you selected. The source page URL is not included as a separate field in the search prompt, though extracted text or search queries may contain URLs. The provider uses built-in web search, or generates queries for your configured Exa or Tavily search service, to suggest related pages and write short relevance notes. The data is used only for this purpose.
 - **Authentication information (API keys / OAuth token).** Keys you paste into Settings, or the key issued to the extension when you use "Connect to OpenRouter", are stored on your device and are sent only to the provider they belong to, as the credential on that provider's API requests.
 - **Settings and history.** Your chosen provider, per-provider model choices, chosen search service and its key, number of results, and a history of your most recent analyses (up to 50 sessions: source page title and URL, the results returned, the provider used, which search service was used if any, and a timestamp) are stored on your device.
 
-The extension does not collect your name, email address, location, browsing history beyond the pages you explicitly analyze, financial or health information, or any analytics or telemetry.
+The extension does not require a Research Companion account or collect analytics or telemetry, and it does not monitor your browsing history. Text from pages you choose to analyze may contain personal or sensitive information; that text is sent to your selected provider as described above.
 
 ## Where your data goes
 
@@ -35,16 +35,16 @@ Requests go directly from your browser to the provider you selected. They do not
 - `https://api.exa.ai` (Exa, search service)
 - `https://api.tavily.com` (Tavily, search service)
 
-Only the provider you currently have selected receives your page content. The Exa and Tavily hosts receive data only if you add a key for them (see Search key mode below). The OpenRouter sign-in uses Chrome's `identity` permission and the OAuth PKCE flow; the extension never sees your OpenRouter password.
+The selected AI provider receives your page title and extracted text. Exa or Tavily receives search queries only when configured and used for the search; those queries can contain wording from the page (see Search key mode below). The OpenRouter sign-in uses Chrome's `identity` permission and the OAuth PKCE flow; the extension never sees your OpenRouter password.
 
 ## What the developer does not do
 
 The developer does not operate a backend server and has no access to your page content, API keys, or history. In addition:
 
-- We do not sell or transfer user data to third parties, other than the provider you chose, as necessary to provide the extension's single purpose.
+- We do not sell or transfer user data to third parties, other than the AI provider and search service you configured, as necessary to find related pages.
 - We do not use or transfer user data for purposes unrelated to the extension's single purpose of finding pages related to the one you are reading.
 - We do not use or transfer user data to determine creditworthiness or for lending purposes, and we do not use it for personalized or interest-based advertising.
-- No humans read your data. Because the developer never receives it, there is nothing for us to read, except where you voluntarily send it to us (for example, in a GitHub issue).
+- The developer does not receive or read your page content, keys, or history, except information you voluntarily send us (for example, in a GitHub issue). Your selected providers and search services process the data sent to them under their own policies.
 
 **Limited Use.** The use of information received by Research Companion will adhere to the [Chrome Web Store User Data Policy, including the Limited Use requirements](https://developer.chrome.com/docs/webstore/program-policies/limited-use).
 
@@ -67,20 +67,20 @@ Once your page content reaches a provider, that provider's own terms and privacy
 - Exa (search service): [exa.ai/privacy-policy](https://exa.ai/privacy-policy).
 - Tavily (search service): [tavily.com/privacy](https://www.tavily.com/privacy).
 
-**Search key mode.** Some providers (Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen) have no built-in web search, and the same applies when a provider that does have built-in search is used with a model that can't search. For these, you add your own Exa or Tavily key in Settings. The page title and text go to the AI provider you selected, which writes a few search queries. Only those AI-written search queries are sent to Exa or Tavily, never the page text or the page URL. Exa or Tavily returns result links and snippets, which are sent back to your AI provider to rank. Your Exa or Tavily key is stored on your device and sent only to that search service.
+**Search key mode.** Some providers (Ollama Cloud, Together AI, Hugging Face, Cerebras, OpenCode Zen) have no built-in web search, and the same applies when a provider that does have built-in search is used with a model that can't search. For these, you add your own Exa or Tavily key in Settings. The page title and text go to the AI provider you selected, which writes a few search queries. The search queries are sent to Exa or Tavily and may include words or details from the page. If query generation does not produce usable queries, the extension falls back to the page title or, when that is empty, up to 100 characters from the page text. Exa or Tavily returns result links, titles, and snippets, which are sent back to your AI provider to rank. Your Exa or Tavily key is stored on your device and sent only to that search service.
 
 Please do not analyze pages containing sensitive personal information (for example, private email, medical records, or internal documents) unless you are comfortable with it being sent to your chosen provider.
 
 ## Storage, retention, and deletion
 
-- All extension data is stored in `chrome.storage.local` on your device. Nothing is synced across devices or uploaded by the extension.
+- Settings, credentials, and saved history are stored in `chrome.storage.local` on your device. They are not synced across devices or uploaded to a developer-operated server. Requests to your selected AI provider and search service still transmit the data described above.
 - History is capped at the 50 most recent sessions; older entries are discarded automatically. You can delete a single entry or use the **Clear** button in the side panel to delete all history.
 - You can replace an API key in Settings at any time, or click “Remove saved keys” in Settings to delete every stored API key, every stored search key, and the OpenRouter connection on this device. Uninstalling the extension deletes all of its stored data from your browser. To revoke an OpenRouter connection, remove the key in your OpenRouter account.
 - Data already sent to a provider is retained according to that provider's policy; request deletion from the provider directly.
 
 ## This website
 
-This policy and the project's other pages are hosted on GitHub Pages, which may log visitor IP addresses and request metadata under [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). The project's landing page may load scripts from a public CDN (cdnjs) and fonts from Google Fonts, which can receive your IP address when you visit that page. The Chrome extension itself loads no remote code, fonts, or other remote resources.
+This policy and the project's other pages are hosted on GitHub Pages, which may log visitor IP addresses and request metadata under [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). The landing page serves its scripts and provider logo files from this GitHub Pages site and uses system fonts. Visiting the landing page does not send requests to AI providers. The Chrome extension itself loads no remote code, fonts, or other remote resources.
 
 ## Children's privacy
 

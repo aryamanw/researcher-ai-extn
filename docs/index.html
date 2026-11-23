@@ -12,7 +12,7 @@
   <meta property="og:url" content="https://aryamanw.github.io/researcher-ai-extn/">
   <link rel="canonical" href="https://aryamanw.github.io/researcher-ai-extn/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20aria-hidden%3D%22true%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2228%22%20fill%3D%22oklch%2825%25%20.045%20230%29%22%2F%3E%3Cpath%20d%3D%22M44%2086%2084%2044%22%20stroke%3D%22oklch%2878%25%20.09%20231%29%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2244%22%20cy%3D%2286%22%20r%3D%2214%22%20fill%3D%22oklch%2896%25%20.009%20230%29%22%2F%3E%3Ccircle%20cx%3D%2284%22%20cy%3D%2244%22%20r%3D%2219%22%20fill%3D%22oklch%2878%25%20.09%20231%29%22%2F%3E%3C%2Fsvg%3E">
-  <link rel="stylesheet" href="./assets/landing.css?v=providers-5">
+  <link rel="stylesheet" href="./assets/landing.css?v=sources-6">
   <noscript><style>[data-demo-controls], [data-example-picker], [data-demo-navigation], [data-scroll-progress] { display: none !important; }</style></noscript>
 </head>
 <body>
@@ -33,7 +33,7 @@
   <div class="hero-copy">
     <p class="eyebrow">Related research, inside Chrome</p>
     <h1 id="hero-title" data-reading-text><span class="headline-line"><span>Go deeper.</span></span><span class="headline-line headline-secondary"><span>Stay here.</span></span></h1>
-    <p class="lead" data-reading-text>Research Companion uses the page you’re reading to find related articles, papers, and reports in Chrome’s side panel.</p>
+    <p class="lead" data-reading-text>Find your next relevant article, paper, or report from the page you’re reading. Explore links in Chrome’s side panel, then open the original source to read for yourself.</p>
     <div class="actions">
       <a class="button button-primary" href="#install">Download for Chrome</a>
     </div>
@@ -84,8 +84,8 @@
   <div class="wrap experience-grid">
     <ol class="workflow">
       <li data-chapter="0"><div><span class="chapter-kicker">START WHERE YOU ARE</span><h3>Read something<br> that moves you.</h3><p>An article, a report, a paper. Open Research Companion from the page that already has your attention.</p></div></li>
-      <li data-chapter="1"><div><span class="chapter-kicker">FOLLOW THE THREAD</span><h3>Make the<br> connection.</h3><p>Your chosen AI provider finds related sources. Every result comes with a reason it belongs beside what you’re reading.</p></div></li>
-      <li data-chapter="2"><div><span class="chapter-kicker">TAKE THE NEXT STEP</span><h3>Keep the good<br> ideas going.</h3><p>Open a source and go deeper. Your last 50 research sessions stay in local history, ready when you return.</p></div></li>
+      <li data-chapter="1"><div><span class="chapter-kicker">FOLLOW THE THREAD</span><h3>Make the<br> connection.</h3><p>Your chosen model uses built-in web search or an Exa or Tavily connection. AI-written relevance notes help you decide what to open.</p></div></li>
+      <li data-chapter="2"><div><span class="chapter-kicker">TAKE THE NEXT STEP</span><h3>Keep the good<br> ideas going.</h3><p>Open the original in a new tab. Up to 50 successful searches stay in local history, ready to reopen without another search. Delete individual entries or clear the history whenever you like.</p></div></li>
     </ol>
     <div class="demo-sticky">
   <figure id="demo" class="demo-stage" data-phase="2" data-demo-progress="1" data-motion="off" tabindex="-1" aria-labelledby="demo-title">
@@ -147,22 +147,55 @@
     </div>
   </div>
 </section>
+<section class="section source-first" id="sources" aria-labelledby="sources-title">
+  <div class="wrap source-first-grid">
+    <h2 id="sources-title">Find the next article.<br> Read the original.</h2>
+    <div class="source-first-copy">
+      <p class="source-first-lead">A path to further reading, with the source one click away.</p>
+      <p>Research Companion suggests links to articles, papers, and reports, with a short explanation of why they may connect to your page. You follow the link and assess the original work.</p>
+      <p>AI helps select and explain the suggestions. It does not write a research report or independently verify a source’s claims.</p>
+      <details class="source-method">
+        <summary>How suggestions are checked</summary>
+        <p>With built-in search, suggested URLs are filtered against the sources returned by the provider’s search response. Most integrations match exact URLs. Gemini also accepts matches to a source domain or its subdomains, which does not confirm a particular article’s URL.</p>
+        <p>With Exa or Tavily, the model ranks a list of search results; the links, titles, and snippets come from that list.</p>
+        <p>These checks reduce unsupported suggestions, but do not guarantee that a page exists, is accurate, or says what the AI description claims. Titles, summaries, relevance notes, and rankings can still be wrong. Check important details in the original source.</p>
+      </details>
+    </div>
+  </div>
+</section>
 <section class="section" id="privacy" aria-labelledby="trust-title">
   <div class="wrap">
     <h2 id="trust-title">Your browser. Your provider. Your choice.</h2>
     <span class="section-rule" data-section-rule aria-hidden="true"></span>
     <div class="trust-copy">
       <div><h3>Only when you ask</h3><p>The extension reads the active page after you invoke it. It does not monitor your browsing in the background.</p></div>
-      <div><h3>A direct connection</h3><p>Page content goes from your browser to your configured AI provider. There is no developer-operated backend in between.</p></div>
-      <div><h3>History stays here</h3><p>Settings, credentials, and research history are stored in your browser’s local extension storage.</p></div>
+      <div><h3>A direct connection</h3><p>Your page’s title and readable text go directly to your selected AI provider. If you enable Exa or Tavily, search queries go to that service and the results return to your AI provider for ranking. There is no developer-operated backend in between.</p></div>
+      <div><h3>History stays here</h3><p>Settings, API keys, and up to 50 successful searches are stored in your browser’s local extension storage. You can remove saved keys and delete history on this device.</p></div>
     </div>
-    <ul class="provider-logos" aria-label="Supported AI providers">
-      <li><img src="./assets/providers/openrouter.svg" alt="" width="28" height="28"><span>OpenRouter</span></li>
-      <li><img src="./assets/providers/anthropic.svg" alt="" width="28" height="28"><span>Anthropic</span></li>
-      <li><img src="./assets/providers/openai.svg" alt="" width="28" height="28"><span>OpenAI</span></li>
-      <li><img src="./assets/providers/gemini.svg" alt="" width="28" height="28"><span>Gemini</span></li>
-    </ul>
-    <p class="provider-setup">Connect OpenRouter or bring your own provider API key. Usage charges and provider data policies apply.</p>
+    <div class="provider-support">
+      <h3>12 provider integrations. Your model choice.</h3>
+      <ul class="provider-logos" aria-label="AI provider integrations in the preview">
+        <li data-provider-id="openrouter"><img src="./assets/providers/openrouter.svg" alt="" width="28" height="28"><span>OpenRouter</span></li>
+        <li data-provider-id="anthropic"><img src="./assets/providers/anthropic.svg" alt="" width="28" height="28"><span>Anthropic</span></li>
+        <li data-provider-id="openai"><img src="./assets/providers/openai.svg" alt="" width="28" height="28"><span>OpenAI</span></li>
+        <li data-provider-id="gemini"><img src="./assets/providers/gemini.svg" alt="" width="28" height="28"><span>Gemini</span></li>
+        <li data-provider-id="deepseek"><img src="./assets/providers/deepseek.svg" alt="" width="28" height="28"><span>DeepSeek</span></li>
+        <li data-provider-id="kimi"><img src="./assets/providers/kimi.svg" alt="" width="28" height="28"><span>Kimi (Moonshot)</span></li>
+        <li data-provider-id="xai"><img src="./assets/providers/xai.svg" alt="" width="28" height="28"><span>xAI</span></li>
+        <li data-provider-id="ollama-cloud"><img src="./assets/providers/ollama.svg" alt="" width="28" height="28"><span>Ollama Cloud</span></li>
+        <li data-provider-id="together"><img src="./assets/providers/together.svg" alt="" width="28" height="28"><span>Together AI</span></li>
+        <li data-provider-id="huggingface"><img src="./assets/providers/huggingface.svg" alt="" width="28" height="28"><span>Hugging Face</span></li>
+        <li data-provider-id="cerebras"><img src="./assets/providers/cerebras.svg" alt="" width="28" height="28"><span>Cerebras</span></li>
+        <li data-provider-id="opencode-zen"><img src="./assets/providers/opencode.svg" alt="" width="28" height="28"><span>OpenCode Zen</span></li>
+      </ul>
+      <p class="provider-setup">Connect OpenRouter or add your own provider API key. Choose from your provider’s model list or enter a model name in Settings. Provider and search-service usage charges may apply.</p>
+      <details class="provider-compatibility">
+        <summary>Search compatibility and setup</summary>
+        <p><strong>Built-in search with compatible models:</strong> Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Kimi, and xAI.</p>
+        <p><strong>Add an Exa or Tavily key:</strong> Ollama Cloud, Together AI, Hugging Face, Cerebras, and OpenCode Zen. Other providers also need a search key when you choose a model without built-in search.</p>
+        <p>Settings lets you request 1–20 results. Availability depends on your selected model, account, permissions, and provider API. These integrations are included in the v0.2.0 preview; end-to-end testing across every provider is still in progress.</p>
+      </details>
+    </div>
     <p><a href="./privacy-policy.html">Read the privacy policy</a></p>
   </div>
 </section>
@@ -170,13 +203,14 @@
   <div class="wrap">
     <h2 id="install-title">Go deeper into what you’re reading.</h2>
     <span class="section-rule" data-section-rule aria-hidden="true"></span>
-    <p>Install the preview from GitHub. Research Companion is not currently listed in the Chrome Web Store.</p>
+    <p>Install the v0.2.0 preview from GitHub. Research Companion is not currently listed in the Chrome Web Store.</p>
+    <p class="small">Requires Chrome 116 or later. This preview reads webpage text; it does not extract PDF documents or bypass paywalls.</p>
     <ol class="install-steps">
       <li>Download and unzip the latest release.</li>
       <li>Open <code>chrome://extensions</code> in Chrome and enable Developer mode.</li>
       <li>Select <strong>Load unpacked</strong>, choose the unzipped folder, and pin the extension.</li>
     </ol>
-    <p>Open the extension’s options to connect OpenRouter or configure a supported provider key. Usage may incur charges from your provider.</p>
+    <p>Open the extension’s options, connect OpenRouter or add your provider key, and choose a model. If that model has no built-in web search, add an Exa or Tavily key too. Provider and search-service charges may apply.</p>
     <div class="actions">
       <a class="button" href="https://github.com/aryamanw/researcher-ai-extn/releases/latest">Download latest release</a>
       <a href="https://github.com/aryamanw/researcher-ai-extn">Explore the source</a>
@@ -199,6 +233,6 @@
   </footer>
   <script defer src="./assets/vendor/gsap.min.js"></script>
   <script defer src="./assets/vendor/ScrollTrigger.min.js"></script>
-  <script defer src="./assets/landing.js?v=providers-5"></script>
+  <script defer src="./assets/landing.js?v=sources-6"></script>
 </body>
 </html>
